@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: neuroecom-db
+    environment:
+      SA_PASSWORD: "NeuroEcom@2024"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: neuroecom-api
+    ports:
+      - "5000:80"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=NeuroEcomBI;User Id=sa;Password=NeuroEcom@2024;TrustServerCertificate=True;"
+    depends_on:
+      - sqlserver
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: neuroecom-ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  sqldata:
