@@ -2,8 +2,15 @@ import { useState } from 'react'
 import { ArrowLeft, Flag, Gift, Mail, Phone, Lock, Unlock, Star, Users } from 'lucide-react'
 import { LoyaltyBadge, FlagBadge } from '../../components/ui/StatusBadge'
 
-export default function CustomerDetail({ customer, onBack }) {
+export default function CustomerDetail({ customer, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
+  const [localCustomer, setlocalCustomer] = useState(customer)
+  const [discountValue, setDiscountValue] = useState('')
+  const [discountReason, setDiscountReason] = useState('')
+  const [selectedFlag, setSelectedFlag] = useState('HighReturn')
+  const [selectedTier, setSelectedTier] = useState(customer.LoyaltyTier)
+  const [emailMessage, setEmailMessage] = useState('')
+  const [callNote, setCallNote] = useState('')
 
   const actions = [
     { id: 'GiveDiscount', icon: Gift, label: 'Give Discount', color: 'bloom' },
@@ -23,9 +30,37 @@ export default function CustomerDetail({ customer, onBack }) {
     pulse: { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)', text: '#22d3ee' },
   }
 
-  const ltv = customer.TotalSpent
-  const nextTierSpend = customer.LoyaltyTier === 'Bronze' ? 500 : customer.LoyaltyTier === 'Silver' ? 2000 : customer.LoyaltyTier === 'Gold' ? 5000 : null
+  const ltv = localCustomer.TotalSpent
+  const nextTierSpend = localCustomer.LoyaltyTier === 'Bronze' ? 500 : localCustomer.LoyaltyTier === 'Silver' ? 2000 : localCustomer.LoyaltyTier === 'Gold' ? 5000 : null
   const tierProgress = nextTierSpend ? Math.min(100, (ltv / nextTierSpend) * 100) : 100
+
+  const handleConfirm = (actionId) => {
+    let updated = { ...localCustomer }
+
+    if (actionId === 'Block') {
+      updated.IsBlocked = true
+      alert(`${updated.FirstName} has been blocked.`)
+    } else if (actionId === 'Unblock') {
+      updated.IsBlocked = false
+      alert(`${updated.FirstName} has been unblocked.`)
+    } else if (actionId === 'Flag') {
+      updated.Flags = [{ FlagType: selectedFlag }]
+      alert(`${updated.FirstName} flagged as ${selectedFlag}.`)
+    } else if (actionId === 'GiveDiscount') {
+      alert(`Discount of ${discountValue} applied to ${updated.FirstName}. Reason: ${discountReason}`)
+    } else if (actionId === 'ChangeTier') {
+      updated.LoyaltyTier = selectedTier
+      alert(`${updated.FirstName} tier changed to ${selectedTier}.`)
+    } else if (actionId === 'LogCall') {
+      alert(`Call logged for ${updated.FirstName}: ${callNote}`)
+    } else if (actionId === 'SendEmail') {
+      alert(`Email sent to ${updated.Email}: ${emailMessage}`)
+    }
+
+    setlocalCustomer(updated)
+    onUpdate(updated)
+    setActiveAction(null)
+  }
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
@@ -40,19 +75,20 @@ export default function CustomerDetail({ customer, onBack }) {
         <div className="space-y-4">
           <div className="card text-center">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4"
-              style={{ background: `linear-gradient(135deg, hsl(${customer.Id * 47}deg 70% 50%), hsl(${customer.Id * 47 + 40}deg 60% 40%))` }}>
-              {customer.FirstName[0]}{customer.LastName[0]}
+              style={{ background: `linear-gradient(135deg, hsl(${localCustomer.Id * 47}deg 70% 50%), hsl(${localCustomer.Id * 47 + 40}deg 60% 40%))` }}>
+              {localCustomer.FirstName[0]}{localCustomer.LastName[0]}
             </div>
-            <h3 className="text-xl font-bold text-text-white">{customer.FirstName} {customer.LastName}</h3>
-            <p className="text-sm text-text-dim mt-0.5">{customer.Email}</p>
-            <p className="text-sm text-text-dim">{customer.Phone}</p>
+            <h3 className="text-xl font-bold text-text-white">{localCustomer.FirstName} {localCustomer.LastName}</h3>
+            <p className="text-sm text-text-dim mt-0.5">{localCustomer.Email}</p>
+            <p className="text-sm text-text-dim">{localCustomer.Phone}</p>
             <div className="flex justify-center gap-2 mt-3">
-              <LoyaltyBadge tier={customer.LoyaltyTier} />
-              {customer.Flags?.length > 0 && <FlagBadge type={customer.Flags[0].FlagType} />}
-              {customer.IsBlocked && <span className="badge-danger">Blocked</span>}
+              <LoyaltyBadge tier={localCustomer.LoyaltyTier} />
+              {localCustomer.Flags?.length > 0 && <FlagBadge type={localCustomer.Flags[0].FlagType} />}
+              {localCustomer.IsBlocked && <span className="badge-danger">Blocked</span>}
             </div>
 
             {/* Tier progress */}
+
             {nextTierSpend && (
               <div className="mt-4">
                 <div className="flex justify-between text-xs text-text-dim mb-1">
@@ -72,11 +108,11 @@ export default function CustomerDetail({ customer, onBack }) {
             <div className="section-title mb-4 flex items-center gap-2"><Users size={14} className="text-pulse" /> Summary</div>
             <div className="space-y-3">
               {[
-                { label: 'Total Spent', value: `$${customer.TotalSpent.toLocaleString()}`, color: '#34d399' },
-                { label: 'Total Orders', value: customer.TotalOrders, color: '#818cf8' },
-                { label: 'Loyalty Points', value: customer.LoyaltyPoints.toLocaleString(), color: '#fbbf24' },
-                { label: 'City', value: customer.City || '—', color: '#9ca3af' },
-                { label: 'Member Since', value: new Date(customer.JoinedDate || Date.now()).toLocaleDateString(), color: '#9ca3af' },
+                { label: 'Total Spent', value: `$${localCustomer.TotalSpent.toLocaleString()}`, color: '#34d399' },
+                { label: 'Total Orders', value: localCustomer.TotalOrders, color: '#818cf8' },
+                { label: 'Loyalty Points', value: localCustomer.LoyaltyPoints.toLocaleString(), color: '#fbbf24' },
+                { label: 'City', value: localCustomer.City || '—', color: '#9ca3af' },
+                { label: 'Member Since', value: new Date(localCustomer.JoinedDate || Date.now()).toLocaleDateString(), color: '#9ca3af' },
               ].map(m => (
                 <div key={m.label} className="flex justify-between text-sm">
                   <span className="text-text-dim">{m.label}</span>
@@ -132,30 +168,42 @@ export default function CustomerDetail({ customer, onBack }) {
                     <div className="mt-1 p-3 rounded-lg space-y-2" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
                       {action.id === 'GiveDiscount' && (
                         <>
-                          <input className="input" placeholder="Discount % or $amount" />
-                          <input className="input" placeholder="Reason (optional)" />
+                          <input className="input" placeholder="Discount % or $amount"
+                            value={discountValue} onChange={e => setDiscountValue(e.target.value)} />
+                          <input className="input" placeholder="Reason (optional)"
+                            value={discountReason} onChange={e => setDiscountReason(e.target.value)} />
                         </>
                       )}
                       {action.id === 'Flag' && (
-                        <select className="select">
-                          <option>HighReturn</option>
-                          <option>FraudRisk</option>
-                          <option>PaymentIssue</option>
-                          <option>Abusive</option>
+                        <select className="select" value={selectedFlag} onChange={e => setSelectedFlag(e.target.value)}
+                          style={{ background: '#1a1f2e', color: '#e2e8f0', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e2e8f0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}>
+                          <option style={{ background: '#1a1f2e' }}>HighReturn</option>
+                          <option style={{ background: '#1a1f2e' }}>FraudRisk</option>
+                          <option style={{ background: '#1a1f2e' }}>PaymentIssue</option>
+                          <option style={{ background: '#1a1f2e' }}>Abusive</option>
                         </select>
                       )}
                       {action.id === 'ChangeTier' && (
-                        <select className="select">
-                          <option>VIP</option>
-                          <option>Gold</option>
-                          <option>Silver</option>
-                          <option>Bronze</option>
+                        <select className="select" value={selectedTier} onChange={e => setSelectedTier(e.target.value)}
+                          style={{ background: '#1a1f2e', color: '#e2e8f0', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e2e8f0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}>
+                          <option style={{ background: '#1a1f2e' }}>VIP</option>
+                          <option style={{ background: '#1a1f2e' }}>Gold</option>
+                          <option style={{ background: '#1a1f2e' }}>Silver</option>
+                          <option style={{ background: '#1a1f2e' }}>Bronze</option>
                         </select>
                       )}
                       {action.id === 'SendEmail' && (
-                        <textarea className="input" rows={3} placeholder="Message..." />
+                        <textarea className="input" rows={3} placeholder="Message..."
+                          value={emailMessage} onChange={e => setEmailMessage(e.target.value)} />
                       )}
-                      <button className="btn-primary w-full text-xs">Confirm {action.label}</button>
+                      {action.id === 'LogCall' && (
+                        <input className="input" placeholder="Call notes..."
+                          value={callNote} onChange={e => setCallNote(e.target.value)} />
+                      )}
+                      <button className="btn-primary w-full text-xs"
+                        onClick={() => handleConfirm(action.id)}>
+                        Confirm {action.label}
+                      </button>
                     </div>
                   )}
                 </div>

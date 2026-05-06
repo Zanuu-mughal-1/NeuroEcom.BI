@@ -4723,24 +4723,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Zain Mughal\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\dell\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\My 2nd Sem Project\\NeuroEcom.BI\\NeuroEcom.BI\\backend\\NeuroEcom.BI.csproj",
+      "projectUniqueName": "G:\\Proj NeuroEcom.BI\\NeuroEcom.BI\\backend\\NeuroEcom.BI.csproj",
       "projectName": "NeuroEcom.BI",
-      "projectPath": "E:\\My 2nd Sem Project\\NeuroEcom.BI\\NeuroEcom.BI\\backend\\NeuroEcom.BI.csproj",
-      "packagesPath": "C:\\Users\\Zain Mughal\\.nuget\\packages\\",
-      "outputPath": "E:\\My 2nd Sem Project\\NeuroEcom.BI\\NeuroEcom.BI\\backend\\obj\\",
+      "projectPath": "G:\\Proj NeuroEcom.BI\\NeuroEcom.BI\\backend\\NeuroEcom.BI.csproj",
+      "packagesPath": "C:\\Users\\dell\\.nuget\\packages\\",
+      "outputPath": "G:\\Proj NeuroEcom.BI\\NeuroEcom.BI\\backend\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Zain Mughal\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Users\\dell\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -4766,7 +4761,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "10.0.200"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net8.0": {
@@ -4807,19 +4802,19 @@
         "downloadDependencies": [
           {
             "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
+            "version": "[8.0.23, 8.0.23]"
           },
           {
             "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[8.0.26, 8.0.26]"
+            "version": "[8.0.23, 8.0.23]"
           },
           {
             "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
+            "version": "[8.0.23, 8.0.23]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
+            "version": "[8.0.23, 8.0.23]"
           }
         ],
         "frameworkReferences": {
@@ -4830,7 +4825,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
