@@ -16,6 +16,16 @@ const pageTitles = {
 export default function Header() {
   const location = useLocation()
   const [hasAlerts] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    // Simulate a brief reboot delay before reloading the entire page
+    setTimeout(() => {
+      window.location.reload()
+    }, 800)
+  }
   const title = pageTitles[location.pathname] || pageTitles[Object.keys(pageTitles).find(k => location.pathname.startsWith(k) && k !== '/') || '/']
 
   return (
@@ -32,15 +42,26 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '200px' }}>
-          <Search size={14} />
-          <span className="text-xs">Quick search...</span>
-          <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-text-dim transition-all focus-within:border-neo/50 focus-within:bg-surface-light"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '240px' }}>
+          <Search size={14} className={searchQuery ? 'text-neo-bright' : ''} />
+          <input 
+            type="text"
+            placeholder="Quick search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-xs text-text-bright w-full placeholder:text-text-dim/50"
+          />
+          {!searchQuery && (
+            <kbd className="ml-auto px-1.5 py-0.5 rounded text-[10px]"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
+          )}
         </div>
-        <button className="btn-ghost p-2 !px-2">
-          <RefreshCw size={15} />
+        <button 
+          onClick={handleRefresh}
+          className={`btn-ghost p-2 !px-2 transition-all ${isRefreshing ? 'text-neo-bright' : ''}`}
+        >
+          <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
         <button className="relative btn-ghost p-2 !px-2">
           <Bell size={15} />
