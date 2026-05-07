@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bell, Search, RefreshCw, Calendar } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
+import NotificationPanel from '../ui/NotificationPanel'
 
 const pageTitles = {
   '/': 'Main Dashboard',
@@ -18,6 +19,34 @@ export default function Header() {
   const [hasAlerts] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showHeaderNotifications, setShowHeaderNotifications] = useState(false)
+
+  const sampleNotifications = [
+    {
+      type: 'info',
+      title: 'New Order Received',
+      message: 'Order #12345 from John Doe',
+      time: '2 minutes ago'
+    },
+    {
+      type: 'success',
+      title: 'Prediction Complete',
+      message: 'AI model has finished analyzing customer trends',
+      time: '15 minutes ago'
+    },
+    {
+      type: 'error',
+      title: 'Low Stock Alert',
+      message: 'Product SKU-789 is running low',
+      time: '1 hour ago'
+    },
+    {
+      type: 'info',
+      title: 'System Maintenance',
+      message: 'Database backup completed successfully',
+      time: '3 hours ago'
+    }
+  ]
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -59,12 +88,24 @@ export default function Header() {
         >
           <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
-        <button className="relative btn-ghost p-2 !px-2">
-          <Bell size={15} />
-          {hasAlerts && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+        <div className="relative">
+          <button 
+            onClick={() => setShowHeaderNotifications(!showHeaderNotifications)}
+            className="relative btn-ghost p-2 !px-2"
+          >
+            <Bell size={15} />
+            {hasAlerts && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+            )}
+          </button>
+          {showHeaderNotifications && (
+            <NotificationPanel 
+              notifications={sampleNotifications}
+              onClose={() => setShowHeaderNotifications(false)}
+              position="header"
+            />
           )}
-        </button>
+        </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-bloom bg-bloom/10 border border-bloom/20">
           <span className="w-1.5 h-1.5 rounded-full bg-bloom animate-pulse" />
           LIVE
