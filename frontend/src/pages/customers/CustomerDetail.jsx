@@ -95,7 +95,7 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
                   <span>Progress to next tier</span>
                   <span>${nextTierSpend.toLocaleString()}</span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-2 rounded-full overflow-hidden bg-abyss">
                   <div className="h-full rounded-full bg-neo" style={{ width: `${tierProgress}%` }} />
                 </div>
                 <div className="text-xs text-neo mt-1">{tierProgress.toFixed(0)}% complete</div>
@@ -134,8 +134,7 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
               { id: 'ORD-00185', date: '2024-03-15', amount: 299.97, status: 'Delivered' },
               { id: 'ORD-00170', date: '2024-03-01', amount: 55.99, status: 'Delivered' },
             ].map(o => (
-              <div key={o.id} className="flex items-center justify-between p-2.5 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div key={o.id} className="flex items-center justify-between p-2.5 rounded-lg bg-abyss border border-border">
                 <div>
                   <div className="text-xs font-mono text-neo-bright">{o.id}</div>
                   <div className="text-xs text-text-dim">{o.date}</div>
@@ -160,9 +159,9 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
                 <div key={action.id}>
                   <button onClick={() => setActiveAction(isActive ? null : action.id)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
-                    style={{ background: isActive ? c.bg : 'rgba(255,255,255,0.02)', border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.05)'}` }}>
+                    style={{ background: isActive ? c.bg : 'var(--abyss)', border: `1px solid ${isActive ? c.border : 'var(--border)'}` }}>
                     <action.icon size={15} style={{ color: c.text }} />
-                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : '#9ca3af' }}>{action.label}</span>
+                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : 'var(--text-mid)' }}>{action.label}</span>
                   </button>
                   {isActive && (
                     <div className="mt-1 p-3 rounded-lg space-y-2" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
@@ -175,21 +174,19 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
                         </>
                       )}
                       {action.id === 'Flag' && (
-                        <select className="select" value={selectedFlag} onChange={e => setSelectedFlag(e.target.value)}
-                          style={{ background: '#1a1f2e', color: '#e2e8f0', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e2e8f0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}>
-                          <option style={{ background: '#1a1f2e' }}>HighReturn</option>
-                          <option style={{ background: '#1a1f2e' }}>FraudRisk</option>
-                          <option style={{ background: '#1a1f2e' }}>PaymentIssue</option>
-                          <option style={{ background: '#1a1f2e' }}>Abusive</option>
+                        <select className="select" value={selectedFlag} onChange={e => setSelectedFlag(e.target.value)}>
+                          <option>HighReturn</option>
+                          <option>FraudRisk</option>
+                          <option>PaymentIssue</option>
+                          <option>Abusive</option>
                         </select>
                       )}
                       {action.id === 'ChangeTier' && (
-                        <select className="select" value={selectedTier} onChange={e => setSelectedTier(e.target.value)}
-                          style={{ background: '#1a1f2e', color: '#e2e8f0', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e2e8f0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}>
-                          <option style={{ background: '#1a1f2e' }}>VIP</option>
-                          <option style={{ background: '#1a1f2e' }}>Gold</option>
-                          <option style={{ background: '#1a1f2e' }}>Silver</option>
-                          <option style={{ background: '#1a1f2e' }}>Bronze</option>
+                        <select className="select" value={selectedTier} onChange={e => setSelectedTier(e.target.value)}>
+                          <option>VIP</option>
+                          <option>Gold</option>
+                          <option>Silver</option>
+                          <option>Bronze</option>
                         </select>
                       )}
                       {action.id === 'SendEmail' && (

@@ -116,37 +116,33 @@ export default function Predictions() {
   return (
     <div className="p-6 space-y-5 animate-fade-up">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-xl p-5" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 50%, rgba(6,182,212,0.1) 100%)',
-        border: '1px solid rgba(99,102,241,0.25)',
-        boxShadow: '0 0 60px rgba(99,102,241,0.1)'
-      }}>
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-10"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(30%, -30%)' }} />
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)' }}>
+      <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-neo/10 via-royal/10 to-pulse/5 border border-neo/20 shadow-neo">
+        <div className="absolute top-0 right-0 w-64 h-64 opacity-5 dark:opacity-10 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--neo), transparent)', transform: 'translate(30%, -30%)' }} />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="p-3 rounded-xl bg-neo/20 border border-neo/30">
             <Brain size={24} className="text-neo-bright" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-text-white" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>
+            <h2 className="text-2xl font-bold text-text-bright" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>
               AI Prediction Engine
             </h2>
-            <p className="text-sm text-text-dim mt-0.5">
+            <p className="text-sm text-text-dim mt-0.5 font-medium">
               Run what-if simulations and get AI-powered forecasts for products, ads, customers, and returns
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
+          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bloom/10 border border-bloom/20">
             <Sparkles size={13} className="text-bloom" />
-            <span className="text-xs font-medium text-bloom">Model v2.4 Active</span>
+            <span className="text-xs font-bold text-bloom">Model v2.4 Active</span>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex gap-1 p-1 rounded-xl w-fit bg-surface border border-border">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid hover:bg-void/50'}`}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}
@@ -168,8 +164,7 @@ export default function Predictions() {
                   setSimStock(p.Stock);
                   setProductResult(null);
                 }}
-                className="w-full bg-surface-light border border-border/40 rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
+                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
               >
                 {mockProducts.map(p => (
                   <option key={p.Id} value={p.Id} className="bg-surface text-text-mid">
@@ -190,13 +185,13 @@ export default function Predictions() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {[
-                { label: 'Price', value: `$${selectedProduct.Price}`, color: '#f8fafc' },
+                { label: 'Price', value: `$${selectedProduct.Price}`, color: 'var(--text-bright)' },
                 { label: 'Cost', value: `$${selectedProduct.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${((selectedProduct.Price - selectedProduct.Cost) / selectedProduct.Price * 100).toFixed(1)}%`, color: '#34d399' },
                 { label: 'Stock', value: selectedProduct.Stock, color: selectedProduct.Stock < 10 ? '#f87171' : '#818cf8' },
                 { label: 'Sales (est)', value: '450 units', color: '#22d3ee' },
               ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={m.label} className="p-3 rounded-lg text-center bg-void border border-border">
                   <div className="stat-label">{m.label}</div>
                   <div className="text-base font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
                 </div>
@@ -237,7 +232,7 @@ export default function Predictions() {
                   }}>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] uppercase tracking-wider font-bold text-text-bright">Projected Outcome</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-light border border-border/20 text-text-mid">${productResult.newPrice}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-abyss border border-border text-text-mid">${productResult.newPrice}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -280,7 +275,7 @@ export default function Predictions() {
                   <div className="text-xs text-text-dim mt-1">Current: {selectedProduct.Stock} units</div>
                 </div>
 
-                <div className="p-3 rounded-xl space-y-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="p-3 rounded-xl space-y-3 bg-abyss border border-border">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-text-dim">Stockout Risk</span>
                     {(() => {
@@ -291,7 +286,7 @@ export default function Predictions() {
                       return <span className="text-xs font-bold" style={{ color }}>{risk}</span>
                     })()}
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-abyss">
                     {(() => {
                       const dailyRate = forecastData.reduce((sum, d) => sum + d.units, 0) / 30;
                       const daysLeft = simStock / dailyRate;
@@ -306,10 +301,10 @@ export default function Predictions() {
                   </div>
                 </div>
 
-                <div className="bg-neo/5 border border-neo/10 p-4 rounded-xl min-h-[100px] flex flex-col justify-center">
+                <div className="bg-neo/10 border border-neo/20 p-4 rounded-xl min-h-[100px] flex flex-col justify-center">
                   <div className="flex items-center gap-2 mb-2">
-                    <Brain size={12} className="text-neo-bright" />
-                    <div className="text-[10px] uppercase tracking-wider text-neo-bright font-bold">AI Strategic Insight</div>
+                    <Brain size={12} className="text-neo dark:text-neo-bright" />
+                    <div className="text-[10px] uppercase tracking-wider text-neo dark:text-neo-bright font-bold">AI Strategic Insight</div>
                   </div>
                   <p className="text-xs text-text-mid leading-relaxed italic">
                     "{simStock < 50 ? `Stock levels are dangerously low. Reorder at least 150 units immediately to avoid $${(150 * simPrice).toLocaleString()} in lost revenue.` : 
@@ -355,7 +350,7 @@ export default function Predictions() {
                     <span className="text-text-dim">Confidence Level</span>
                     <span className="text-bloom font-bold">85%</span>
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-abyss">
                     <div className="h-full rounded-full bg-bloom" style={{ width: '85%' }} />
                   </div>
                 </div>
@@ -388,8 +383,7 @@ export default function Predictions() {
                   setAdResult(null);
                   setSimBudget(Math.round(c.TotalSpend / 30) || 100);
                 }}
-                className="w-full bg-surface-light border border-border/40 rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
+                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
               >
                 {mockCampaigns.filter(c => c.Status !== 'Draft').map(c => (
                   <option key={c.Id} value={c.Id} className="bg-surface text-text-mid">
@@ -409,13 +403,13 @@ export default function Predictions() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {[
-                { label: 'Budget', value: `$${selectedCampaign.Budget.toLocaleString()}`, color: '#f8fafc' },
+                { label: 'Budget', value: `$${selectedCampaign.Budget.toLocaleString()}`, color: 'var(--text-bright)' },
                 { label: 'Total Spend', value: `$${selectedCampaign.TotalSpend.toLocaleString()}`, color: '#f87171' },
                 { label: 'Revenue', value: `$${selectedCampaign.TotalRevenue.toLocaleString()}`, color: '#34d399' },
                 { label: 'ROI', value: `${selectedCampaign.ROI}%`, color: '#818cf8' },
                 { label: 'Clicks', value: selectedCampaign.Clicks.toLocaleString(), color: '#22d3ee' },
               ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={m.label} className="p-3 rounded-lg text-center bg-void border border-border">
                   <div className="stat-label">{m.label}</div>
                   <div className="text-base font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
                 </div>
@@ -458,7 +452,7 @@ export default function Predictions() {
                   }}>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] uppercase tracking-wider font-bold text-text-bright">Ad Forecast Result</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-light border border-border/20 text-text-mid">${adResult.newBudget}/day</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-abyss border border-border text-text-mid">${adResult.newBudget}/day</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
@@ -511,8 +505,7 @@ export default function Predictions() {
                   ];
 
                   return recommendations.map(r => (
-                    <div key={r.label} className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div key={r.label} className="flex items-center gap-3 p-3 rounded-xl bg-void border border-border">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: `${r.color}18` }}>
                         <r.icon size={14} style={{ color: r.color }} />
@@ -548,7 +541,7 @@ export default function Predictions() {
                             <span className="text-text-dim">{p.name}</span>
                             <span style={{ color: p.color }}>{p.pct}%</span>
                           </div>
-                          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                          <div className="h-1 rounded-full overflow-hidden bg-abyss">
                             <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: p.color }} />
                           </div>
                         </div>
@@ -584,8 +577,7 @@ export default function Predictions() {
                   setSelectedCustomer(c);
                   setSimLoyaltyPoints(c.LoyaltyPoints);
                 }}
-                className="w-full bg-surface-light border border-border/40 rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
+                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
               >
                 {mockCustomers.map(c => (
                   <option key={c.Id} value={c.Id} className="bg-surface text-text-mid">
@@ -614,7 +606,7 @@ export default function Predictions() {
                   </div>
                 </div>
                 
-                <div className="p-4 rounded-xl bg-surface-light/50 border border-border/20">
+                <div className="p-4 rounded-xl bg-abyss border border-border">
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-[10px] uppercase tracking-wider text-text-dim font-bold">Churn Risk Impact</div>
                     <div className="text-[10px] px-2 py-0.5 rounded bg-neo/10 text-neo-bright font-bold">
@@ -679,7 +671,7 @@ export default function Predictions() {
                       <div className="text-[10px] uppercase tracking-wider text-text-dim font-bold">Cross-Sell Opportunities</div>
                       <div className="flex gap-2">
                         {['Premium Support', 'Extended Warranty'].map(tag => (
-                          <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-surface-light border border-border/20 text-text-mid">
+                          <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-abyss border border-border text-text-mid">
                             {tag}
                           </span>
                         ))}
@@ -771,10 +763,10 @@ export default function Predictions() {
                       setSelectedReturnProduct(p);
                       setSimQualityLevel(0);
                     }}
-                    className="w-full bg-surface-light border border-border/40 rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
                   >
                     {mockProducts.map(p => (
-                      <option key={p.Id} value={p.Id} className="bg-surface">{p.Name} — Current Return Rate: {(5 + (p.Id % 10)).toFixed(1)}%</option>
+                      <option key={p.Id} value={p.Id} className="bg-surface text-text-mid">{p.Name} — Current Return Rate: {(5 + (p.Id % 10)).toFixed(1)}%</option>
                     ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
@@ -806,12 +798,12 @@ export default function Predictions() {
 
                       return (
                         <>
-                          <div className="p-3 rounded-lg bg-surface-light/50 border border-border/10">
+                          <div className="p-3 rounded-lg bg-abyss border border-border">
                             <div className="stat-label">Predicted Return Rate</div>
                             <div className="text-xl font-bold text-danger">{newRate.toFixed(1)}%</div>
                             <div className="text-[10px] text-bloom">↓ {Math.round(reduction * 100)}% Improvement</div>
                           </div>
-                          <div className="p-3 rounded-lg bg-surface-light/50 border border-border/10">
+                          <div className="p-3 rounded-lg bg-abyss border border-border">
                             <div className="stat-label">Est. Monthly Savings</div>
                             <div className="text-xl font-bold text-bloom">${monthlySavings.toLocaleString()}</div>
                             <div className="text-[10px] text-text-dim">Based on {monthlyReturns} orders</div>
@@ -839,7 +831,7 @@ export default function Predictions() {
                         <span className="text-text-dim">{r.label}</span>
                         <span className="font-bold text-text-bright">{Math.max(5, Math.round(r.pct))}%</span>
                       </div>
-                      <div className="h-1.5 bg-surface-light rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-abyss rounded-full overflow-hidden">
                         <div className="h-full transition-all duration-700" 
                           style={{ width: `${Math.max(5, r.pct)}%`, background: r.color }} />
                       </div>
@@ -891,7 +883,7 @@ export default function Predictions() {
                 ].map(r => (
                   <div key={r.cat} className="flex items-center gap-4">
                     <div className="w-24 text-xs font-medium text-text-mid">{r.cat}</div>
-                    <div className="flex-1 h-2 bg-surface-light rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-abyss rounded-full overflow-hidden">
                       <div className="h-full bg-neo" style={{ width: r.current }} />
                     </div>
                     <div className="text-xs font-bold text-text-bright w-12">{r.current}</div>
