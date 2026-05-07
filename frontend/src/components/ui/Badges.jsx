@@ -59,7 +59,7 @@ export function PlatformBadge({ platform }) {
     Instagram: { bg: 'rgba(225,48,108,0.15)', color: '#E1306C', border: 'rgba(225,48,108,0.3)', icon: '◎' },
     TikTok: { bg: 'rgba(0,0,0,0.3)', color: '#69C9D0', border: 'rgba(105,201,208,0.3)', icon: '♪' },
   }
-  const p = map[platform] || { bg: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: 'rgba(255,255,255,0.1)', icon: '?' }
+  const p = map[platform] || { bg: 'var(--abyss)', color: 'var(--text-dim)', border: 'var(--border)', icon: '?' }
   return (
     <span className="badge" style={{ background: p.bg, color: p.color, border: `1px solid ${p.border}` }}>
       {platform}

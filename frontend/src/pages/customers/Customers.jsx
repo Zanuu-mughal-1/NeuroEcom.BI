@@ -88,14 +88,14 @@ export default function Customers() {
             </button>
             {tierDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: '#0f1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}>
                 {tierOptions.map(opt => (
                   <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
                     style={{
-                      color: tierFilter !== '' && tierFilter === opt ? '#06b6d4' : '#e2e8f0',
+                      color: tierFilter !== '' && tierFilter === opt ? '#06b6d4' : 'var(--text-bright)',
                       background: tierFilter !== '' && tierFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
                     onMouseLeave={e => e.currentTarget.style.background = tierFilter !== '' && tierFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
                     onClick={() => { setTierFilter(opt); setTierDropdownOpen(false) }}>
                     {tierLabels[opt]}
@@ -151,7 +151,6 @@ export default function Customers() {
                 <div>
                   <label className="text-xs text-text-dim mb-1 block">Tier</label>
                   <select className="select w-full"
-                    style={{ background: '#1a1f2e', color: '#e2e8f0' }}
                     value={newCustomer.LoyaltyTier}
                     onChange={e => setNewCustomer(p => ({ ...p, LoyaltyTier: e.target.value }))}>
                     <option value="New">🆕 New</option>
@@ -188,7 +187,7 @@ export default function Customers() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-left">City</th>
                 <th className="table-header text-center">Tier</th>

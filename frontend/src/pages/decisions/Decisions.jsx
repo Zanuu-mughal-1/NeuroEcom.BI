@@ -63,7 +63,7 @@ export default function Decisions() {
   return (
     <div className="p-6 space-y-5 animate-fade-up">
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex gap-1 p-1 rounded-xl w-fit bg-surface border border-border">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>
@@ -122,7 +122,7 @@ export default function Decisions() {
                 const color = sectionColors[d.Section] || '#9ca3af'
                 const typeColor = decisionTypeColors[d.DecisionType] || 'text-text-mid'
                 return (
-                  <div key={d.Id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors animate-fade-in">
+                  <div key={d.Id} className="flex items-center gap-4 px-5 py-4 hover:bg-abyss transition-colors animate-fade-in">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ background: `${color}18`, border: `1px solid ${color}33` }}>
                       <Icon size={15} style={{ color }} />
@@ -166,7 +166,7 @@ export default function Decisions() {
                   className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                   style={categoryFilter === cat
                     ? { background: c.bg, color: c.text, border: `1px solid ${c.border}` }
-                    : { background: 'rgba(255,255,255,0.03)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    : { background: 'var(--surface)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
                   {cat}
                 </button>
               )
@@ -189,7 +189,7 @@ export default function Decisions() {
                 </div>
                 <table className="w-full">
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <tr className="bg-abyss border-b border-border">
                       <th className="table-header text-left">Rule Name</th>
                       <th className="table-header text-left">If This Happens (Condition)</th>
                       <th className="table-header text-left">Then AI Does This (Action)</th>
@@ -282,7 +282,7 @@ export default function Decisions() {
                   { section: 'Orders', count: 289, color: '#fbbf24' },
                   { section: 'Ads', count: 196, color: '#34d399' },
                 ].map(s => (
-                  <div key={s.section} className="p-2 rounded-lg bg-white/5 border border-white/5">
+                  <div key={s.section} className="p-2 rounded-lg bg-abyss border border-border">
                     <div className="text-[10px] text-text-dim uppercase font-bold">{s.section}</div>
                     <div className="text-lg font-bold" style={{ color: s.color }}>{s.count}</div>
                   </div>
@@ -301,7 +301,7 @@ export default function Decisions() {
                   { rule: 'Pause Ad ROI', triggers: 97, color: '#10b981' },
                   { rule: 'Price Drop Rule', triggers: 84, color: '#34d399' },
                 ].map(r => (
-                  <div key={r.rule} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
+                  <div key={r.rule} className="flex items-center justify-between p-2 rounded-lg bg-abyss">
                     <span className="text-xs text-text-mid truncate">{r.rule}</span>
                     <span className="text-xs font-bold" style={{ color: r.color }}>{r.triggers}×</span>
                   </div>
@@ -343,7 +343,7 @@ export default function Decisions() {
                           <span className="text-[9px] text-text-dim font-mono">({s.success}/{s.total})</span>
                         </div>
                       </div>
-                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-1 bg-abyss rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-1000"
                           style={{ width: `${rate}%`, background: s.color, boxShadow: `0 0 8px ${s.color}40` }} />
                       </div>
@@ -368,12 +368,12 @@ export default function Decisions() {
                 <div className="text-xs font-bold text-bloom">Operational</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="p-3 rounded-xl bg-abyss border border-border">
                   <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Drift Score</div>
                   <div className="text-lg font-bold text-text-bright">0.02</div>
                   <div className="text-[9px] text-bloom font-medium">Stable</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="p-3 rounded-xl bg-abyss border border-border">
                   <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Re-train Due</div>
                   <div className="text-lg font-bold text-text-bright">14d</div>
                   <div className="text-[9px] text-text-dim font-medium">12 May 2026</div>
@@ -385,7 +385,7 @@ export default function Decisions() {
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <div className="section-title">Impact Analysis (Deep Dive)</div>
-              <div className="text-[10px] text-text-dim bg-white/5 px-2 py-1 rounded">Last 30 Days Data</div>
+              <div className="text-[10px] text-text-dim bg-abyss border border-border px-2 py-1 rounded">Last 30 Days Data</div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(() => {
@@ -409,7 +409,7 @@ export default function Decisions() {
                   <div key={i} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
                     <div className="flex-shrink-0 relative">
                       <svg className="w-12 h-12 rotate-[-90deg]">
-                        <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />
                         <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4"
                           strokeDasharray="125.6" strokeDashoffset={125.6 - (125.6 * item.score / 100)} className="transition-all duration-1000" />
                       </svg>

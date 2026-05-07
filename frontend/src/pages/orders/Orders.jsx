@@ -111,17 +111,17 @@ export default function Orders() {
             {dropdownOpen && (
               <div
                 className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: '#0f1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}
               >
                 {statusOptions.map(opt => (
                   <div
                     key={opt}
                     className="px-3 py-2 text-sm cursor-pointer"
                     style={{
-                      color: statusFilter === opt ? '#06b6d4' : '#e2e8f0',
+                      color: statusFilter === opt ? '#06b6d4' : 'var(--text-bright)',
                       background: statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
                     onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
                     onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}
                   >
@@ -147,7 +147,7 @@ export default function Orders() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Order</th>
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-right">Amount</th>
@@ -188,7 +188,7 @@ export default function Orders() {
 
         {/* Order Detail Panel */}
         {selected && (
-          <div className="border-t border-border/50 p-5" style={{ background: 'rgba(99,102,241,0.04)' }}>
+          <div className="border-t border-border/50 p-5 bg-neo/5">
             <div className="flex items-center justify-between mb-4">
               <div className="section-title">Order Details — {selected.OrderNumber}</div>
               <button onClick={() => setSelected(null)} className="btn-ghost text-xs">Close</button>
