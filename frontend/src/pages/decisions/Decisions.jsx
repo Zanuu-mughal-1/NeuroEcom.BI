@@ -7,7 +7,7 @@ const allRules = [
   { Id: 2, Category: 'Product', RuleName: 'Price Elasticity', Condition: 'Sales Drop > {v}%', Action: 'Suggest Price Cut', CurrentValue: '20', DefaultValue: '20' },
   { Id: 9, Category: 'Product', RuleName: 'Dynamic Pricing', Condition: 'Profit Margin > {v}%', Action: 'Enable Aggressive Sale', CurrentValue: '45', DefaultValue: '40' },
   { Id: 10, Category: 'Product', RuleName: 'Overstock Alert', Condition: 'Stock > {v} units', Action: 'Bundle with Bestseller', CurrentValue: '300', DefaultValue: '500' },
-  
+
   { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > ${v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
   { Id: 4, Category: 'Customer', RuleName: 'Churn Prevention', Condition: 'Inactive > {v} days', Action: 'Send "Miss You" Email', CurrentValue: '60', DefaultValue: '90' },
   { Id: 11, Category: 'Customer', RuleName: 'Loyalty Referral', Condition: 'Total Orders > {v}', Action: 'Invite to Affiliate', CurrentValue: '25', DefaultValue: '20' },
@@ -94,8 +94,8 @@ export default function Decisions() {
             <div className="section-title">All Decisions</div>
             <div className="flex gap-2">
               {['All', 'Products', 'Customers', 'Orders', 'Ads'].map(f => (
-                <button 
-                  key={f} 
+                <button
+                  key={f}
                   onClick={() => setDecisionFilter(f)}
                   className={`btn-ghost text-xs !py-1 !px-2 transition-all ${decisionFilter === f ? 'bg-neo/20 text-neo-bright border border-neo/30' : ''}`}
                 >
@@ -108,13 +108,13 @@ export default function Decisions() {
             {(() => {
               const baseDecisions = [
                 ...decisions,
-                { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now()-18000000).toISOString(), Status: 'Applied' },
-                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > $5000)', CreatedAt: new Date(Date.now()-25200000).toISOString(), Status: 'Applied' },
-                { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now()-32400000).toISOString(), Status: 'Applied' },
+                { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now() - 18000000).toISOString(), Status: 'Applied' },
+                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > $5000)', CreatedAt: new Date(Date.now() - 25200000).toISOString(), Status: 'Applied' },
+                { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now() - 32400000).toISOString(), Status: 'Applied' },
               ];
-              
-              const filteredDecisions = decisionFilter === 'All' 
-                ? baseDecisions 
+
+              const filteredDecisions = decisionFilter === 'All'
+                ? baseDecisions
                 : baseDecisions.filter(d => d.Section === decisionFilter);
 
               return filteredDecisions.map(d => {
@@ -326,8 +326,8 @@ export default function Decisions() {
                   { type: 'Stop Selling', section: 'Products', success: 91, total: 44, color: '#10b981' },
                 ];
 
-                const filtered = decisionFilter === 'All' 
-                  ? successData 
+                const filtered = decisionFilter === 'All'
+                  ? successData
                   : successData.filter(d => d.section === decisionFilter);
 
                 if (filtered.length === 0) return <div className="py-10 text-center text-text-dim text-xs italic">No data for this category.</div>;
@@ -344,7 +344,7 @@ export default function Decisions() {
                         </div>
                       </div>
                       <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-1000" 
+                        <div className="h-full rounded-full transition-all duration-1000"
                           style={{ width: `${rate}%`, background: s.color, boxShadow: `0 0 8px ${s.color}40` }} />
                       </div>
                     </div>
@@ -399,8 +399,8 @@ export default function Decisions() {
                   { section: 'Ads', decision: 'Scale: Search Bestseller', impact: '+35%', metric: 'ROI Boost', score: 82, status: 'positive' },
                 ];
 
-                const filtered = decisionFilter === 'All' 
-                  ? impactData 
+                const filtered = decisionFilter === 'All'
+                  ? impactData
                   : impactData.filter(d => d.section === decisionFilter);
 
                 if (filtered.length === 0) return <div className="col-span-2 py-10 text-center text-text-dim text-xs italic">No impact data for this section yet.</div>;
@@ -410,7 +410,7 @@ export default function Decisions() {
                     <div className="flex-shrink-0 relative">
                       <svg className="w-12 h-12 rotate-[-90deg]">
                         <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-                        <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4" 
+                        <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4"
                           strokeDasharray="125.6" strokeDashoffset={125.6 - (125.6 * item.score / 100)} className="transition-all duration-1000" />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-text-bright">{item.score}</div>
