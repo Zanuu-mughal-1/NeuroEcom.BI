@@ -1,17 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
   DollarSign, ShoppingCart, Users, RotateCcw, TrendingUp,
   AlertTriangle, CheckCircle, Clock, XCircle, Package,
-  Plus, FlaskConical, Megaphone, Upload, Activity, Zap
+  Plus, FlaskConical, Megaphone, Upload, Activity, Zap, RefreshCw
 } from 'lucide-react'
 import KpiCard from '../../components/ui/KpiCard'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
-import { mockDashboard, generateSalesData } from '../../utils/api'
+import api, { generateSalesData } from '../../utils/api'
 
 export default function Dashboard() {
-  const [data] = useState(mockDashboard)
-  const [salesData] = useState(generateSalesData(30))
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/dashboard')
+      setData(res.data)
+    } catch (err) {
+      console.error('Failed to fetch dashboard data', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  if (!data) return (
+    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
+      <RefreshCw className="animate-spin text-neo" size={40} />
+      <div className="text-text-dim animate-pulse">Loading NeuroEcom Intelligence...</div>
+    </div>
+  )
 
   const healthData = [
     { name: 'Healthy', value: data.ProductHealth.Healthy },
@@ -42,11 +65,11 @@ export default function Dashboard() {
     <div className="p-6 space-y-6 animate-fade-up">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Monthly Revenue" value={`$${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
-        <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
-        <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" />
-        <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" />
-        <KpiCard label="Ad ROI" value={`${data.ROI}%`} change={15} changeLabel="vs last month" icon={TrendingUp} color="royal" />
+        <KpiCard label="Monthly Revenue" value={data.Revenue.ThisMonth} prefix="$" change={12} changeLabel="vs last month" icon={DollarSign} color="neo" onClick={() => navigate('/orders')} />
+        <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" onClick={() => navigate('/orders')} />
+        <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" onClick={() => navigate('/customers')} />
+        <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" onClick={() => navigate('/returns')} />
+        <KpiCard label="Ad ROI" value={`${data.ROI}%`} change={15} changeLabel="vs last month" icon={TrendingUp} color="royal" onClick={() => navigate('/ads')} />
       </div>
 
       {/* Charts Row */}
@@ -58,14 +81,10 @@ export default function Dashboard() {
               <div className="section-title">Revenue Trend</div>
               <div className="section-subtitle">Last 30 days performance</div>
             </div>
-            <div className="flex gap-2">
-              {['7D','30D','90D'].map((d,i) => (
-                <button key={d} className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${i===1 ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>{d}</button>
-              ))}
-            </div>
+            <button onClick={fetchData} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
           </div>
           <div className="h-52">
-            <SalesAreaChart data={salesData} color="#6366f1" dataKey="revenue" prefix="$" />
+            <SalesAreaChart data={data.Revenue.Trend} color="#6366f1" dataKey="revenue" prefix="$" />
           </div>
         </div>
 
@@ -193,11 +212,11 @@ export default function Dashboard() {
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Orders today</span>
-              <span className="font-bold text-text-bright">47</span>
+              <span className="font-bold text-text-bright">{data.Orders.Total > 0 ? Math.round(data.Orders.Total / 30) : 0}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Avg order value</span>
-              <span className="font-bold text-text-bright">$264.89</span>
+              <span className="font-bold text-text-bright">${data.Revenue.Today > 0 ? (data.Revenue.Today / 1.5).toFixed(2) : "0.00"}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Pending fulfillment</span>
@@ -216,13 +235,15 @@ export default function Dashboard() {
             <Link to="/decisions" className="text-xs text-neo hover:text-neo-bright transition-colors">View all →</Link>
           </div>
           <div className="space-y-2">
-            {data.RecentDecisions.map(d => {
+            {data.RecentDecisions.length === 0 ? (
+              <div className="text-center py-10 text-text-dim text-xs">No recent decisions</div>
+            ) : data.RecentDecisions.map(d => {
               const Icon = decisionIcons[d.Section] || Activity
               return (
                 <div key={d.Id} className="flex items-start gap-3 p-2.5 rounded-lg table-row border-none"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
+                  style={{ background: 'var(--input-bg)' }}>
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    style={{ background: 'var(--glass-border)' }}>
                     <Icon size={13} className={decisionColors[d.Section] || 'text-text-dim'} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -245,7 +266,9 @@ export default function Dashboard() {
             <span className="badge-danger">{data.Alerts.length} alerts</span>
           </div>
           <div className="space-y-2.5">
-            {data.Alerts.map((alert, i) => {
+            {data.Alerts.length === 0 ? (
+              <div className="text-center py-10 text-text-dim text-xs">All systems operational</div>
+            ) : data.Alerts.map((alert, i) => {
               const style = alertStyles[alert.Level] || alertStyles.Info
               const Icon = style.icon
               return (
@@ -296,3 +319,4 @@ export default function Dashboard() {
     </div>
   )
 }
+

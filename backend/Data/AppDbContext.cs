@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderTimeline> OrderTimelines => Set<OrderTimeline>();
     public DbSet<Return> Returns => Set<Return>();
+    public DbSet<RTO> RTOs => Set<RTO>();
     public DbSet<AdCampaign> AdCampaigns => Set<AdCampaign>();
     public DbSet<AdPerformance> AdPerformance => Set<AdPerformance>();
     public DbSet<Decision> Decisions => Set<Decision>();

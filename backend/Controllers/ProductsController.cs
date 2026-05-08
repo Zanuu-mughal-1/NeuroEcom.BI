@@ -82,11 +82,19 @@ public class ProductsController : ControllerBase
     {
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
-        product.Name = update.Name; product.Price = update.Price;
-        product.Cost = update.Cost; product.Stock = update.Stock;
-        product.Category = update.Category; product.Description = update.Description;
+        
+        product.Name = update.Name;
+        product.SKU = update.SKU;
+        product.Price = update.Price;
+        product.Cost = update.Cost;
+        product.Stock = update.Stock;
+        product.Category = update.Category;
+        product.Description = update.Description;
         product.ReorderLevel = update.ReorderLevel;
+        product.IsActive = update.IsActive;
+        product.IsDiscontinued = update.IsDiscontinued;
         product.UpdatedAt = DateTime.UtcNow;
+        
         await _db.SaveChangesAsync();
         return Ok(product);
     }
@@ -108,7 +116,7 @@ public class ProductsController : ControllerBase
                 product.LastRestockDate = DateTime.UtcNow;
                 details = $"Stock increased by {action.Quantity}"; break;
             case "DecreaseInventory":
-                product.Stock = Math.Max(0, product.Stock - (action.Quantity ?? 0));
+                product.Stock = Math.Max(0, (product.Stock ?? 0) - (action.Quantity ?? 0));
                 details = $"Stock decreased by {action.Quantity}"; break;
             case "IncreasePrice":
                 product.Price = action.NewPrice ?? product.Price;
@@ -145,20 +153,20 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetAnalytics()
     {
         var products = await _db.Products.ToListAsync();
-        var totalValue = await _db.Products.SumAsync(p => p.Stock * p.Cost);
+        var totalValue = await _db.Products.SumAsync(p => (p.Stock ?? 0) * p.Cost);
         var byCategory = await _db.Products.GroupBy(p => p.Category)
-            .Select(g => new { Category = g.Key, Count = g.Count(), TotalStock = g.Sum(p => p.Stock) })
+            .Select(g => new { Category = g.Key, Count = g.Count(), TotalStock = g.Sum(p => p.Stock ?? 0) })
             .ToListAsync();
 
         return Ok(new {
             TotalProducts = products.Count,
-            ActiveSKUs = products.Count(p => p.IsActive),
+            ActiveSKUs = products.Count(p => p.IsActive == true),
             OutOfStock = products.Count(p => p.Stock == 0),
             TotalInventoryValue = totalValue,
             Healthy = products.Count(p => p.HealthStatus == "Healthy"),
             Warning = products.Count(p => p.HealthStatus == "Warning"),
             Critical = products.Count(p => p.HealthStatus == "Critical"),
-            Discontinued = products.Count(p => p.IsDiscontinued),
+            Discontinued = products.Count(p => p.IsDiscontinued == true),
             ByCategory = byCategory
         });
     }

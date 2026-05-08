@@ -79,7 +79,7 @@ export default function Decisions() {
       {/* Decisions Log Tab */}
       {activeTab === 'decisions' && (
         <div className="card !p-0 overflow-hidden">
-          <div className="p-4 border-b border-border/50 flex items-center justify-between">
+          <div className="p-4 border-b border-border flex items-center justify-between">
             <div className="section-title">All Decisions</div>
             <div className="flex gap-2">
               {['All', 'Products', 'Customers', 'Orders', 'Ads'].map(f => (
@@ -154,7 +154,7 @@ export default function Decisions() {
             const c = catColors[cat]
             return (
               <div key={cat} className="card !p-0 overflow-hidden">
-                <div className="px-5 py-3 flex items-center gap-3 border-b border-border/50"
+                <div className="px-5 py-3 flex items-center gap-3 border-b border-border"
                   style={{ background: c.bg }}>
                   <div className="w-2 h-2 rounded-full" style={{ background: c.text, boxShadow: `0 0 6px ${c.text}` }} />
                   <span className="font-semibold text-sm" style={{ color: c.text }}>{cat} Rules</span>

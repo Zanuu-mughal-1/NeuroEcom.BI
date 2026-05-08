@@ -13,14 +13,14 @@ public class Product
     public string? Description { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal Price { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal Cost { get; set; }
-    public int Stock { get; set; }
-    public int ReorderLevel { get; set; } = 10;
+    public int? Stock { get; set; }
+    public int? ReorderLevel { get; set; } = 10;
     public DateTime? LastRestockDate { get; set; }
-    public bool IsActive { get; set; } = true;
-    public bool IsDiscontinued { get; set; } = false;
+    public bool? IsActive { get; set; } = true;
+    public bool? IsDiscontinued { get; set; } = false;
     public string? ImageUrl { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
     [NotMapped] public decimal Margin => Price > 0 ? ((Price - Cost) / Price) * 100 : 0;
     [NotMapped] public string HealthStatus => GetHealthStatus();
@@ -28,7 +28,7 @@ public class Product
 
     private string GetHealthStatus()
     {
-        if (IsDiscontinued) return "Discontinued";
+        if (IsDiscontinued == true) return "Discontinued";
         if (HealthScore >= 80) return "Healthy";
         if (HealthScore >= 50) return "Warning";
         return "Critical";
@@ -37,9 +37,9 @@ public class Product
     private int CalculateHealthScore()
     {
         int score = 100;
-        if (Stock == 0) score -= 40;
-        else if (Stock < ReorderLevel) score -= 20;
-        if (IsDiscontinued) return 0;
+        if ((Stock ?? 0) == 0) score -= 40;
+        else if ((Stock ?? 0) < (ReorderLevel ?? 0)) score -= 20;
+        if (IsDiscontinued == true) return 0;
         return Math.Max(0, score);
     }
 }
@@ -70,15 +70,19 @@ public class Customer
     public string? BillingAddress { get; set; }
     [MaxLength(100)] public string? City { get; set; }
     [MaxLength(20)] public string? Pincode { get; set; }
-    [MaxLength(20)] public string LoyaltyTier { get; set; } = "New";
-    public int LoyaltyPoints { get; set; }
-    [Column(TypeName = "decimal(18,2)")] public decimal TotalSpent { get; set; }
-    public int TotalOrders { get; set; }
-    public bool IsBlocked { get; set; }
+    [MaxLength(20)] public string? LoyaltyTier { get; set; } = "New";
+    public int? LoyaltyPoints { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal? TotalSpent { get; set; }
+    public int? TotalOrders { get; set; }
+    public int? TotalReturns { get; set; }
+    public int? TotalRTO { get; set; }
+    public int? RTORiskScore { get; set; }
+    public bool? IsCODBlocked { get; set; }
+    public bool? IsBlocked { get; set; }
     public string? BlockReason { get; set; }
-    public DateTime JoinedDate { get; set; } = DateTime.UtcNow;
+    public DateTime? JoinedDate { get; set; } = DateTime.UtcNow;
     public DateTime? LastOrderDate { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
     [NotMapped] public string FullName => $"{FirstName} {LastName}";
     public ICollection<CustomerFlag> Flags { get; set; } = [];
@@ -111,20 +115,20 @@ public class Order
 {
     public int Id { get; set; }
     [Required, MaxLength(50)] public string OrderNumber { get; set; } = "";
-    public int CustomerId { get; set; }
+    public int? CustomerId { get; set; }
     public Customer? Customer { get; set; }
-    public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+    public DateTime? OrderDate { get; set; } = DateTime.UtcNow;
     [Column(TypeName = "decimal(18,2)")] public decimal TotalAmount { get; set; }
     [MaxLength(50)] public string? PaymentMethod { get; set; }
-    [MaxLength(50)] public string PaymentStatus { get; set; } = "Pending";
-    [MaxLength(50)] public string FulfillmentStatus { get; set; } = "Pending";
+    [MaxLength(50)] public string? PaymentStatus { get; set; } = "Pending";
+    [MaxLength(50)] public string? FulfillmentStatus { get; set; } = "Pending";
     [MaxLength(100)] public string? TrackingNumber { get; set; }
     public string? ShippingAddress { get; set; }
-    public int RTORiskScore { get; set; }
+    public int? RTORiskScore { get; set; }
     [MaxLength(50)] public string? RTODecision { get; set; }
     public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<OrderItem> Items { get; set; } = [];
     public ICollection<OrderTimeline> Timeline { get; set; } = [];
@@ -157,7 +161,7 @@ public class OrderTimeline
 public class Return
 {
     public int Id { get; set; }
-    [Required, MaxLength(50)] public string ReturnNumber { get; set; } = "";
+    [MaxLength(50)] public string ReturnNumber { get; set; } = "";
     public int OrderId { get; set; }
     public Order? Order { get; set; }
     public int CustomerId { get; set; }
@@ -173,6 +177,24 @@ public class Return
     public DateTime RequestDate { get; set; } = DateTime.UtcNow;
     public DateTime? ProcessedDate { get; set; }
     public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+// ===================== RTO =====================
+public class RTO
+{
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public Order? Order { get; set; }
+    public int CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+    public int DeliveryAttempts { get; set; }
+    [MaxLength(200)] public string? FailureReason { get; set; }
+    public int RiskScore { get; set; }
+    [MaxLength(50)] public string Status { get; set; } = "Pending"; // Pending, Returned, Re-Attempting
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 // ===================== ADS =====================
@@ -185,12 +207,12 @@ public class AdCampaign
     public Product? Product { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal Budget { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal? DailyBudget { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    [MaxLength(50)] public string Status { get; set; } = "Draft";
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    [MaxLength(50)] public string? Status { get; set; } = "Draft";
     public string? TargetAudience { get; set; }
-    [Column(TypeName = "decimal(5,2)")] public decimal ROIAlertThreshold { get; set; } = -10;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Column(TypeName = "decimal(5,2)")] public decimal? ROIAlertThreshold { get; set; } = -10;
+    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<AdPerformance> Performance { get; set; } = [];
 }
@@ -198,14 +220,14 @@ public class AdCampaign
 public class AdPerformance
 {
     public int Id { get; set; }
-    public int CampaignId { get; set; }
+    public int? CampaignId { get; set; }
     public AdCampaign? Campaign { get; set; }
-    public DateTime PerformanceDate { get; set; }
-    [Column(TypeName = "decimal(18,2)")] public decimal Spend { get; set; }
-    [Column(TypeName = "decimal(18,2)")] public decimal Revenue { get; set; }
-    public int Impressions { get; set; }
-    public int Clicks { get; set; }
-    public int Conversions { get; set; }
+    public DateOnly PerformanceDate { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal? Spend { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal? Revenue { get; set; }
+    public int? Impressions { get; set; }
+    public int? Clicks { get; set; }
+    public int? Conversions { get; set; }
 }
 
 // ===================== DECISIONS & RULES =====================

@@ -12,7 +12,7 @@ const COLORS = {
 const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="glass rounded-xl px-4 py-3 shadow-panel" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+    <div className="glass rounded-xl px-4 py-3 shadow-panel" style={{ border: '1px solid var(--glass-border)' }}>
       <p className="text-xs text-text-dim mb-2">{label}</p>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
@@ -39,9 +39,9 @@ export function SalesAreaChart({ data, height = 200 }) {
             <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-        <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-        <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+        <XAxis dataKey="date" tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+        <YAxis tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip prefix="$" />} />
         <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />
       </AreaChart>
@@ -93,7 +93,7 @@ export function DonutChart({ data, height = 180, innerRadius = 50, outerRadius =
           ))}
         </Pie>
         <Tooltip content={({ active, payload }) => active && payload?.length ? (
-          <div className="glass rounded-xl px-3 py-2" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="glass rounded-xl px-3 py-2" style={{ border: '1px solid var(--glass-border)' }}>
             <p className="text-sm font-medium" style={{ color: payload[0].payload.color }}>{payload[0].name}</p>
             <p className="text-text-white font-bold">{payload[0].value}</p>
           </div>

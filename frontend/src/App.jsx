@@ -12,7 +12,7 @@ import Predictions from './pages/predictions/Predictions'
 
 export default function App() {
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#050508' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Grid */}
