@@ -1,24 +1,89 @@
-import { useState } from 'react'
-import { Shield, RotateCcw, Search, CheckCircle, XCircle, Clock, DollarSign, Zap } from 'lucide-react'
-import { mockReturns, mockRules } from '../../utils/api'
+import { useState, useEffect, useRef } from 'react'
+import { Shield, RotateCcw, Search, CheckCircle, XCircle, Clock, DollarSign, Zap, AlertTriangle, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { returnApi, rtoApi, decisionsApi, mockReturns, mockRules } from '../../utils/api'
+import { useData } from '../../context/DataContext'
 
 export default function Returns() {
+  const { isOnline } = useData()
   const [activeTab, setActiveTab] = useState('returns')
-  const [returns] = useState(mockReturns)
-  const [rules] = useState(mockRules.filter(r => r.Category === 'RTO'))
+  const [returns, setReturns] = useState(mockReturns)
+  const [rules, setRules] = useState(mockRules.filter(r => r.Category === 'RTO'))
   const [rtoInput, setRtoInput] = useState({ orderValue: 250, paymentMethod: 'COD', customerId: '' })
   const [rtoResult, setRtoResult] = useState(null)
   const [editingRule, setEditingRule] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [actionMsg, setActionMsg] = useState(null)
+  const msgTimer = useRef(null)
 
-  const testRTO = () => {
-    let score = 0
-    const triggered = []
-    if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
-    if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >$500 (+20 pts)') }
-    if (new Date().getDay() === 5 || new Date().getDay() === 6) { score += 10; triggered.push('Weekend order (+10 pts)') }
-    score = Math.min(100, score)
-    const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : score <= 80 ? 'Additional Verification' : 'Auto-Rejected'
-    setRtoResult({ score, decision, triggered })
+  const showMsg = (type, text) => {
+    if (msgTimer.current) clearTimeout(msgTimer.current)
+    setActionMsg({ type, text })
+    msgTimer.current = setTimeout(() => setActionMsg(null), 4000)
+  }
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      if (isOnline) {
+        const [retRes, ruleRes] = await Promise.all([
+          returnApi.getAll(),
+          decisionsApi.getRules('RTO')
+        ])
+        if (retRes.data) setReturns(retRes.data)
+        if (ruleRes.data) setRules(ruleRes.data)
+      } else {
+        setReturns(mockReturns)
+        setRules(mockRules.filter(r => r.Category === 'RTO'))
+      }
+    } catch (err) {
+      console.error("Fetch returns/rules failed:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchData() }, [isOnline])
+
+  const testRTO = async () => {
+    if (!isOnline) {
+      // Mock logic
+      let score = 0
+      const triggered = []
+      if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
+      if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >$500 (+20 pts)') }
+      score = Math.min(100, score)
+      const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : score <= 80 ? 'Additional Verification' : 'Auto-Rejected'
+      setRtoResult({ score, decision, triggeredRules: triggered.join('; ') })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await rtoApi.testOrder({
+        orderValue: parseFloat(rtoInput.orderValue),
+        paymentMethod: rtoInput.paymentMethod,
+        customerId: rtoInput.customerId ? parseInt(rtoInput.customerId) : null
+      })
+      setRtoResult(res.data)
+    } catch (err) {
+      showMsg('error', 'RTO assessment failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateRuleValue = async (id, value) => {
+    if (!isOnline) {
+      setRules(prev => prev.map(r => r.Id === id ? { ...r, CurrentValue: value } : r))
+      return
+    }
+    try {
+      await decisionsApi.updateRule(id, { newValue: value })
+      setRules(prev => prev.map(r => r.Id === id ? { ...r, CurrentValue: value } : r))
+      showMsg('success', 'Rule updated')
+    } catch (err) {
+      showMsg('error', 'Failed to update rule')
+    }
   }
 
   const tabs = [
@@ -36,6 +101,23 @@ export default function Returns() {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {isOnline 
+            ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Live Database</span></>
+            : <><WifiOff size={13} className="text-ember" /><span className="text-xs font-semibold text-ember">Offline — mock data</span></>
+          }
+          {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
+        </div>
+        {actionMsg && (
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
+            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+          }`}>
+            {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+            {actionMsg.text}
+          </div>
+        )}
+      </div>
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', width: 'fit-content' }}>
         {tabs.map(t => (
@@ -132,6 +214,7 @@ export default function Returns() {
       {/* RTO Shield Tab */}
       {activeTab === 'rto' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Left — Input */}
           <div className="card">
             <div className="flex items-center gap-2 mb-5">
               <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.15)' }}>
@@ -169,7 +252,8 @@ export default function Returns() {
             </div>
           </div>
 
-          <div className="card">
+          {/* Right — Result */}
+          <div className="card flex flex-col">
             <div className="section-title mb-5">Assessment Result</div>
             {rtoResult ? (
               <div className="space-y-4">
@@ -186,7 +270,7 @@ export default function Returns() {
                         strokeWidth="2.5" strokeDasharray={`${rtoResult.score} 100`} strokeLinecap="round" />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xl font-bold text-text-white" style={{ fontFamily: 'Bebas Neue' }}>{rtoResult.score}</span>
+                      <span className="text-xl font-bold text-text-white">{rtoResult.score}</span>
                     </div>
                   </div>
                   <div>
@@ -197,38 +281,43 @@ export default function Returns() {
                   </div>
                 </div>
 
+                {/* Triggered Rules */}
                 <div>
                   <div className="stat-label mb-2">Triggered Rules</div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                     {rtoResult.triggered.length > 0 ? rtoResult.triggered.map((rule, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 rounded-lg text-xs text-ember"
-                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                        ⚠️ {rule}
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl text-xs font-bold text-ember"
+                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)', borderLeft: '3px solid #f59e0b' }}>
+                        <AlertTriangle size={13} className="flex-shrink-0" /> {rule}
                       </div>
                     )) : (
-                      <div className="text-xs text-text-dim p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.08)' }}>
-                        ✅ No risk factors detected
+                      <div className="flex items-center gap-3 p-3 rounded-xl text-xs font-bold text-bloom"
+                        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', borderLeft: '3px solid #10b981' }}>
+                        <CheckCircle size={13} className="flex-shrink-0" /> ALL RISK PROTOCOLS PASSED
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button className="btn-success flex-1 flex items-center justify-center gap-2 text-sm">
-                    <CheckCircle size={14} /> Approve
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button className="btn-success flex-1 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest py-3 rounded-xl">
+                    <CheckCircle size={14} /> Override Approve
                   </button>
-                  <button className="btn-danger flex-1 flex items-center justify-center gap-2 text-sm">
-                    <XCircle size={14} /> Reject
+                  <button className="btn-danger flex-1 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest py-3 rounded-xl">
+                    <XCircle size={14} /> Hold Order
                   </button>
-                  <button className="btn-ghost text-sm">
+                  <button className="btn-ghost flex items-center justify-center px-3 rounded-xl">
                     <Clock size={14} />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-48 text-center">
-                <Shield size={40} className="text-text-dim mb-3 opacity-30" />
-                <div className="text-text-dim text-sm">Run an assessment to see results</div>
+              <div className="flex flex-col items-center justify-center flex-1 h-48 text-center opacity-20">
+                <Shield size={48} className="text-text-dim mb-3" />
+                <div className="text-xs font-black uppercase tracking-widest text-text-dim">
+                  Awaiting system input to initiate assessment protocol
+                </div>
               </div>
             )}
           </div>
@@ -237,31 +326,38 @@ export default function Returns() {
 
       {/* RTO Rules Tab */}
       {activeTab === 'rules' && (
-        <div className="card !p-0 overflow-hidden">
-          <div className="p-4 border-b border-border/50">
-            <div className="section-title">RTO Shield Rules Configuration</div>
-            <div className="section-subtitle mt-0.5">Configure risk scoring parameters</div>
+        <div className="card !p-0 overflow-hidden border border-border/50 shadow-lg">
+          <div className="p-5 border-b border-border/50">
+            <div className="section-title">System Risk Parameters</div>
+            <div className="section-subtitle mt-0.5">Global tuning for automated risk assessment</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <th className="table-header text-left">Rule Name</th>
-                  <th className="table-header text-left">Description</th>
-                  <th className="table-header text-center">Current Value</th>
-                  <th className="table-header text-center">Default</th>
+                  <th className="table-header text-left">Protocol Name</th>
+                  <th className="table-header text-left">Neural Context</th>
+                  <th className="table-header text-center">Score Weight</th>
+                  <th className="table-header text-center">Reference</th>
                   <th className="table-header text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rules.map(rule => (
                   <tr key={rule.Id} className="table-row">
-                    <td className="table-cell font-medium text-text-bright">{rule.RuleName}</td>
-                    <td className="table-cell text-text-dim text-xs">{rule.Description}</td>
+                    <td className="table-cell font-bold text-text-bright text-xs uppercase tracking-tighter">{rule.RuleName}</td>
+                    <td className="table-cell text-text-dim text-xs leading-relaxed max-w-xs">{rule.Description}</td>
                     <td className="table-cell text-center">
                       {editingRule === rule.Id ? (
-                        <input className="input w-24 text-center text-sm" defaultValue={rule.CurrentValue}
-                          onBlur={e => { rule.CurrentValue = e.target.value; setEditingRule(null) }} autoFocus />
+                        <input
+                          className="input w-20 text-center text-xs font-mono !py-1"
+                          defaultValue={rule.CurrentValue}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') { updateRuleValue(rule.Id, e.target.value); setEditingRule(null) }
+                          }}
+                          onBlur={e => { updateRuleValue(rule.Id, e.target.value); setEditingRule(null) }}
+                          autoFocus
+                        />
                       ) : (
                         <span className="badge-neo font-mono cursor-pointer" onClick={() => setEditingRule(rule.Id)}>
                           {rule.CurrentValue}
@@ -274,7 +370,7 @@ export default function Returns() {
                     <td className="table-cell text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditingRule(rule.Id)} className="btn-ghost text-xs !py-1 !px-2">Edit</button>
-                        <button className="btn-ghost text-xs !py-1 !px-2">Reset</button>
+                        <button onClick={() => updateRuleValue(rule.Id, rule.DefaultValue)} className="btn-ghost text-xs !py-1 !px-2">Reset</button>
                       </div>
                     </td>
                   </tr>

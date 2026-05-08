@@ -25,6 +25,23 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Explicit table mapping to match schema.sql exactly
+        modelBuilder.Entity<Product>().ToTable("Products");
+        modelBuilder.Entity<ProductSalesHistory>().ToTable("ProductSalesHistory");
+        modelBuilder.Entity<Customer>().ToTable("Customers");
+        modelBuilder.Entity<CustomerFlag>().ToTable("CustomerFlags");
+        modelBuilder.Entity<CustomerNote>().ToTable("CustomerNotes");
+        modelBuilder.Entity<Order>().ToTable("Orders");
+        modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
+        modelBuilder.Entity<OrderTimeline>().ToTable("OrderTimelines");
+        modelBuilder.Entity<Return>().ToTable("Returns");
+        modelBuilder.Entity<AdCampaign>().ToTable("AdCampaigns");
+        modelBuilder.Entity<AdPerformance>().ToTable("AdPerformance");
+        modelBuilder.Entity<Decision>().ToTable("Decisions");
+        modelBuilder.Entity<SystemRule>().ToTable("SystemRules");
+        modelBuilder.Entity<RTOAssessment>().ToTable("RTOAssessments");
+        modelBuilder.Entity<CustomerDiscount>().ToTable("CustomerDiscounts");
+
         modelBuilder.Entity<Customer>()
             .HasMany(c => c.Flags)
             .WithOne(f => f.Customer)

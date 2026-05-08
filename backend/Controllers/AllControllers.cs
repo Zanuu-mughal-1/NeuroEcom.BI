@@ -16,18 +16,22 @@ public class CustomersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? tier)
     {
-        var query = _db.Customers.Include(c => c.Flags).AsQueryable();
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(c => c.FirstName.Contains(search) || c.LastName.Contains(search) || c.Email.Contains(search));
-        if (!string.IsNullOrEmpty(tier))
-            query = query.Where(c => c.LoyaltyTier == tier);
-        var customers = await query.ToListAsync();
-        return Ok(customers.Select(c => new {
-            c.Id, c.FirstName, c.LastName, c.Email, c.Phone, c.City,
-            c.LoyaltyTier, c.LoyaltyPoints, c.TotalSpent, c.TotalOrders,
-            c.IsBlocked, c.JoinedDate, c.LastOrderDate,
-            Flags = c.Flags.Where(f => f.IsActive).Select(f => new { f.FlagType, f.Reason })
-        }));
+        try {
+            var query = _db.Customers.Include(c => c.Flags).AsQueryable();
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(c => c.FirstName.Contains(search) || c.LastName.Contains(search) || c.Email.Contains(search));
+            if (!string.IsNullOrEmpty(tier))
+                query = query.Where(c => c.LoyaltyTier == tier);
+            var customers = await query.ToListAsync();
+            return Ok(customers.Select(c => new {
+                c.Id, c.FirstName, c.LastName, c.Email, c.Phone, c.City,
+                c.LoyaltyTier, c.LoyaltyPoints, c.TotalSpent, c.TotalOrders,
+                c.IsBlocked, c.JoinedDate, c.LastOrderDate,
+                Flags = c.Flags.Where(f => f.IsActive).Select(f => new { f.FlagType, f.Reason })
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -116,6 +120,33 @@ public class CustomersController : ControllerBase
         await _db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Customer updated)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        if (customer == null) return NotFound();
+        customer.FirstName    = updated.FirstName ?? customer.FirstName;
+        customer.LastName     = updated.LastName  ?? customer.LastName;
+        customer.Email        = updated.Email     ?? customer.Email;
+        customer.Phone        = updated.Phone     ?? customer.Phone;
+        customer.City         = updated.City      ?? customer.City;
+        customer.LoyaltyTier  = updated.LoyaltyTier ?? customer.LoyaltyTier;
+        customer.IsBlocked    = updated.IsBlocked;
+        customer.BlockReason  = updated.BlockReason ?? customer.BlockReason;
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Customer updated", customer });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        if (customer == null) return NotFound();
+        _db.Customers.Remove(customer);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Customer deleted" });
+    }
 }
 
 public class CustomerActionDto
@@ -140,18 +171,22 @@ public class OrdersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
-        if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
-        if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
-        if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
-        if (to.HasValue) query = query.Where(o => o.OrderDate <= to.Value);
-        var orders = await query.OrderByDescending(o => o.OrderDate).Take(200).ToListAsync();
-        return Ok(orders.Select(o => new {
-            o.Id, o.OrderNumber, o.OrderDate, o.TotalAmount, o.PaymentMethod,
-            o.PaymentStatus, o.FulfillmentStatus, o.RTORiskScore, o.RTODecision,
-            Customer = o.Customer == null ? null : new { o.Customer.FirstName, o.Customer.LastName, o.Customer.Email },
-            ItemCount = o.Items.Count
-        }));
+        try {
+            var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
+            if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
+            if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
+            if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
+            if (to.HasValue) query = query.Where(o => o.OrderDate <= to.Value);
+            var orders = await query.OrderByDescending(o => o.OrderDate).Take(200).ToListAsync();
+            return Ok(orders.Select(o => new {
+                o.Id, o.OrderNumber, o.OrderDate, o.TotalAmount, o.PaymentMethod,
+                o.PaymentStatus, o.FulfillmentStatus, o.RTORiskScore, o.RTODecision,
+                Customer = o.Customer == null ? null : new { o.Customer.FirstName, o.Customer.LastName, o.Customer.Email },
+                ItemCount = o.Items.Count
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -236,15 +271,19 @@ public class ReturnsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status)
     {
-        var query = _db.Returns.Include(r => r.Customer).Include(r => r.Product).Include(r => r.Order).AsQueryable();
-        if (!string.IsNullOrEmpty(status)) query = query.Where(r => r.Status == status);
-        var returns = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
-        return Ok(returns.Select(r => new {
-            r.Id, r.ReturnNumber, r.Status, r.ReturnReason, r.Quantity, r.RefundAmount, r.RequestDate,
-            Customer = r.Customer == null ? null : new { r.Customer.FirstName, r.Customer.LastName },
-            Product = r.Product == null ? null : new { r.Product.Name, r.Product.SKU },
-            OrderNumber = r.Order?.OrderNumber
-        }));
+        try {
+            var query = _db.Returns.Include(r => r.Customer).Include(r => r.Product).Include(r => r.Order).AsQueryable();
+            if (!string.IsNullOrEmpty(status)) query = query.Where(r => r.Status == status);
+            var returns = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
+            return Ok(returns.Select(r => new {
+                r.Id, r.ReturnNumber, r.Status, r.ReturnReason, r.Quantity, r.RefundAmount, r.RequestDate,
+                Customer = r.Customer == null ? null : new { r.Customer.FirstName, r.Customer.LastName },
+                Product = r.Product == null ? null : new { r.Product.Name, r.Product.SKU },
+                OrderNumber = r.Order?.OrderNumber
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -308,20 +347,24 @@ public class AdsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? platform)
     {
-        var query = _db.AdCampaigns.Include(c => c.Product).Include(c => c.Performance).AsQueryable();
-        if (!string.IsNullOrEmpty(status)) query = query.Where(c => c.Status == status);
-        if (!string.IsNullOrEmpty(platform)) query = query.Where(c => c.Platform == platform);
-        var campaigns = await query.ToListAsync();
-        return Ok(campaigns.Select(c => new {
-            c.Id, c.Name, c.Platform, c.Budget, c.Status, c.StartDate, c.EndDate,
-            Product = c.Product == null ? null : new { c.Product.Name },
-            TotalSpend = c.Performance.Sum(p => p.Spend),
-            TotalRevenue = c.Performance.Sum(p => p.Revenue),
-            ROI = c.Performance.Sum(p => p.Spend) > 0
-                ? Math.Round((double)(c.Performance.Sum(p => p.Revenue) - c.Performance.Sum(p => p.Spend)) / (double)c.Performance.Sum(p => p.Spend) * 100, 1) : 0,
-            Clicks = c.Performance.Sum(p => p.Clicks),
-            Impressions = c.Performance.Sum(p => p.Impressions)
-        }));
+        try {
+            var query = _db.AdCampaigns.Include(c => c.Product).Include(c => c.Performance).AsQueryable();
+            if (!string.IsNullOrEmpty(status)) query = query.Where(c => c.Status == status);
+            if (!string.IsNullOrEmpty(platform)) query = query.Where(c => c.Platform == platform);
+            var campaigns = await query.ToListAsync();
+            return Ok(campaigns.Select(c => new {
+                c.Id, c.Name, c.Platform, c.Budget, c.Status, c.StartDate, c.EndDate,
+                Product = c.Product == null ? null : new { c.Product.Name },
+                TotalSpend = c.Performance.Sum(p => p.Spend),
+                TotalRevenue = c.Performance.Sum(p => p.Revenue),
+                ROI = c.Performance.Sum(p => p.Spend) > 0
+                    ? Math.Round((double)(c.Performance.Sum(p => p.Revenue) - c.Performance.Sum(p => p.Spend)) / (double)c.Performance.Sum(p => p.Spend) * 100, 1) : 0,
+                Clicks = c.Performance.Sum(p => p.Clicks),
+                Impressions = c.Performance.Sum(p => p.Impressions)
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -396,9 +439,13 @@ public class DecisionsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? section)
     {
-        var query = _db.Decisions.AsQueryable();
-        if (!string.IsNullOrEmpty(section)) query = query.Where(d => d.Section == section);
-        return Ok(await query.OrderByDescending(d => d.CreatedAt).Take(100).ToListAsync());
+        try {
+            var query = _db.Decisions.AsQueryable();
+            if (!string.IsNullOrEmpty(section)) query = query.Where(d => d.Section == section);
+            return Ok(await query.OrderByDescending(d => d.CreatedAt).Take(100).ToListAsync());
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("rules")]

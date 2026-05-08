@@ -10,6 +10,7 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
 {
     opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    opt.JsonSerializerOptions.PropertyNamingPolicy = null; // Use original property names (PascalCase)
 });
 
 builder.Services.AddCors(options =>
@@ -31,6 +32,22 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "NeuroEcom.BI v1"));
 app.UseCors("AllowFrontend");
+
+// Health check endpoint — now verifies DB connectivity
+app.MapGet("/api/health", async (NeuroEcom.BI.Data.AppDbContext db) => {
+    try {
+        // Try a simple operation to verify the connection
+        bool canConnect = await db.Database.CanConnectAsync();
+        if (canConnect) {
+            return Results.Ok(new { status = "Healthy", database = "Connected", timestamp = DateTime.UtcNow });
+        }
+        return Results.Json(new { status = "Degraded", database = "Disconnected" }, statusCode: 503);
+    }
+    catch (Exception ex) {
+        return Results.Json(new { status = "Unhealthy", error = ex.Message }, statusCode: 503);
+    }
+});
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

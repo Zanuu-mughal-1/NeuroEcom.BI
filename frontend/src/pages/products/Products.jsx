@@ -1,14 +1,50 @@
 import { useState } from 'react'
 import { Search, Filter, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
-import { mockProducts } from '../../utils/api'
+import { productApi, mockProducts } from '../../utils/api'
 import ProductDetail from './ProductDetail'
+import { useData } from '../../context/DataContext'
+import { RefreshCw, Wifi, WifiOff, CheckCircle, XCircle } from 'lucide-react'
 
 export default function Products() {
-  const [products] = useState(mockProducts)
+  const { isOnline } = useData()
+  const [products, setProducts] = useState(mockProducts)
   const [search, setSearch] = useState('')
   const [healthFilter, setHealthFilter] = useState('')
   const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [actionMsg, setActionMsg] = useState(null)
+  const msgTimer = useRef(null)
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    try {
+      if (isOnline) {
+        const res = await productApi.getAll({ search: search || undefined, health: healthFilter || undefined })
+        if (res.data && Array.isArray(res.data)) {
+          setProducts(res.data)
+        }
+      } else {
+        setProducts(mockProducts)
+      }
+    } catch (err) {
+      console.error("Fetch products failed:", err)
+      if (isOnline) {
+        setActionMsg({ type: 'error', text: 'Database error. Showing fallback data.' })
+        setProducts(mockProducts)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchProducts() }, [healthFilter, isOnline])
+
+  const showMsg = (type, text) => {
+    if (msgTimer.current) clearTimeout(msgTimer.current)
+    setActionMsg({ type, text })
+    msgTimer.current = setTimeout(() => setActionMsg(null), 4000)
+  }
 
   const filtered = products.filter(p =>
     (!search || p.Name.toLowerCase().includes(search.toLowerCase()) || p.SKU.includes(search)) &&
@@ -25,12 +61,30 @@ export default function Products() {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {isOnline 
+            ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Live Database</span></>
+            : <><WifiOff size={13} className="text-ember" /><span className="text-xs font-semibold text-ember">Offline — mock data</span></>
+          }
+          {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
+        </div>
+        {actionMsg && (
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
+            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+          }`}>
+            {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+            {actionMsg.text}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Products', value: products.length, icon: Package, bg: 'rgba(99,102,241,0.1)', color: '#6366f1' },
           { label: 'Active SKUs', value: products.filter(p => p.IsActive).length, icon: TrendingUp, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
           { label: 'Out of Stock', value: products.filter(p => p.Stock === 0).length, icon: AlertTriangle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-          { label: 'Inventory Value', value: `$${products.reduce((s, p) => s + p.Stock * p.Cost, 0).toLocaleString()}`, icon: DollarSign, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Inventory Value', value: `$${products.reduce((s, p) => s + p.Stock * (p.Cost || 0), 0).toLocaleString()}`, icon: DollarSign, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>

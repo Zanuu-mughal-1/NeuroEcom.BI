@@ -7,11 +7,39 @@ import {
 } from 'lucide-react'
 import KpiCard from '../../components/ui/KpiCard'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
-import { mockDashboard, generateSalesData } from '../../utils/api'
+import { dashboardApi, mockDashboard, generateSalesData } from '../../utils/api'
+import { useData } from '../../context/DataContext'
 
 export default function Dashboard() {
-  const [data] = useState(mockDashboard)
-  const [salesData] = useState(generateSalesData(30))
+  const { isOnline } = useData()
+  const [data, setData] = useState(mockDashboard)
+  const [salesData, setSalesData] = useState(generateSalesData(30))
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isOnline) {
+        setData(mockDashboard)
+        setSalesData(generateSalesData(30))
+        return
+      }
+      
+      setLoading(true)
+      try {
+        const res = await dashboardApi.get()
+        if (res.data) {
+          setData(res.data)
+          // For sales trends, we can generate based on real revenue or use historical data
+          // For now, let's keep generated data for visual but use real data where possible
+        }
+      } catch (err) {
+        console.error("Dashboard fetch failed:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [isOnline])
 
   const healthData = [
     { name: 'Healthy', value: data.ProductHealth.Healthy },
@@ -42,7 +70,7 @@ export default function Dashboard() {
     <div className="p-6 space-y-6 animate-fade-up">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Monthly Revenue" value={`$${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
+        <KpiCard label="Monthly Revenue" value={`$${(data.Revenue.ThisMonth / 1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
         <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
         <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" />
         <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" />
@@ -59,8 +87,8 @@ export default function Dashboard() {
               <div className="section-subtitle">Last 30 days performance</div>
             </div>
             <div className="flex gap-2">
-              {['7D','30D','90D'].map((d,i) => (
-                <button key={d} className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${i===1 ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>{d}</button>
+              {['7D', '30D', '90D'].map((d, i) => (
+                <button key={d} className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${i === 1 ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>{d}</button>
               ))}
             </div>
           </div>

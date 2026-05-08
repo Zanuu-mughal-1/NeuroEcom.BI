@@ -21,7 +21,7 @@ export default function Header() {
   return (
     <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b"
       style={{ background: 'rgba(10,10,18,0.8)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.05)' }}>
-      
+
       <div className="flex items-center gap-4">
         <h1 className="page-title text-2xl">{title}</h1>
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-text-dim"
