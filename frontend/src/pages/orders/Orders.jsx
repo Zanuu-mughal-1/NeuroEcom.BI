@@ -123,16 +123,15 @@ export default function Orders() {
       {/* Connection Status Bar */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {isOnline 
+          {isOnline
             ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Connected to Live Database</span></>
             : <><WifiOff size={13} className="text-danger" /><span className="text-xs font-semibold text-danger">Database Offline</span></>
           }
           {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
         </div>
         {actionMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
-            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+            }`}>
             {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
             {actionMsg.text}
           </div>

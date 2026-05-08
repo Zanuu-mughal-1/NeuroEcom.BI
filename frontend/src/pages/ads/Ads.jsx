@@ -74,16 +74,15 @@ export default function Ads() {
     <div className="p-6 space-y-5 animate-fade-up">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {isOnline 
+          {isOnline
             ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Live Database</span></>
             : <><WifiOff size={13} className="text-ember" /><span className="text-xs font-semibold text-ember">Offline — mock data</span></>
           }
           {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
         </div>
         {actionMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
-            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+            }`}>
             {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
             {actionMsg.text}
           </div>
@@ -150,16 +149,16 @@ export default function Ads() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <th className="table-header text-left">Campaign Strategy</th>
-                <th className="table-header text-left">Channel</th>
-                <th className="table-header text-right">Budget Allocation</th>
-                <th className="table-header text-right">Actual Spend</th>
-                <th className="table-header text-right">Neural Revenue</th>
-                <th className="table-header text-right">ROI (%)</th>
-                <th className="table-header text-right">Engagement</th>
-                <th className="table-header text-center">Protocol Status</th>
-                <th className="table-header text-center">Execution Control</th>
+              <tr className="bg-abyss border-b border-border">
+                <th className="table-header text-left">Campaign</th>
+                <th className="table-header text-left">Platform</th>
+                <th className="table-header text-right">Budget</th>
+                <th className="table-header text-right">Spend</th>
+                <th className="table-header text-right">Revenue</th>
+                <th className="table-header text-right">ROI</th>
+                <th className="table-header text-right">Clicks</th>
+                <th className="table-header text-center">Status</th>
+                <th className="table-header text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">

@@ -1,14 +1,35 @@
-import { useState, useEffect } from 'react'
-import { Activity, Settings, BarChart2, Package, Users, ShoppingCart, Megaphone, RotateCcw, Edit3, Save, X, RefreshCw, Target, Wifi, WifiOff, CheckCircle, XCircle } from 'lucide-react'
-import { decisionsApi, mockRules } from '../../utils/api'
-import { useData } from '../../context/DataContext'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react'
+import { Activity, Settings, BarChart2, Package, Users, ShoppingCart, Megaphone, RotateCcw, Edit3, Save, X, RefreshCw } from 'lucide-react'
+import { mockDashboard, mockRules } from '../../utils/api'
+
+const allRules = [
+  { Id: 1, Category: 'Product', RuleName: 'Low Stock Trigger', Condition: 'Inventory < {v} units', Action: 'Alert Reorder', CurrentValue: '15', DefaultValue: '15' },
+  { Id: 2, Category: 'Product', RuleName: 'Price Elasticity', Condition: 'Sales Drop > {v}%', Action: 'Suggest Price Cut', CurrentValue: '20', DefaultValue: '20' },
+  { Id: 9, Category: 'Product', RuleName: 'Dynamic Pricing', Condition: 'Profit Margin > {v}%', Action: 'Enable Aggressive Sale', CurrentValue: '45', DefaultValue: '40' },
+  { Id: 10, Category: 'Product', RuleName: 'Overstock Alert', Condition: 'Stock > {v} units', Action: 'Bundle with Bestseller', CurrentValue: '300', DefaultValue: '500' },
+
+  { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > ${v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
+  { Id: 4, Category: 'Customer', RuleName: 'Churn Prevention', Condition: 'Inactive > {v} days', Action: 'Send "Miss You" Email', CurrentValue: '60', DefaultValue: '90' },
+  { Id: 11, Category: 'Customer', RuleName: 'Loyalty Referral', Condition: 'Total Orders > {v}', Action: 'Invite to Affiliate', CurrentValue: '25', DefaultValue: '20' },
+  { Id: 12, Category: 'Customer', RuleName: 'High-Return Risk', Condition: 'Return Rate > {v}%', Action: 'Audit Purchases', CurrentValue: '20', DefaultValue: '25' },
+
+  { Id: 5, Category: 'Ads', RuleName: 'Budget Kill-Switch', Condition: 'ROI < {v}%', Action: 'Pause Campaign', CurrentValue: '5', DefaultValue: '10' },
+  { Id: 6, Category: 'Ads', RuleName: 'High Performance', Condition: 'ROAS > {v}x', Action: 'Boost Budget 20%', CurrentValue: '4.5', DefaultValue: '3.0' },
+  { Id: 13, Category: 'Ads', RuleName: 'CPC Efficiency', Condition: 'CPC < ${v}', Action: 'Scale Daily Spend', CurrentValue: '0.15', DefaultValue: '0.20' },
+  { Id: 14, Category: 'Ads', RuleName: 'Creative Fatigue', Condition: 'CTR Drop > {v}%', Action: 'Rotate Creatives', CurrentValue: '35', DefaultValue: '30' },
+
+  { Id: 7, Category: 'RTO', RuleName: 'Fraud Shield', Condition: 'RTO Score > {v}', Action: 'Force Prepaid Only', CurrentValue: '75', DefaultValue: '80' },
+  { Id: 8, Category: 'RTO', RuleName: 'Address Risk', Condition: 'Incomplete Match', Action: 'Flag for Call', CurrentValue: 'Yes', DefaultValue: 'Yes' },
+  { Id: 15, Category: 'RTO', RuleName: 'High Value Check', Condition: 'Order Value > ${v}', Action: 'Admin Review Required', CurrentValue: '1500', DefaultValue: '2000' },
+  { Id: 16, Category: 'RTO', RuleName: 'Shipment Delay', Condition: 'Unshipped > {v} hrs', Action: 'Notify Customer', CurrentValue: '48', DefaultValue: '48' },
+]
 
 export default function Decisions() {
   const { isOnline, dbStatus } = useData()
   const [activeTab, setActiveTab] = useState('decisions')
   const [rules, setRules] = useState(mockRules)
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [decisionFilter, setDecisionFilter] = useState('All')
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,7 +53,7 @@ export default function Decisions() {
         if (logRes.data) setDecisions(logRes.data)
       } else {
         setRules(mockRules)
-        setDecisions([]) 
+        setDecisions([])
       }
     } catch (err) {
       console.error('Failed to fetch decision data:', err)
@@ -43,7 +64,7 @@ export default function Decisions() {
   }
 
   const startEdit = (rule) => { setEditingId(rule.Id); setEditValue(rule.CurrentValue) }
-  
+
   const saveEdit = async (id) => {
     if (!isOnline) {
       toast.error('Cannot update rules in simulation mode.')
@@ -83,11 +104,11 @@ export default function Decisions() {
 
   const filteredRules = rules.filter(r => !categoryFilter || r.Category === categoryFilter)
   const categories = ['Product', 'Customer', 'RTO', 'Ads']
-  const catColors = { 
-    Product: { bg: 'rgba(99,102,241,0.05)', text: '#818cf8', border: 'rgba(99,102,241,0.2)' }, 
-    Customer: { bg: 'rgba(6,182,212,0.05)', text: '#22d3ee', border: 'rgba(6,182,212,0.2)' }, 
-    RTO: { bg: 'rgba(139,92,246,0.05)', text: '#a78bfa', border: 'rgba(139,92,246,0.2)' }, 
-    Ads: { bg: 'rgba(16,185,129,0.05)', text: '#34d399', border: 'rgba(16,185,129,0.2)' } 
+  const catColors = {
+    Product: { bg: 'rgba(99,102,241,0.05)', text: '#818cf8', border: 'rgba(99,102,241,0.2)' },
+    Customer: { bg: 'rgba(6,182,212,0.05)', text: '#22d3ee', border: 'rgba(6,182,212,0.2)' },
+    RTO: { bg: 'rgba(139,92,246,0.05)', text: '#a78bfa', border: 'rgba(139,92,246,0.2)' },
+    Ads: { bg: 'rgba(16,185,129,0.05)', text: '#34d399', border: 'rgba(16,185,129,0.2)' }
   }
   const sectionIcons = { Products: Package, Customers: Users, Orders: ShoppingCart, Ads: Megaphone, Returns: RotateCcw }
   const sectionColors = { Products: '#818cf8', Customers: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#a78bfa' }
@@ -119,7 +140,7 @@ export default function Decisions() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="flex gap-1 p-1 rounded-xl w-fit bg-surface border border-border">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30 shadow-lg shadow-neo/5' : 'text-text-dim hover:text-text-mid'}`}>
@@ -149,45 +170,59 @@ export default function Decisions() {
           <div className="p-5 border-b border-border/50 flex items-center justify-between bg-white/[0.01]">
             <h3 className="text-sm font-bold text-text-bright uppercase tracking-tighter">Operational Protocol Log</h3>
             <div className="flex gap-2">
-               {['Products', 'Customers', 'Ads'].map(f => (
-                 <button key={f} className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-border/50 text-text-dim hover:text-text-mid transition-all hover:bg-white/5">{f}</button>
-               ))}
+              {['All', 'Products', 'Customers', 'Orders', 'Ads'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setDecisionFilter(f)}
+                  className={`btn-ghost text-xs !py-1 !px-2 transition-all ${decisionFilter === f ? 'bg-neo/20 text-neo-bright border border-neo/30' : ''}`}
+                >
+                  {f}
+                </button>
+              ))}
             </div>
           </div>
-          <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto custom-scrollbar">
-            {decisions.length > 0 ? decisions.map(d => {
-              const Icon = sectionIcons[d.Section] || Activity
-              const color = sectionColors[d.Section] || '#9ca3af'
-              const typeColor = decisionTypeColors[d.DecisionType] || 'text-text-mid'
-              return (
-                <div key={d.Id} className="flex items-center gap-5 px-6 py-5 hover:bg-white/[0.02] transition-colors group">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 shadow-lg shadow-black/20"
-                    style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
-                    <Icon size={18} style={{ color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${typeColor}`}>{d.DecisionType}</span>
-                      <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                      <span className="text-[9px] uppercase font-black text-text-dim tracking-[0.2em] opacity-40">{d.Section}</span>
+          <div className="divide-y divide-border/30">
+            {(() => {
+              const baseDecisions = [
+                ...decisions,
+                { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now() - 18000000).toISOString(), Status: 'Applied' },
+                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > $5000)', CreatedAt: new Date(Date.now() - 25200000).toISOString(), Status: 'Applied' },
+                { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now() - 32400000).toISOString(), Status: 'Applied' },
+              ];
+
+              const filteredDecisions = decisionFilter === 'All'
+                ? baseDecisions
+                : baseDecisions.filter(d => d.Section === decisionFilter);
+
+              return filteredDecisions.map(d => {
+                const Icon = sectionIcons[d.Section] || Activity
+                const color = sectionColors[d.Section] || '#9ca3af'
+                const typeColor = decisionTypeColors[d.DecisionType] || 'text-text-mid'
+                return (
+                  <div key={d.Id} className="flex items-center gap-4 px-5 py-4 hover:bg-abyss transition-colors animate-fade-in">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${color}18`, border: `1px solid ${color}33` }}>
+                      <Icon size={15} style={{ color }} />
                     </div>
-                    <div className="text-sm font-bold text-text-bright mt-1 uppercase tracking-tight">{d.ItemName}</div>
-                    <div className="text-[11px] text-text-dim mt-1 font-medium opacity-70 leading-relaxed">{d.DecisionDetails}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-semibold ${typeColor}`}>{d.DecisionType}</span>
+                        <span className="text-text-dim text-xs">·</span>
+                        <span className="text-xs text-text-dim">{d.Section}</span>
+                      </div>
+                      <div className="text-sm font-medium text-text-bright mt-0.5">{d.ItemName}</div>
+                      <div className="text-xs text-text-dim truncate mt-0.5">{d.DecisionDetails}</div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="badge-bloom text-xs">{d.Status}</span>
+                      <span className="text-xs text-text-dim">
+                        {new Date(d.CreatedAt).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className="badge text-[9px] font-black uppercase tracking-widest bg-bloom/10 text-bloom border border-bloom/20 px-2 py-1">SYNCHRONIZED</span>
-                    <span className="text-[10px] font-mono text-text-dim opacity-50 uppercase">
-                      {new Date(d.CreatedAt).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              )
-            }) : (
-              <div className="py-20 flex flex-col items-center justify-center opacity-20">
-                <Activity size={48} className="text-text-dim mb-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">No Decision Records Detected</span>
-              </div>
-            )}
+                )
+              })
+            })()}
           </div>
         </div>
       )}
@@ -206,9 +241,9 @@ export default function Decisions() {
                 <button key={cat} onClick={() => setCategoryFilter(categoryFilter === cat ? '' : cat)}
                   className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
                   style={categoryFilter === cat
-                    ? { background: c.bg, color: c.text, border: `1px solid ${c.border}`, boxShadow: `0 8px 16px ${c.text}10` }
-                    : { background: 'rgba(255,255,255,0.02)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  {cat} Protocol
+                    ? { background: c.bg, color: c.text, border: `1px solid ${c.border}` }
+                    : { background: 'var(--surface)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
+                  {cat}
                 </button>
               )
             })}
@@ -225,85 +260,87 @@ export default function Decisions() {
                   <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.2)]" style={{ background: c.text, boxShadow: `0 0 15px ${c.text}60` }} />
                   <h3 className="font-bold text-sm uppercase tracking-[0.15em]" style={{ color: c.text }}>{cat} Optimization Matrix</h3>
                   <div className="ml-auto flex items-center gap-2">
-                     <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Status:</span>
-                     <span className="badge text-[9px] font-black uppercase tracking-widest" style={{ background: `${c.text}15`, color: c.text, border: `1px solid ${c.text}30` }}>
-                        ACTIVE
-                     </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Status:</span>
+                    <span className="badge text-[9px] font-black uppercase tracking-widest" style={{ background: `${c.text}15`, color: c.text, border: `1px solid ${c.text}30` }}>
+                      ACTIVE
+                    </span>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <th className="table-header text-left">Neural Node</th>
-                        <th className="table-header text-left">Heuristic Logic</th>
-                        <th className="table-header text-center">Variable Score</th>
-                        <th className="table-header text-center">Base Baseline</th>
-                        <th className="table-header text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {catRules.map(rule => {
-                        const isEditing = editingId === rule.Id
-                        const isChanged = rule.CurrentValue !== rule.DefaultValue
-                        return (
-                          <tr key={rule.Id} className="table-row group hover:bg-white/[0.015] transition-colors">
-                            <td className="table-cell">
-                               <div className="font-bold text-text-bright text-xs uppercase tracking-tighter">{rule.RuleName}</div>
-                               <div className="text-[8px] font-black text-text-dim opacity-30 mt-1 uppercase tracking-[0.2em]">NODE_ID: {rule.Id}</div>
-                            </td>
-                            <td className="table-cell text-text-dim text-[10px] font-medium leading-relaxed max-w-xs">{rule.Description}</td>
-                            <td className="table-cell text-center">
-                              {isEditing ? (
-                                <div className="flex items-center justify-center">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-abyss border-b border-border">
+                      <th className="table-header text-left">Rule Name</th>
+                      <th className="table-header text-left">If This Happens (Condition)</th>
+                      <th className="table-header text-left">Then AI Does This (Action)</th>
+                      <th className="table-header text-center">Default</th>
+                      <th className="table-header text-center">Status</th>
+                      <th className="table-header text-center">Edit Logic</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catRules.map(rule => {
+                      const isEditing = editingId === rule.Id
+                      const isChanged = rule.CurrentValue !== rule.DefaultValue
+                      return (
+                        <tr key={rule.Id} className="table-row">
+                          <td className="table-cell font-medium text-text-bright">{rule.RuleName}</td>
+                          <td className="table-cell">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] uppercase font-bold text-neo-bright bg-neo/10 px-1.5 py-0.5 rounded">IF</span>
+                              <span className="text-xs text-text-mid italic">
+                                {rule.Condition.split('{v}')[0]}
+                                {isEditing ? (
                                   <input
-                                    className="input w-24 text-center text-xs font-mono border-neo/50 !py-1.5 shadow-xl shadow-neo/10"
+                                    className="input w-16 text-center text-xs !py-0.5 inline-block border-neo/40 focus:border-neo bg-neo/5"
                                     value={editValue}
                                     onChange={e => setEditValue(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && saveEdit(rule.Id)}
                                     autoFocus
                                   />
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center gap-2 group/val">
-                                   <span className={`font-mono font-bold text-sm px-4 py-1.5 rounded-xl cursor-pointer transition-all hover:scale-105 inline-block shadow-lg ${isChanged ? 'text-ember bg-ember/10 border border-ember/20 shadow-ember/5' : 'text-neo-bright bg-neo/10 border border-neo/20 shadow-neo/5'}`} onClick={() => startEdit(rule)}>
-                                      {rule.CurrentValue}
-                                   </span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="table-cell text-center text-[10px] text-text-dim font-mono opacity-50 uppercase tracking-widest">{rule.DefaultValue}</td>
-                            <td className="table-cell text-center">
-                              <div className="flex gap-2 justify-center">
-                                {isEditing ? (
-                                  <>
-                                    <button onClick={() => saveEdit(rule.Id)} className="btn-success text-[10px] font-black uppercase tracking-widest !py-1.5 !px-4 flex items-center gap-2 rounded-xl shadow-xl shadow-bloom/10">
-                                      <Save size={12} /> SYNC
-                                    </button>
-                                    <button onClick={() => setEditingId(null)} className="btn-ghost text-[10px] font-bold !py-1.5 !px-2.5 flex items-center justify-center rounded-xl border border-border/50">
-                                      <X size={12} />
-                                    </button>
-                                  </>
                                 ) : (
-                                  <>
-                                    <button onClick={() => startEdit(rule)} className="w-8 h-8 flex items-center justify-center rounded-xl border border-border/50 text-text-dim hover:text-neo-bright hover:border-neo/40 transition-all hover:bg-neo/5">
-                                      <Edit3 size={13} />
-                                    </button>
-                                    {isChanged && (
-                                      <button onClick={() => resetRule(rule.Id)} className="w-8 h-8 flex items-center justify-center rounded-xl border border-border/50 text-ember/50 hover:text-ember hover:border-ember/40 transition-all hover:bg-ember/5">
-                                        <RefreshCw size={13} className={actionLoading ? 'animate-spin' : ''} />
-                                      </button>
-                                    )}
-                                  </>
+                                  <span className={`font-bold px-1 rounded ${isChanged ? 'text-ember bg-ember/10' : 'text-neo-bright bg-neo/10'}`}>
+                                    {rule.CurrentValue}
+                                  </span>
                                 )}
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                {rule.Condition.split('{v}')[1]}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="table-cell">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] uppercase font-bold text-bloom bg-bloom/10 px-1.5 py-0.5 rounded">THEN</span>
+                              <span className="text-xs font-semibold text-text-bright">{rule.Action}</span>
+                            </div>
+                          </td>
+                          <td className="table-cell text-center text-[10px] text-text-dim font-mono">{rule.DefaultValue}</td>
+                          <td className="table-cell text-center">
+                            {isChanged
+                              ? <span className="badge-ember text-[10px]">Optimized</span>
+                              : <span className="text-[10px] text-text-dim">Standard</span>}
+                          </td>
+                          <td className="table-cell text-center">
+                            <div className="flex gap-1 justify-center">
+                              {isEditing ? (
+                                <>
+                                  <button onClick={() => saveEdit(rule.Id)} className="btn-success text-[10px] !py-1 !px-2">
+                                    <Save size={10} />
+                                  </button>
+                                  <button onClick={() => setEditingId(null)} className="btn-ghost text-[10px] !py-1 !px-2">
+                                    <X size={10} />
+                                  </button>
+                                </>
+                              ) : (
+                                <button onClick={() => startEdit(rule)} className="btn-ghost text-[10px] !py-1 !px-2 flex items-center gap-1">
+                                  <Edit3 size={10} /> Modify
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             )
           })}
@@ -312,61 +349,163 @@ export default function Decisions() {
 
       {/* Analytics Tab */}
       {activeTab === 'analytics' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card border border-border/50 shadow-2xl bg-card/40">
-            <div className="flex items-center justify-between mb-8">
-               <div>
-                  <h3 className="text-sm font-bold text-text-bright uppercase tracking-tighter">Logic Distribution</h3>
-                  <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest opacity-50">Decision weighting by module</p>
-               </div>
-               <Activity size={18} className="text-neo-bright opacity-50" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Top Row: Compact Breakdown & Most Triggered */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:col-span-2">
+            <div className="card">
+              <div className="section-title mb-4">Volume by Section</div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { section: 'Products', count: 487, color: '#818cf8' },
+                  { section: 'Customers', count: 312, color: '#22d3ee' },
+                  { section: 'Orders', count: 289, color: '#fbbf24' },
+                  { section: 'Ads', count: 196, color: '#34d399' },
+                ].map(s => (
+                  <div key={s.section} className="p-2 rounded-lg bg-abyss border border-border">
+                    <div className="text-[10px] text-text-dim uppercase font-bold">{s.section}</div>
+                    <div className="text-lg font-bold" style={{ color: s.color }}>{s.count}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-6">
-              {[
-                { section: 'Products', count: 487, pct: 38, color: '#818cf8' },
-                { section: 'Customers', count: 312, pct: 24, color: '#22d3ee' },
-                { section: 'Orders', count: 289, pct: 22, color: '#fbbf24' },
-                { section: 'Ads', count: 196, pct: 16, color: '#34d399' },
-              ].map(s => (
-                <div key={s.section} className="group">
-                  <div className="flex justify-between text-[10px] mb-2 font-black tracking-widest uppercase">
-                    <span className="text-text-dim">{s.section} Core</span>
-                    <span style={{ color: s.color }}>{s.count} VECTORS</span>
+
+            <div className="card lg:col-span-2">
+              <div className="section-title mb-4">Most Triggered Rules</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                {[
+                  { rule: 'Low Stock Alert', triggers: 342, color: '#f59e0b' },
+                  { rule: 'High Return Flag', triggers: 218, color: '#ef4444' },
+                  { rule: 'COD Penalty (RTO)', triggers: 189, color: '#a78bfa' },
+                  { rule: 'VIP Tier Upgrade', triggers: 134, color: '#818cf8' },
+                  { rule: 'Pause Ad ROI', triggers: 97, color: '#10b981' },
+                  { rule: 'Price Drop Rule', triggers: 84, color: '#34d399' },
+                ].map(r => (
+                  <div key={r.rule} className="flex items-center justify-between p-2 rounded-lg bg-abyss">
+                    <span className="text-xs text-text-mid truncate">{r.rule}</span>
+                    <span className="text-xs font-bold" style={{ color: r.color }}>{r.triggers}×</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden bg-white/[0.02] border border-white/[0.05] p-[1px]">
-                    <div className="h-full rounded-full transition-all duration-[1500ms] ease-out shadow-[0_0_10px_rgba(255,255,255,0.1)]" style={{ width: `${s.pct}%`, background: `linear-gradient(90deg, ${s.color}66, ${s.color})` }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="card border border-border/50 shadow-2xl bg-card/40">
-             <div className="flex items-center justify-between mb-8">
-               <div>
-                  <h3 className="text-sm font-bold text-text-bright uppercase tracking-tighter">Heuristic Performance</h3>
-                  <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest opacity-50">Agent success rate monitoring</p>
-               </div>
-               <Target size={18} className="text-bloom opacity-50" />
+          {/* Middle Row: Success Rate & AI Health */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="section-title">Decision Success Rate</div>
+              <div className="text-[10px] text-bloom font-bold bg-bloom/10 px-2 py-0.5 rounded">91.2% Avg</div>
             </div>
-            <div className="space-y-6">
-              {[
-                { type: 'Price Optimization', success: 94, total: 128, color: '#10b981' },
-                { type: 'Inventory Automation', success: 98, total: 89, color: '#10b981' },
-                { type: 'Fraud Mitigation', success: 87, total: 156, color: '#f59e0b' },
-                { type: 'Budget Allocation', success: 82, total: 73, color: '#f59e0b' },
-                { type: 'Product Termination', success: 91, total: 44, color: '#10b981' },
-              ].map(s => (
-                <div key={s.type}>
-                  <div className="flex justify-between text-[10px] mb-2 font-black tracking-widest uppercase">
-                    <span className="text-text-dim">{s.type}</span>
-                    <span style={{ color: s.color }}>{s.success}% ACCURACY</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden bg-white/[0.02]">
-                    <div className="h-full rounded-full transition-all duration-[2000ms] ease-in-out" style={{ width: `${s.success}%`, background: s.color }} />
+            <div className="space-y-4">
+              {(() => {
+                const successData = [
+                  { type: 'Price Change', section: 'Products', success: 94, total: 128, color: '#10b981' },
+                  { type: 'Inventory Restock', section: 'Products', success: 98, total: 89, color: '#10b981' },
+                  { type: 'Customer Flag', section: 'Customers', success: 87, total: 156, color: '#f59e0b' },
+                  { type: 'Ad Pause/Resume', section: 'Ads', success: 82, total: 73, color: '#f59e0b' },
+                  { type: 'Stop Selling', section: 'Products', success: 91, total: 44, color: '#10b981' },
+                ];
+
+                const filtered = decisionFilter === 'All'
+                  ? successData
+                  : successData.filter(d => d.section === decisionFilter);
+
+                if (filtered.length === 0) return <div className="py-10 text-center text-text-dim text-xs italic">No data for this category.</div>;
+
+                return filtered.map(s => {
+                  const rate = Math.round((s.success / s.total) * 100);
+                  return (
+                    <div key={s.type} className="group">
+                      <div className="flex justify-between items-end mb-1">
+                        <div className="text-xs font-semibold text-text-bright">{s.type}</div>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-text-bright">{rate}% </span>
+                          <span className="text-[9px] text-text-dim font-mono">({s.success}/{s.total})</span>
+                        </div>
+                      </div>
+                      <div className="h-1 bg-abyss rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-1000"
+                          style={{ width: `${rate}%`, background: s.color, boxShadow: `0 0 8px ${s.color}40` }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="section-title mb-4">AI Model Health</div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-neo/5 border border-neo/20">
+                <div className="flex items-center gap-3">
+                  <Activity size={18} className="text-neo-bright animate-pulse" />
+                  <div>
+                    <div className="text-xs font-bold text-text-bright">Real-time Processing</div>
+                    <div className="text-[10px] text-text-dim">Latency: 124ms</div>
                   </div>
                 </div>
-              ))}
+                <div className="text-xs font-bold text-bloom">Operational</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-abyss border border-border">
+                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Drift Score</div>
+                  <div className="text-lg font-bold text-text-bright">0.02</div>
+                  <div className="text-[9px] text-bloom font-medium">Stable</div>
+                </div>
+                <div className="p-3 rounded-xl bg-abyss border border-border">
+                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Re-train Due</div>
+                  <div className="text-lg font-bold text-text-bright">14d</div>
+                  <div className="text-[9px] text-text-dim font-medium">12 May 2026</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <div className="section-title">Impact Analysis (Deep Dive)</div>
+              <div className="text-[10px] text-text-dim bg-abyss border border-border px-2 py-1 rounded">Last 30 Days Data</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(() => {
+                const impactData = [
+                  { section: 'Products', decision: 'Price Drop: Wireless Mouse', impact: '+150%', metric: 'Sales Vol.', score: 92, status: 'positive' },
+                  { section: 'Products', decision: 'Inventory: Gaming KB', impact: '+$4.2k', metric: 'Est. Revenue', score: 85, status: 'positive' },
+                  { section: 'Customers', decision: 'VIP Upgrade: R. Martinez', impact: '+22%', metric: 'LTV Growth', score: 78, status: 'positive' },
+                  { section: 'Orders', decision: 'RTO Block: ORD-00238', impact: '$120', metric: 'Loss Saved', score: 95, status: 'positive' },
+                  { section: 'Ads', decision: 'Pause: Low ROI Social', impact: '$900', metric: 'Spend Saved', score: 88, status: 'positive' },
+                  { section: 'Customers', decision: 'Flag: High Returner', impact: 'Review', metric: 'Risk Control', score: 70, status: 'neutral' },
+                  { section: 'Ads', decision: 'Scale: Search Bestseller', impact: '+35%', metric: 'ROI Boost', score: 82, status: 'positive' },
+                ];
+
+                const filtered = decisionFilter === 'All'
+                  ? impactData
+                  : impactData.filter(d => d.section === decisionFilter);
+
+                if (filtered.length === 0) return <div className="col-span-2 py-10 text-center text-text-dim text-xs italic">No impact data for this section yet.</div>;
+
+                return filtered.map((item, i) => (
+                  <div key={i} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
+                    <div className="flex-shrink-0 relative">
+                      <svg className="w-12 h-12 rotate-[-90deg]">
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />
+                        <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4"
+                          strokeDasharray="125.6" strokeDashoffset={125.6 - (125.6 * item.score / 100)} className="transition-all duration-1000" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-text-bright">{item.score}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-text-bright truncate">{item.decision}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-text-dim uppercase tracking-wider">{item.metric}:</span>
+                        <span className={`text-[10px] font-black ${item.status === 'positive' ? 'text-bloom' : 'text-ember'}`}>
+                          {item.impact}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>

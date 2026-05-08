@@ -70,12 +70,12 @@ export default function ProductDetail({ product, onBack }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Price', value: `$${product.Price}`, color: '#f8fafc' },
+                { label: 'Price', value: `$${product.Price}`, color: 'var(--text-bright)' },
                 { label: 'Cost', value: `$${product.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${margin}%`, color: '#34d399' },
                 { label: 'Profit/Unit', value: `$${profit}`, color: '#818cf8' },
               ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={m.label} className="p-3 rounded-lg bg-abyss border border-border">
                   <div className="stat-label">{m.label}</div>
                   <div className="text-lg font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
                 </div>
@@ -95,7 +95,7 @@ export default function ProductDetail({ product, onBack }) {
                   {product.Stock}
                 </span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-2 rounded-full overflow-hidden bg-abyss">
                 <div className="h-full rounded-full" style={{
                   width: `${Math.min(100, (product.Stock / (product.ReorderLevel * 3)) * 100)}%`,
                   background: product.Stock === 0 ? '#ef4444' : product.Stock < product.ReorderLevel ? '#f59e0b' : '#10b981'
@@ -116,7 +116,7 @@ export default function ProductDetail({ product, onBack }) {
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20 flex-shrink-0">
                 <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="15.9" fill="none"
                     stroke={product.HealthScore >= 80 ? '#10b981' : product.HealthScore >= 50 ? '#f59e0b' : '#ef4444'}
                     strokeWidth="2.5" strokeDasharray={`${product.HealthScore} 100`} strokeLinecap="round" />
@@ -153,7 +153,7 @@ export default function ProductDetail({ product, onBack }) {
                 { label: 'Return Rate', value: '8.2%', color: '#fbbf24' },
                 { label: 'Rating', value: '4.6 ⭐', color: '#f97316' },
               ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={m.label} className="p-3 rounded-lg text-center bg-abyss border border-border">
                   <div className="stat-label">{m.label}</div>
                   <div className="text-base font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
                 </div>
@@ -174,11 +174,11 @@ export default function ProductDetail({ product, onBack }) {
                   <button onClick={() => setActiveAction(isActive ? null : action.id)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
                     style={{
-                      background: isActive ? c.bg : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.05)'}`,
+                      background: isActive ? c.bg : 'var(--abyss)',
+                      border: `1px solid ${isActive ? c.border : 'var(--border)'}`,
                     }}>
                     <action.icon size={15} style={{ color: c.text }} />
-                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : '#9ca3af' }}>{action.label}</span>
+                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : 'var(--text-mid)' }}>{action.label}</span>
                   </button>
                   {isActive && (
                     <div className="mt-1 p-3 rounded-lg space-y-2" style={{ background: c.bg, border: `1px solid ${c.border}` }}>

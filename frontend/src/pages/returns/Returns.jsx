@@ -103,23 +103,22 @@ export default function Returns() {
     <div className="p-6 space-y-5 animate-fade-up">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {isOnline 
+          {isOnline
             ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Live Database</span></>
             : <><WifiOff size={13} className="text-ember" /><span className="text-xs font-semibold text-ember">Offline — mock data</span></>
           }
           {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
         </div>
         {actionMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
-            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+            }`}>
             {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
             {actionMsg.text}
           </div>
         )}
       </div>
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', width: 'fit-content' }}>
+      <div className="flex gap-1 p-1 rounded-xl bg-surface border border-border w-fit">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>
@@ -160,7 +159,7 @@ export default function Returns() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <tr className="bg-abyss border-b border-border">
                   <th className="table-header text-left">Return ID</th>
                   <th className="table-header text-left">Customer</th>
                   <th className="table-header text-left">Product</th>
@@ -264,7 +263,7 @@ export default function Returns() {
                 }}>
                   <div className="relative w-20 h-20 flex-shrink-0">
                     <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" strokeWidth="2.5" />
                       <circle cx="18" cy="18" r="15.9" fill="none"
                         stroke={rtoResult.score <= 20 ? '#10b981' : rtoResult.score <= 50 ? '#f59e0b' : '#ef4444'}
                         strokeWidth="2.5" strokeDasharray={`${rtoResult.score} 100`} strokeLinecap="round" />
@@ -334,11 +333,11 @@ export default function Returns() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <th className="table-header text-left">Protocol Name</th>
-                  <th className="table-header text-left">Neural Context</th>
-                  <th className="table-header text-center">Score Weight</th>
-                  <th className="table-header text-center">Reference</th>
+                <tr className="bg-abyss border-b border-border">
+                  <th className="table-header text-left">Rule Name</th>
+                  <th className="table-header text-left">Description</th>
+                  <th className="table-header text-center">Current Value</th>
+                  <th className="table-header text-center">Default</th>
                   <th className="table-header text-center">Actions</th>
                 </tr>
               </thead>

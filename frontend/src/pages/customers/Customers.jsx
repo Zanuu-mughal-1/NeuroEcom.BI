@@ -126,16 +126,15 @@ export default function Customers() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {isOnline 
+          {isOnline
             ? <><Wifi size={13} className="text-bloom" /><span className="text-xs font-semibold text-bloom">Connected to Live Database</span></>
             : <><WifiOff size={13} className="text-danger" /><span className="text-xs font-semibold text-danger">Database Offline</span></>
           }
           {loading && <RefreshCw size={12} className="animate-spin text-neo ml-2" />}
         </div>
         {actionMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${
-            actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold animate-fade-in ${actionMsg.type === 'success' ? 'bg-bloom/10 text-bloom border border-bloom/20' : 'bg-danger/10 text-danger border border-danger/20'
+            }`}>
             {actionMsg.type === 'success' ? <CheckCircle size={10} /> : <XCircle size={10} />}
             {actionMsg.text}
           </div>
@@ -194,7 +193,7 @@ export default function Customers() {
             </button>
             {tierDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: '#0f1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}>
                 {tierOptions.map(opt => (
                   <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
                     style={{ color: tierFilter === opt && opt !== '' ? '#06b6d4' : '#e2e8f0', background: tierFilter === opt && opt !== '' ? 'rgba(6,182,212,0.1)' : 'transparent' }}
@@ -220,7 +219,7 @@ export default function Customers() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-left">City</th>
                 <th className="table-header text-center">Tier</th>

@@ -117,7 +117,7 @@ export default function Products() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Product</th>
                 <th className="table-header text-left">Category</th>
                 <th className="table-header text-right">Price</th>
@@ -154,7 +154,7 @@ export default function Products() {
                   <td className="table-cell text-center"><HealthBadge status={p.HealthStatus} /></td>
                   <td className="table-cell text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                      <div className="w-16 h-1.5 rounded-full overflow-hidden bg-abyss">
                         <div className="h-full rounded-full" style={{ width: `${p.HealthScore}%`, background: p.HealthScore >= 80 ? '#10b981' : p.HealthScore >= 50 ? '#f59e0b' : '#ef4444' }} />
                       </div>
                       <span className="text-xs font-mono text-text-dim">{p.HealthScore}</span>
