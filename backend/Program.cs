@@ -10,6 +10,7 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
 {
     opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    opt.JsonSerializerOptions.PropertyNamingPolicy = null;
 });
 
 builder.Services.AddCors(options =>

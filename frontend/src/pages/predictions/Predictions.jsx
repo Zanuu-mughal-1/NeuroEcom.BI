@@ -1,440 +1,257 @@
-import { useState } from 'react'
-import { Brain, Sparkles, TrendingUp, TrendingDown, Package, Megaphone, Zap, Target, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import {
+  FlaskConical, TrendingUp, Target, ArrowRight,
+  Sparkles, Zap, BarChart3, RefreshCcw, Play, Package, PieChart, Info
+} from 'lucide-react'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
-import { mockProducts, mockCampaigns, generateSalesData } from '../../utils/api'
+import api from '../../utils/api'
 
 export default function Predictions() {
-  const [activeTab, setActiveTab] = useState('product')
-  const [selectedProduct, setSelectedProduct] = useState(mockProducts[0])
-  const [selectedCampaign, setSelectedCampaign] = useState(mockCampaigns[0])
-  const [simPrice, setSimPrice] = useState(selectedProduct.Price)
-  const [simDiscount, setSimDiscount] = useState(10)
-  const [simBudget, setSimBudget] = useState(200)
-  const [productResult, setProductResult] = useState(null)
-  const [adResult, setAdResult] = useState(null)
-  const forecastData = generateSalesData(30)
+  const [products, setProducts] = useState([])
+  const [campaigns, setCampaigns] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedCampaign, setSelectedCampaign] = useState(null)
+  const [budgetBoost, setBudgetBoost] = useState(20)
+  const [priceChange, setPriceChange] = useState(0)
+  const [simulating, setSimulating] = useState(false)
+  const [results, setResults] = useState(null)
 
-  const runProductSim = () => {
-    const priceDiff = (simPrice - selectedProduct.Price) / selectedProduct.Price
-    const elasticity = -1.5
-    const salesChange = priceDiff * elasticity
-    const baseSales = 450
-    const newSales = Math.round(baseSales * (1 + salesChange))
-    const newRevenue = newSales * simPrice
-    const baseRevenue = baseSales * selectedProduct.Price
-    setProductResult({
-      newPrice: +simPrice,
-      newSales,
-      newRevenue,
-      salesChange: Math.round(salesChange * 100),
-      revenueChange: Math.round((newRevenue - baseRevenue) / baseRevenue * 100),
-      recommendation: newRevenue > baseRevenue ? '✅ Recommended' : '❌ Not recommended',
-      positive: newRevenue > baseRevenue,
-    })
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [prodRes, adsRes] = await Promise.all([
+          api.get('/products'),
+          api.get('/ads')
+        ])
+        setProducts(prodRes.data)
+        setCampaigns(adsRes.data)
+        if (prodRes.data.length > 0) setSelectedProduct(prodRes.data[0])
+        if (adsRes.data.length > 0) setSelectedCampaign(adsRes.data[0])
+      } catch (err) {
+        console.error('Failed to fetch data for predictions', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const runSimulation = () => {
+    if (!selectedProduct) return
+    setSimulating(true)
+    setTimeout(() => {
+      const currentRev = selectedCampaign ? selectedCampaign.TotalRevenue || 1000 : 1000
+      const currentSpend = selectedCampaign ? selectedCampaign.TotalSpend || 200 : 200
+      const boostFactor = 1 + (budgetBoost / 100)
+      const newRevenue = currentRev * boostFactor * (1 - (priceChange / 200))
+      const newSpend = currentSpend * boostFactor
+      setResults({
+        revenue: newRevenue,
+        spend: newSpend,
+        roi: ((newRevenue - newSpend) / newSpend) * 100,
+        orders: Math.max(1, Math.floor(newRevenue / selectedProduct.Price)),
+        improvement: ((newRevenue - currentRev) / currentRev) * 100
+      })
+      setSimulating(false)
+    }, 1500)
   }
 
-  const runDiscountSim = () => {
-    const discPct = +simDiscount / 100
-    const newPrice = selectedProduct.Price * (1 - discPct)
-    const salesLift = 1 + discPct * 2.8
-    const baseSales = 450
-    const newSales = Math.round(baseSales * salesLift)
-    const newRevenue = newSales * newPrice
-    const baseRevenue = baseSales * selectedProduct.Price
-    setProductResult({
-      label: `${simDiscount}% discount`,
-      newPrice: newPrice.toFixed(2),
-      newSales,
-      newRevenue: Math.round(newRevenue),
-      salesChange: Math.round((salesLift - 1) * 100),
-      revenueChange: Math.round((newRevenue - baseRevenue) / baseRevenue * 100),
-      recommendation: newRevenue > baseRevenue ? '✅ Recommended' : '❌ Not recommended',
-      positive: newRevenue > baseRevenue,
-    })
-  }
-
-  const runAdSim = () => {
-    const currentDailyBudget = selectedCampaign.TotalSpend / 30
-    const budgetRatio = simBudget / currentDailyBudget
-    const roiDecay = Math.log(budgetRatio + 1) * 0.7
-    const currentROI = selectedCampaign.ROI / 100
-    const newROI = currentROI * roiDecay
-    const newTotalSpend = simBudget * 30
-    const newRevenue = newTotalSpend * (1 + newROI)
-    setAdResult({
-      newBudget: simBudget,
-      newTotalSpend: Math.round(newTotalSpend),
-      newRevenue: Math.round(newRevenue),
-      newROI: Math.round(newROI * 100),
-      roiChange: Math.round((newROI - currentROI) * 100),
-      roas: (newRevenue / newTotalSpend).toFixed(2),
-      recommendation: newROI > 0.5 ? '✅ Recommended — solid returns' : newROI > 0 ? '⚠️ Moderate — diminishing returns' : '❌ Not recommended',
-      positive: newROI > 0.5,
-    })
-  }
-
-  const tabs = [
-    { id: 'product', label: 'Product Predictions', icon: Package },
-    { id: 'ads', label: 'Ads Predictions', icon: Megaphone },
-  ]
+  if (loading) return <div className="p-6 text-text-dim">Loading Prediction Engine...</div>
+  if (products.length === 0) return <div className="p-6 text-text-dim">No products found. Add products first to run predictions.</div>
 
   return (
-    <div className="p-6 space-y-5 animate-fade-up">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-xl p-5" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 50%, rgba(6,182,212,0.1) 100%)',
-        border: '1px solid rgba(99,102,241,0.25)',
-        boxShadow: '0 0 60px rgba(99,102,241,0.1)'
-      }}>
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-10"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(30%, -30%)' }} />
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)' }}>
-            <Brain size={24} className="text-neo-bright" />
+    <div className="p-6 space-y-6 animate-fade-up">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <FlaskConical className="text-bloom" size={20} />
+            <h1 className="text-2xl font-bold text-text-white">AI Prediction Engine</h1>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-text-white" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>
-              AI Prediction Engine
-            </h2>
-            <p className="text-sm text-text-dim mt-0.5">
-              Run what-if simulations and get AI-powered forecasts for products and ads
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
-            <Sparkles size={13} className="text-bloom" />
-            <span className="text-xs font-medium text-bloom">Model v2.4 Active</span>
+          <p className="text-text-dim text-sm italic">Simulate market changes and ad spend impacts with Neuro-Models</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-wider text-text-dim font-bold">Model Status</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-neo animate-pulse" />
+              <span className="text-sm font-medium text-neo">Neural Link Active</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>
-            <t.icon size={14} /> {t.label}
-          </button>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Config Panel */}
+        <div className="lg:col-span-1 space-y-5">
+          <div className="card border-l-4 border-l-bloom">
+            <div className="section-title mb-4 flex items-center gap-2">
+              <Zap size={16} className="text-bloom" /> Simulation Parameters
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="stat-label mb-1.5 block text-xs uppercase">Target Product</label>
+                <select
+                  className="select w-full"
+                  value={selectedProduct?.Id || ''}
+                  onChange={e => setSelectedProduct(products.find(p => p.Id === parseInt(e.target.value)))}
+                >
+                  {products.map(p => (
+                    <option key={p.Id} value={p.Id}>{p.Name} (Rs{p.Price})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="stat-label mb-1.5 block text-xs uppercase">Linked Campaign</label>
+                <select
+                  className="select w-full"
+                  value={selectedCampaign?.Id || ''}
+                  onChange={e => setSelectedCampaign(campaigns.find(c => c.Id === parseInt(e.target.value)))}
+                >
+                  <option value="">No Active Campaign</option>
+                  {campaigns.map(c => (
+                    <option key={c.Id} value={c.Id}>{c.Name} ({c.Platform})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pt-2">
+                <div className="flex justify-between mb-2">
+                  <label className="stat-label text-xs uppercase">Ad Budget Boost</label>
+                  <span className="text-bloom font-bold text-sm">+{budgetBoost}%</span>
+                </div>
+                <input type="range" min="0" max="200" step="5"
+                  className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-bloom"
+                  value={budgetBoost} onChange={e => setBudgetBoost(parseInt(e.target.value))} />
+              </div>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="stat-label text-xs uppercase">Price Adjustment</label>
+                  <span className={`${priceChange >= 0 ? 'text-neo' : 'text-danger'} font-bold text-sm`}>
+                    {priceChange > 0 ? '+' : ''}{priceChange}%
+                  </span>
+                </div>
+                <input type="range" min="-50" max="50" step="1"
+                  className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-neo"
+                  value={priceChange} onChange={e => setPriceChange(parseInt(e.target.value))} />
+              </div>
+              <button onClick={runSimulation} disabled={simulating}
+                className="btn-primary w-full mt-4 flex items-center justify-center gap-2 group">
+                {simulating ? (
+                  <><RefreshCcw size={16} className="animate-spin" /><span>Neural Processing...</span></>
+                ) : (
+                  <><Play size={16} /><span>Run Neuro-Simulation</span></>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="card bg-gradient-to-br from-bloom/5 to-transparent border-bloom/10">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-full bg-bloom/10 flex items-center justify-center flex-shrink-0">
+                <Sparkles size={18} className="text-bloom" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-text-white mb-1">AI Recommendation</div>
+                <p className="text-xs text-text-dim leading-relaxed">
+                  For <strong className="text-text-mid">{selectedProduct?.Name}</strong>, a budget increase of 25% with a 5% price reduction typically yields the highest ROI based on category trends.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Panel */}
+        <div className="lg:col-span-2 space-y-6">
+          {!results ? (
+            <div className="card h-full flex flex-col items-center justify-center text-center p-12 border-dashed border-2 border-border/50 bg-transparent">
+              <div className="w-20 h-20 rounded-full bg-border/20 flex items-center justify-center mb-6">
+                <BarChart3 size={32} className="text-text-dim opacity-30" />
+              </div>
+              <h3 className="text-xl font-bold text-text-mid mb-2">Ready for Simulation</h3>
+              <p className="text-text-dim max-w-xs">Adjust the parameters on the left and run the engine to see predicted outcomes.</p>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-fade-up">
+              {/* Result Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="card bg-neo/5 border-neo/20 relative overflow-hidden group">
+                  <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <TrendingUp size={80} className="text-neo" />
+                  </div>
+                  <div className="stat-label text-neo">Predicted Revenue</div>
+                  <div className="text-2xl font-black text-text-white mt-1">
+                    Rs{results.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-neo font-bold mt-2">
+                    <TrendingUp size={12} />
+                    <span>+{results.improvement.toFixed(1)}% growth</span>
+                  </div>
+                </div>
+                <div className="card bg-bloom/5 border-bloom/20 relative overflow-hidden group">
+                  <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <PieChart size={80} className="text-bloom" />
+                  </div>
+                  <div className="stat-label text-bloom">Predicted ROI</div>
+                  <div className="text-2xl font-black text-text-white mt-1">{results.roi.toFixed(1)}%</div>
+                  <div className="flex items-center gap-1 text-xs text-bloom font-bold mt-2">
+                    <Target size={12} />
+                    <span>{(results.roi / 100).toFixed(2)}x ROAS</span>
+                  </div>
+                </div>
+                <div className="card bg-royal/5 border-royal/20 relative overflow-hidden group">
+                  <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Package size={80} className="text-royal" />
+                  </div>
+                  <div className="stat-label text-royal">Predicted Units</div>
+                  <div className="text-2xl font-black text-text-white mt-1">{results.orders}</div>
+                  <div className="flex items-center gap-1 text-xs text-text-dim mt-2 font-medium">
+                    <Info size={12} /><span>Estimated demand</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="section-title">Projection Analysis</div>
+                    <div className="section-subtitle">Forecasted revenue trajectory</div>
+                  </div>
+                </div>
+                <div className="h-64">
+                  <SalesAreaChart
+                    data={[
+                      { date: 'Week 1', revenue: results.revenue * 0.2 },
+                      { date: 'Week 2', revenue: results.revenue * 0.5 },
+                      { date: 'Week 3', revenue: results.revenue * 0.8 },
+                      { date: 'Week 4', revenue: results.revenue },
+                    ]}
+                    color="#6366f1" dataKey="revenue" prefix="Rs"
+                  />
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-neo/10 to-transparent border border-neo/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-neo/10 flex items-center justify-center text-neo">
+                    <TrendingUp size={24} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-text-white">High Confidence Opportunity</div>
+                    <div className="text-xs text-text-dim">Our models suggest an 84% success probability.</div>
+                  </div>
+                </div>
+                <button className="btn-primary !py-2 !px-6 flex items-center gap-2">
+                  Apply Strategy <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* PRODUCT PREDICTIONS */}
-      {activeTab === 'product' && (
-        <div className="space-y-5">
-          {/* Product selector */}
-          <div className="card">
-            <div className="section-title mb-3">Select Product</div>
-            <div className="flex gap-2 flex-wrap">
-              {mockProducts.slice(0, 5).map(p => (
-                <button key={p.Id} onClick={() => { setSelectedProduct(p); setSimPrice(p.Price); setProductResult(null) }}
-                  className={`px-3 py-2 rounded-lg text-sm transition-all ${selectedProduct.Id === p.Id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'btn-ghost'}`}>
-                  {p.Name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Current metrics */}
-          <div className="card">
-            <div className="section-title mb-3 flex items-center gap-2">
-              <Package size={15} className="text-neo" /> Current Metrics — {selectedProduct.Name}
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              {[
-                { label: 'Price', value: `$${selectedProduct.Price}`, color: '#f8fafc' },
-                { label: 'Cost', value: `$${selectedProduct.Cost}`, color: '#9ca3af' },
-                { label: 'Margin', value: `${((selectedProduct.Price - selectedProduct.Cost) / selectedProduct.Price * 100).toFixed(1)}%`, color: '#34d399' },
-                { label: 'Stock', value: selectedProduct.Stock, color: selectedProduct.Stock < 10 ? '#f87171' : '#818cf8' },
-                { label: 'Sales (est)', value: '450 units', color: '#22d3ee' },
-              ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="stat-label">{m.label}</div>
-                  <div className="text-base font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Price Simulation */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={15} className="text-neo" />
-                <div className="section-title">Price Simulation</div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="stat-label block mb-1">New Price ($)</label>
-                  <input type="number" className="input" value={simPrice}
-                    onChange={e => setSimPrice(e.target.value)} step="0.01" min={0} />
-                  <div className="text-xs text-text-dim mt-1">Current: ${selectedProduct.Price}</div>
-                </div>
-                <button onClick={runProductSim} className="btn-primary w-full flex items-center justify-center gap-2">
-                  <Zap size={14} /> Simulate Price Change
-                </button>
-
-                {productResult && !productResult.label && (
-                  <div className="p-3 rounded-xl space-y-2" style={{
-                    background: productResult.positive ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                    border: `1px solid ${productResult.positive ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`
-                  }}>
-                    <div className="text-xs font-semibold text-text-bright">At ${productResult.newPrice}:</div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-text-dim">Sales</span>
-                        <div className={`font-bold ${productResult.salesChange >= 0 ? 'text-bloom' : 'text-danger'}`}>
-                          {productResult.newSales} ({productResult.salesChange >= 0 ? '+' : ''}{productResult.salesChange}%)
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-text-dim">Revenue</span>
-                        <div className={`font-bold ${productResult.revenueChange >= 0 ? 'text-bloom' : 'text-danger'}`}>
-                          ${productResult.newRevenue.toLocaleString()} ({productResult.revenueChange >= 0 ? '+' : ''}{productResult.revenueChange}%)
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold">{productResult.recommendation}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Discount Simulation */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <Target size={15} className="text-royal" />
-                <div className="section-title">Discount Simulation</div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="stat-label block mb-1">Discount Percentage</label>
-                  <div className="flex items-center gap-3">
-                    <input type="range" min="5" max="50" step="5" value={simDiscount}
-                      onChange={e => setSimDiscount(e.target.value)}
-                      className="flex-1 accent-neo" />
-                    <span className="text-xl font-bold text-neo-bright w-12 text-right" style={{ fontFamily: 'Bebas Neue' }}>{simDiscount}%</span>
-                  </div>
-                  <div className="text-xs text-text-dim mt-1">
-                    New price: ${(selectedProduct.Price * (1 - simDiscount / 100)).toFixed(2)}
-                  </div>
-                </div>
-                <button onClick={runDiscountSim} className="btn-primary w-full flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
-                  <Sparkles size={14} /> Simulate Discount
-                </button>
-
-                {productResult?.label && (
-                  <div className="p-3 rounded-xl space-y-2" style={{
-                    background: productResult.positive ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                    border: `1px solid ${productResult.positive ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`
-                  }}>
-                    <div className="text-xs font-semibold text-text-bright">At {productResult.label} (${productResult.newPrice}):</div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-text-dim">Est. Sales</span>
-                        <div className="font-bold text-bloom">{productResult.newSales} (+{productResult.salesChange}%)</div>
-                      </div>
-                      <div>
-                        <span className="text-text-dim">Revenue</span>
-                        <div className={`font-bold ${productResult.revenueChange >= 0 ? 'text-bloom' : 'text-danger'}`}>
-                          ${productResult.newRevenue.toLocaleString()} ({productResult.revenueChange >= 0 ? '+' : ''}{productResult.revenueChange}%)
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold">{productResult.recommendation}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AI Forecast */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <Brain size={15} className="text-pulse" />
-                <div className="section-title">AI Forecast (30 Days)</div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { label: 'Predicted Sales', value: '520 units', change: '+16%', positive: true },
-                  { label: 'Predicted Revenue', value: '$15,600', change: '+$2,105', positive: true },
-                  { label: 'Return Rate Forecast', value: '9.5%', change: '+1.3%', positive: false },
-                  { label: 'Optimal Price', value: `$${(selectedProduct.Price * 0.93).toFixed(2)}`, change: 'AI suggested', positive: true },
-                  { label: 'Reorder Date', value: '~18 days', change: 'at current rate', positive: null },
-                ].map(m => (
-                  <div key={m.label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                    <span className="text-xs text-text-dim">{m.label}</span>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-text-bright">{m.value}</div>
-                      <div className={`text-xs ${m.positive === true ? 'text-bloom' : m.positive === false ? 'text-danger' : 'text-text-dim'}`}>
-                        {m.change}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-1">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-text-dim">Confidence Level</span>
-                    <span className="text-bloom font-bold">85%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div className="h-full rounded-full bg-bloom" style={{ width: '85%' }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Forecast chart */}
-          <div className="card">
-            <div className="section-title mb-1">30-Day Sales Forecast</div>
-            <div className="section-subtitle mb-4">Projected performance with current settings</div>
-            <div className="h-52">
-              <SalesAreaChart data={forecastData} color="#8b5cf6" dataKey="revenue" prefix="$" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ADS PREDICTIONS */}
-      {activeTab === 'ads' && (
-        <div className="space-y-5">
-          <div className="card">
-            <div className="section-title mb-3">Select Campaign</div>
-            <div className="flex gap-2 flex-wrap">
-              {mockCampaigns.filter(c => c.Status !== 'Draft').map(c => (
-                <button key={c.Id} onClick={() => { setSelectedCampaign(c); setAdResult(null) }}
-                  className={`px-3 py-2 rounded-lg text-sm transition-all ${selectedCampaign.Id === c.Id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'btn-ghost'}`}>
-                  {c.Name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="section-title mb-3 flex items-center gap-2">
-              <Megaphone size={15} className="text-bloom" /> Current Metrics — {selectedCampaign.Name}
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              {[
-                { label: 'Budget', value: `$${selectedCampaign.Budget.toLocaleString()}`, color: '#f8fafc' },
-                { label: 'Total Spend', value: `$${selectedCampaign.TotalSpend.toLocaleString()}`, color: '#f87171' },
-                { label: 'Revenue', value: `$${selectedCampaign.TotalRevenue.toLocaleString()}`, color: '#34d399' },
-                { label: 'ROI', value: `${selectedCampaign.ROI}%`, color: '#818cf8' },
-                { label: 'Clicks', value: selectedCampaign.Clicks.toLocaleString(), color: '#22d3ee' },
-              ].map(m => (
-                <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="stat-label">{m.label}</div>
-                  <div className="text-base font-bold mt-0.5" style={{ color: m.color }}>{m.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Budget Simulation */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={15} className="text-bloom" />
-                <div className="section-title">Budget Change Simulation</div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="stat-label block mb-1">New Daily Budget ($)</label>
-                  <div className="flex items-center gap-3">
-                    <input type="range" min="50" max="500" step="25" value={simBudget}
-                      onChange={e => setSimBudget(e.target.value)} className="flex-1 accent-bloom" />
-                    <span className="text-xl font-bold text-bloom w-16 text-right" style={{ fontFamily: 'Bebas Neue' }}>${simBudget}</span>
-                  </div>
-                </div>
-                <button onClick={runAdSim} className="btn-success w-full flex items-center justify-center gap-2">
-                  <Zap size={14} /> Simulate Budget Change
-                </button>
-
-                {adResult && (
-                  <div className="p-3 rounded-xl space-y-2" style={{
-                    background: adResult.positive ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
-                    border: `1px solid ${adResult.positive ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`
-                  }}>
-                    <div className="text-xs font-semibold text-text-bright">At ${adResult.newBudget}/day:</div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-text-dim">Monthly Spend</span>
-                        <div className="font-bold text-danger">${adResult.newTotalSpend.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <span className="text-text-dim">Expected Revenue</span>
-                        <div className="font-bold text-bloom">${adResult.newRevenue.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <span className="text-text-dim">Projected ROI</span>
-                        <div className={`font-bold ${adResult.newROI > 100 ? 'text-bloom' : adResult.newROI > 0 ? 'text-ember' : 'text-danger'}`}>
-                          {adResult.newROI}% ({adResult.roiChange >= 0 ? '+' : ''}{adResult.roiChange}%)
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-text-dim">Projected ROAS</span>
-                        <div className="font-bold text-neo-bright">{adResult.roas}x</div>
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold">{adResult.recommendation}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AI Recommendations */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <Brain size={15} className="text-neo" />
-                <div className="section-title">AI Recommendations</div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { label: 'Optimal Daily Budget', value: '$175', confidence: 89, icon: Target, color: '#818cf8' },
-                  { label: 'Expected ROI at optimal', value: '310%', confidence: 84, icon: TrendingUp, color: '#34d399' },
-                  { label: 'Best Performing Platform', value: 'Google', confidence: 76, icon: Megaphone, color: '#22d3ee' },
-                  { label: 'Next 30 Day Revenue', value: '$21,000', confidence: 78, icon: ChevronRight, color: '#fbbf24' },
-                ].map(r => (
-                  <div key={r.label} className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${r.color}18` }}>
-                      <r.icon size={14} style={{ color: r.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-text-dim">{r.label}</div>
-                      <div className="text-base font-bold mt-0.5" style={{ color: r.color }}>{r.value}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-xs text-text-dim">Confidence</div>
-                      <div className="text-sm font-bold text-bloom">{r.confidence}%</div>
-                    </div>
-                  </div>
-                ))}
-
-                <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={13} className="text-neo-bright" />
-                    <span className="text-xs font-semibold text-neo-bright">Platform Allocation</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {[{ name: 'Google', pct: 45, color: '#ef4444' }, { name: 'Facebook', pct: 35, color: '#818cf8' }, { name: 'Instagram', pct: 20, color: '#ec4899' }].map(p => (
-                      <div key={p.name}>
-                        <div className="flex justify-between text-xs mb-0.5">
-                          <span className="text-text-dim">{p.name}</span>
-                          <span style={{ color: p.color }}>{p.pct}%</span>
-                        </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: p.color }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

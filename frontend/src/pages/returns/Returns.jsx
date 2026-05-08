@@ -14,7 +14,7 @@ export default function Returns() {
     let score = 0
     const triggered = []
     if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
-    if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >$500 (+20 pts)') }
+    if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >Rs500 (+20 pts)') }
     if (new Date().getDay() === 5 || new Date().getDay() === 6) { score += 10; triggered.push('Weekend order (+10 pts)') }
     score = Math.min(100, score)
     const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : score <= 80 ? 'Additional Verification' : 'Auto-Rejected'
@@ -52,7 +52,7 @@ export default function Returns() {
           { label: 'Total Returns', value: returns.length, icon: RotateCcw, bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
           { label: 'Return Rate', value: '12.4%', icon: XCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
           { label: 'Pending Review', value: returns.filter(r => r.Status === 'Pending').length, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
-          { label: 'Refund Amount', value: `$${returns.reduce((s, r) => s + (r.RefundAmount || 0), 0).toFixed(2)}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Refund Amount', value: `Rs${returns.reduce((s, r) => s + (r.RefundAmount || 0), 0).toFixed(2)}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
@@ -104,7 +104,7 @@ export default function Returns() {
                         <span className="badge-dim text-xs">{r.ReturnReason}</span>
                       </td>
                       <td className="table-cell text-right font-semibold text-text-white">
-                        ${r.RefundAmount?.toFixed(2) || '—'}
+                        Rs {r.RefundAmount?.toFixed(2) || '—'}
                       </td>
                       <td className="table-cell text-center">
                         <span className="badge text-xs font-medium" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
@@ -144,7 +144,7 @@ export default function Returns() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="stat-label mb-1 block">Order Value ($)</label>
+                <label className="stat-label mb-1 block">Order Value (Rs)</label>
                 <input type="number" className="input" value={rtoInput.orderValue}
                   onChange={e => setRtoInput(p => ({ ...p, orderValue: e.target.value }))} />
               </div>

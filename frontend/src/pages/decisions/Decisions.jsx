@@ -6,9 +6,9 @@ const allRules = [
   ...mockRules,
   { Id: 13, Category: 'Product', RuleName: 'Sales Decline Weekly', CurrentValue: '20', DefaultValue: '20', Description: 'Trigger review if drop > %', IsEditable: true },
   { Id: 14, Category: 'Product', RuleName: 'Health Score Healthy', CurrentValue: '80', DefaultValue: '80', Description: 'Green status above this score', IsEditable: true },
-  { Id: 15, Category: 'Customer', RuleName: 'Silver Tier', CurrentValue: '500', DefaultValue: '500', Description: 'Auto Silver if total spent > $', IsEditable: true },
+  { Id: 15, Category: 'Customer', RuleName: 'Silver Tier', CurrentValue: '500', DefaultValue: '500', Description: 'Auto Silver if total spent > Rs', IsEditable: true },
   { Id: 16, Category: 'Customer', RuleName: 'Churned Customer', CurrentValue: '90', DefaultValue: '90', Description: 'Mark as churned after X days inactive', IsEditable: true },
-  { Id: 17, Category: 'RTO', RuleName: 'New Customer High Value', CurrentValue: '25', DefaultValue: '25', Description: 'Points for first order >$500', IsEditable: true },
+  { Id: 17, Category: 'RTO', RuleName: 'New Customer High Value', CurrentValue: '25', DefaultValue: '25', Description: 'Points for first order >Rs500', IsEditable: true },
   { Id: 18, Category: 'RTO', RuleName: 'Multiple Orders Same Day', CurrentValue: '35', DefaultValue: '35', Description: 'Points if >3 orders same day', IsEditable: true },
   { Id: 19, Category: 'Ads', RuleName: 'Budget Boost Threshold', CurrentValue: '50', DefaultValue: '50', Description: 'Suggest boost if ROI > %', IsEditable: true },
   { Id: 20, Category: 'Ads', RuleName: 'ROAS Warning', CurrentValue: '1.5', DefaultValue: '1.5', Description: 'Yellow if ROAS > X', IsEditable: true },
@@ -91,7 +91,7 @@ export default function Decisions() {
             {[
               ...decisions,
               { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now()-18000000).toISOString(), Status: 'Applied' },
-              { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > $5000)', CreatedAt: new Date(Date.now()-25200000).toISOString(), Status: 'Applied' },
+              { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > Rs5000)', CreatedAt: new Date(Date.now()-25200000).toISOString(), Status: 'Applied' },
               { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now()-32400000).toISOString(), Status: 'Applied' },
             ].map(d => {
               const Icon = sectionIcons[d.Section] || Activity
@@ -313,7 +313,7 @@ export default function Decisions() {
                 { decision: 'Price Decrease — Wireless Mouse', impact: '+150% sales', positive: true },
                 { decision: 'Stock Restock — Gaming KB', impact: '+89 units sold', positive: true },
                 { decision: 'RTO Reject — ORD-00238', impact: 'Fraud prevented', positive: true },
-                { decision: 'Ad Pause — Back to School', impact: '$900 spend saved', positive: true },
+                { decision: 'Ad Pause — Back to School', impact: 'Rs900 spend saved', positive: true },
                 { decision: 'Customer Flag — R. Martinez', impact: 'Order blocked', positive: false },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">

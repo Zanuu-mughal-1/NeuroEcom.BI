@@ -136,7 +136,7 @@
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-8 py-1.5 rounded-full text-xs font-medium whitespace-nowrap min-w-[130px] justify-center;
   }
   .badge-neo { @apply badge; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
   .badge-bloom { @apply badge; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }

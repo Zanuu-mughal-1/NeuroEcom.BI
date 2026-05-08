@@ -1,26 +1,72 @@
-import { useState } from 'react'
-import { ArrowLeft, Package, StopCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Tag, Bell, Star, Copy, Trash2, DollarSign } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Package, StopCircle, PlayCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Trash2, DollarSign } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
-import { generateSalesData } from '../../utils/api'
+import api from '../../utils/api'
 
-export default function ProductDetail({ product, onBack }) {
+export default function ProductDetail({ product, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
   const [qty, setQty] = useState(0)
   const [newPrice, setNewPrice] = useState(product.Price)
-  const salesData = generateSalesData(30)
+  const [salesData, setSalesData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [isActive, setIsActive] = useState(product.IsActive) // local state so button switches instantly
+
+  useEffect(() => {
+    api.get(`/products/${product.Id}/history?days=30`)
+      .then(res => {
+        const mapped = res.data.map(d => ({
+          date: new Date(d.SaleDate).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+          orders: d.UnitsSold,
+          revenue: d.Revenue,
+          returns: d.Returns
+        }))
+        setSalesData(mapped)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to load history', err)
+        setLoading(false)
+      })
+  }, [product.Id])
+
+  const handleAction = async (actionId) => {
+    const payload = { Action: actionId }
+    if (actionId === 'IncreaseInventory' || actionId === 'DecreaseInventory') payload.Quantity = parseInt(qty)
+    if (actionId === 'IncreasePrice' || actionId === 'DecreasePrice') payload.NewPrice = parseFloat(newPrice)
+    
+    try {
+      if (actionId === 'Delete') {
+        const res = await api.delete(`/products/${product.Id}`)
+        // We show the message from backend (it tells if it was deleted or archived)
+        alert(res.data.message || 'Product removed') 
+        if (onUpdate) onUpdate()
+        onBack()
+        return
+      }
+      
+      const res = await api.post(`/products/${product.Id}/action`, payload)
+      // Update local active state so button switches immediately
+      if (actionId === 'StopSelling') setIsActive(false)
+      if (actionId === 'ResumeSelling') setIsActive(true)
+      setActiveAction(null)
+      if (onUpdate) onUpdate()
+    } catch (e) {
+      console.error(e)
+      alert('Action failed: ' + (e.response?.data?.message || e.message))
+    }
+  }
 
   const actions = [
-    { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' },
+    // Dynamically switch between Stop and Resume based on local isActive state
+    isActive
+      ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
+      : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
     { id: 'IncreaseInventory', icon: PlusCircle, label: 'Increase Stock', color: 'bloom' },
     { id: 'DecreaseInventory', icon: MinusCircle, label: 'Decrease Stock', color: 'ember' },
     { id: 'IncreasePrice', icon: TrendingUp, label: 'Increase Price', color: 'bloom' },
     { id: 'DecreasePrice', icon: TrendingDown, label: 'Decrease Price', color: 'danger' },
-    { id: 'ApplyDiscount', icon: Tag, label: 'Apply Discount', color: 'royal' },
-    { id: 'SetReorderAlert', icon: Bell, label: 'Set Reorder Alert', color: 'pulse' },
-    { id: 'MarkForReview', icon: Star, label: 'Mark for Review', color: 'ember' },
-    { id: 'Duplicate', icon: Copy, label: 'Duplicate', color: 'neo' },
-    { id: 'Delete', icon: Trash2, label: 'Delete', color: 'danger' },
+    { id: 'Delete', icon: Trash2, label: 'Delete Product', color: 'danger' },
   ]
 
   const colorMap = {
@@ -32,7 +78,7 @@ export default function ProductDetail({ product, onBack }) {
     pulse: { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)', text: '#22d3ee' },
   }
 
-  const margin = ((product.Price - product.Cost) / product.Price * 100).toFixed(1)
+  const margin = product.Price > 0 ? ((product.Price - product.Cost) / product.Price * 100).toFixed(1) : 0
   const profit = (product.Price - product.Cost).toFixed(2)
 
   return (
@@ -53,7 +99,7 @@ export default function ProductDetail({ product, onBack }) {
                 <span className="text-xs text-text-dim font-mono">{product.SKU}</span>
                 <span className="text-text-dim">·</span>
                 <span className="badge-dim text-xs">{product.Category}</span>
-                <HealthBadge status={product.HealthStatus} />
+                <HealthBadge status={!product.IsActive ? 'Inactive' : (product.IsDiscontinued ? 'Discontinued' : product.HealthStatus)} />
               </div>
             </div>
           </div>
@@ -70,10 +116,10 @@ export default function ProductDetail({ product, onBack }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Price', value: `$${product.Price}`, color: '#f8fafc' },
-                { label: 'Cost', value: `$${product.Cost}`, color: '#9ca3af' },
+                { label: 'Price', value: `Rs ${product.Price}`, color: '#f8fafc' },
+                { label: 'Cost', value: `Rs ${product.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${margin}%`, color: '#34d399' },
-                { label: 'Profit/Unit', value: `$${profit}`, color: '#818cf8' },
+                { label: 'Profit/Unit', value: `Rs ${profit}`, color: '#818cf8' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="stat-label">{m.label}</div>
@@ -126,7 +172,7 @@ export default function ProductDetail({ product, onBack }) {
                 </div>
               </div>
               <div>
-                <HealthBadge status={product.HealthStatus} />
+                <HealthBadge status={!product.IsActive ? 'Inactive' : (product.IsDiscontinued ? 'Discontinued' : product.HealthStatus)} />
                 <p className="text-xs text-text-dim mt-2 leading-relaxed">
                   {product.HealthScore >= 80 ? 'Product is performing well across all metrics.' : product.HealthScore >= 50 ? 'Some issues detected. Review recommended.' : 'Critical issues require immediate attention.'}
                 </p>
@@ -141,7 +187,8 @@ export default function ProductDetail({ product, onBack }) {
             <div className="section-title mb-1">Sales Trend</div>
             <div className="section-subtitle mb-4">Last 30 days</div>
             <div className="h-52">
-              <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />
+              {!loading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
+              {loading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
             </div>
           </div>
           <div className="card">
@@ -149,8 +196,8 @@ export default function ProductDetail({ product, onBack }) {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Units Sold (30d)', value: salesData.reduce((s,d)=>s+d.orders,0), color: '#818cf8' },
-                { label: 'Revenue (30d)', value: `$${salesData.reduce((s,d)=>s+d.revenue,0).toLocaleString()}`, color: '#34d399' },
-                { label: 'Return Rate', value: '8.2%', color: '#fbbf24' },
+                { label: 'Revenue (30d)', value: `Rs ${salesData.reduce((s,d)=>s+d.revenue,0).toLocaleString()}`, color: '#34d399' },
+                { label: 'Return Rate', value: salesData.reduce((s,d)=>s+d.orders,0) > 0 ? `${(salesData.reduce((s,d)=>s+d.returns,0) / salesData.reduce((s,d)=>s+d.orders,0) * 100).toFixed(1)}%` : '0%', color: '#fbbf24' },
                 { label: 'Rating', value: '4.6 ⭐', color: '#f97316' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -168,19 +215,19 @@ export default function ProductDetail({ product, onBack }) {
           <div className="space-y-2">
             {actions.map(action => {
               const c = colorMap[action.color]
-              const isActive = activeAction === action.id
+              const isExpanded = activeAction === action.id
               return (
                 <div key={action.id}>
-                  <button onClick={() => setActiveAction(isActive ? null : action.id)}
+                  <button onClick={() => setActiveAction(isExpanded ? null : action.id)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
                     style={{
-                      background: isActive ? c.bg : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.05)'}`,
+                      background: isExpanded ? c.bg : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isExpanded ? c.border : 'rgba(255,255,255,0.05)'}`,
                     }}>
                     <action.icon size={15} style={{ color: c.text }} />
-                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : '#9ca3af' }}>{action.label}</span>
+                    <span className="text-sm font-medium" style={{ color: isExpanded ? c.text : '#9ca3af' }}>{action.label}</span>
                   </button>
-                  {isActive && (
+                  {isExpanded && (
                     <div className="mt-1 p-3 rounded-lg space-y-2" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
                       {(action.id === 'IncreaseInventory' || action.id === 'DecreaseInventory') && (
                         <div>
@@ -190,11 +237,11 @@ export default function ProductDetail({ product, onBack }) {
                       )}
                       {(action.id === 'IncreasePrice' || action.id === 'DecreasePrice') && (
                         <div>
-                          <label className="stat-label">New Price ($)</label>
+                          <label className="stat-label">New Price (Rs)</label>
                           <input type="number" className="input mt-1" value={newPrice} onChange={e => setNewPrice(e.target.value)} step="0.01" />
                         </div>
                       )}
-                      <button className="btn-primary w-full text-xs" style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
+                      <button onClick={() => handleAction(action.id)} className="btn-primary w-full text-xs" style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
                         Confirm {action.label}
                       </button>
                     </div>

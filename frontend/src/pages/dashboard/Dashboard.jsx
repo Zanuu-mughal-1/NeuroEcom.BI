@@ -7,11 +7,28 @@ import {
 } from 'lucide-react'
 import KpiCard from '../../components/ui/KpiCard'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
-import { mockDashboard, generateSalesData } from '../../utils/api'
+import api from '../../utils/api'
 
 export default function Dashboard() {
-  const [data] = useState(mockDashboard)
-  const [salesData] = useState(generateSalesData(30))
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true)
+        const res = await api.get('/dashboard')
+        setData(res.data)
+      } catch (err) {
+        console.error('Failed to fetch dashboard', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboard()
+  }, [])
+
+  if (loading || !data) return <div className="p-6 text-text-dim">Loading Neuro-Dashboard...</div>
 
   const healthData = [
     { name: 'Healthy', value: data.ProductHealth.Healthy },
@@ -42,7 +59,7 @@ export default function Dashboard() {
     <div className="p-6 space-y-6 animate-fade-up">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Monthly Revenue" value={`$${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
+        <KpiCard label="Monthly Revenue" value={`Rs ${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
         <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
         <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" />
         <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" />
@@ -65,7 +82,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="h-52">
-            <SalesAreaChart data={salesData} color="#6366f1" dataKey="revenue" prefix="$" />
+            <SalesAreaChart data={data.SalesData} color="#6366f1" dataKey="revenue" prefix="Rs" />
           </div>
         </div>
 
@@ -167,7 +184,7 @@ export default function Dashboard() {
             <div className="flex justify-between">
               <div>
                 <div className="stat-label">Total Spend</div>
-                <div className="text-lg font-bold text-ember mt-0.5">${data.ActiveAds.TotalSpend.toLocaleString()}</div>
+                <div className="text-lg font-bold text-ember mt-0.5">Rs {data.ActiveAds.TotalSpend.toLocaleString()}</div>
               </div>
               <div>
                 <div className="stat-label">Avg ROI</div>
@@ -183,7 +200,7 @@ export default function Dashboard() {
           <div className="section-title mb-1">Today's Revenue</div>
           <div className="section-subtitle mb-4">vs. yesterday</div>
           <div className="text-4xl font-bold text-text-white mb-2" style={{ fontFamily: 'Bebas Neue' }}>
-            ${data.Revenue.Today.toLocaleString()}
+            Rs {data.Revenue.Today.toLocaleString()}
           </div>
           <div className="flex items-center gap-1.5 mb-4">
             <TrendingUp size={13} className="text-bloom" />
@@ -197,7 +214,7 @@ export default function Dashboard() {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Avg order value</span>
-              <span className="font-bold text-text-bright">$264.89</span>
+                <span className="font-bold text-text-bright">Rs 264.89</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Pending fulfillment</span>

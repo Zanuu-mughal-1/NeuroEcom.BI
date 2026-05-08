@@ -42,7 +42,7 @@ export function SalesAreaChart({ data, height = 200 }) {
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
         <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-        <Tooltip content={<CustomTooltip prefix="$" />} />
+        <Tooltip content={<CustomTooltip prefix="Rs" />} />
         <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />
       </AreaChart>
     </ResponsiveContainer>
@@ -110,7 +110,7 @@ export function SpendRevenueBarChart({ data, height = 200 }) {
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-        <Tooltip content={<CustomTooltip prefix="$" />} />
+        <Tooltip content={<CustomTooltip prefix="Rs" />} />
         <Legend wrapperStyle={{ color: '#6b7280', fontSize: 12 }} />
         <Bar dataKey="spend" name="Spend" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
         <Bar dataKey="revenue" name="Revenue" fill="#10b981" fillOpacity={0.7} radius={[2, 2, 0, 0]} />

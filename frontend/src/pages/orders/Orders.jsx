@@ -22,8 +22,8 @@ export default function Orders() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Orders', value: orders.length, icon: ShoppingCart, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
-          { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-          { label: 'Avg Order Value', value: `$${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Total Revenue', value: `Rs ${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Avg Order Value', value: `Rs ${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
           { label: 'Pending', value: orders.filter(o => o.FulfillmentStatus === 'Pending').length, icon: CheckCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
@@ -78,7 +78,7 @@ export default function Orders() {
                     <div className="text-xs text-text-dim">{o.Customer?.Email}</div>
                   </td>
                   <td className="table-cell text-right">
-                    <span className="font-bold text-text-white">${o.TotalAmount.toLocaleString()}</span>
+                    <span className="font-bold text-text-white">Rs {o.TotalAmount.toLocaleString()}</span>
                   </td>
                   <td className="table-cell text-center">
                     <span className={`badge ${o.PaymentMethod === 'COD' ? 'badge-ember' : o.PaymentMethod === 'UPI' ? 'badge-pulse' : 'badge-neo'}`}>
@@ -106,7 +106,7 @@ export default function Orders() {
               {[
                 { label: 'Status', value: selected.FulfillmentStatus },
                 { label: 'Payment', value: selected.PaymentMethod },
-                { label: 'Amount', value: `$${selected.TotalAmount}` },
+                { label: 'Amount', value: `Rs ${selected.TotalAmount}` },
                 { label: 'RTO Decision', value: selected.RTODecision || '—' },
               ].map(m => (
                 <div key={m.label}>
