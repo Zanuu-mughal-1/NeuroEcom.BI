@@ -455,7 +455,7 @@ public class RTOController : ControllerBase
         { score += (int)GetRule("COD Penalty"); triggeredRules.Add($"COD payment (+{GetRule("COD Penalty")} pts)"); }
 
         if (input.OrderValue > 500)
-        { score += (int)GetRule("High Value Penalty"); triggeredRules.Add($"High value order >$500 (+{GetRule("High Value Penalty")} pts)"); }
+        { score += (int)GetRule("High Value Penalty"); triggeredRules.Add($"High value order >Rs500 (+{GetRule("High Value Penalty")} pts)"); }
 
         if (input.CustomerId.HasValue)
         {
@@ -539,13 +539,25 @@ public class DashboardController : ControllerBase
         var orders30d = await _db.Orders.Where(o => o.OrderDate >= now.AddDays(-30)).ToListAsync();
         var customers = await _db.Customers.ToListAsync();
         var products = await _db.Products.ToListAsync();
-        var returns30d = await _db.Returns.Where(r => r.RequestDate >= now.AddDays(-30)).CountAsync();
+        var returnsList30d = await _db.Returns.Where(r => r.RequestDate >= now.AddDays(-30)).ToListAsync();
+        var returns30d = returnsList30d.Count;
         var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
         var decisions = await _db.Decisions.OrderByDescending(d => d.CreatedAt).Take(5).ToListAsync();
         var rtoToday = await _db.RTOAssessments.Where(r => r.AssessedAt >= now.Date).ToListAsync();
 
         var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
         var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
+
+        var salesData = Enumerable.Range(0, 30).Reverse().Select(i => {
+            var date = now.AddDays(-i).Date;
+            var dayOrders = orders30d.Where(o => o.OrderDate.Date == date).ToList();
+            return new {
+                date = date.ToString("MMM d"),
+                revenue = dayOrders.Sum(o => o.TotalAmount),
+                orders = dayOrders.Count,
+                returns = returnsList30d.Count(r => r.RequestDate.Date == date)
+            };
+        }).ToList();
 
         return Ok(new {
             Revenue = new { Today = orders30d.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
@@ -578,7 +590,8 @@ public class DashboardController : ControllerBase
                 AvgROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0
             },
             RecentDecisions = decisions,
-            Alerts = GetAlerts(products, orders30d)
+            Alerts = GetAlerts(products, orders30d),
+            SalesData = salesData
         });
     }
 
