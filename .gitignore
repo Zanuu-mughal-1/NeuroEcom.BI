@@ -1,0 +1,21 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node.js
+node_modules/
+dist/
+.vite/
+
+# Backend specific
+backend/bin/
+backend/obj/
+
+# Frontend specific
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
