@@ -106,7 +106,7 @@ export default function Products() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Product</th>
                 <th className="table-header text-left">Category</th>
                 <th className="table-header text-right">Price</th>

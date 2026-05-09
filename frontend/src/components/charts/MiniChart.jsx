@@ -6,7 +6,7 @@ const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => 
     <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'var(--glass-bg-bright)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(10px)' }}>
       <div className="text-text-dim mb-1">{label}</div>
       {payload.map((p, i) => (
-        <div key={i} className="font-semibold" style={{ color: p.color }}>
+        <div key={i} className="font-bold text-sm" style={{ color: p.color }}>
           {prefix}{typeof p.value === 'number' ? p.value.toLocaleString() : p.value}{suffix}
         </div>
       ))}
@@ -39,13 +39,13 @@ export function MultiLineChart({ data, lines }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-        <Tooltip content={<CustomTooltip />} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-dim)' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 10, fill: 'var(--text-dim)' }} axisLine={false} tickLine={false} />
+        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
         {lines.map(line => (
           <Line key={line.key} type="monotone" dataKey={line.key} stroke={line.color}
-            strokeWidth={2} dot={false} activeDot={{ r: 4 }} name={line.label} />
+            strokeWidth={2.5} dot={false} activeDot={{ r: 5, stroke: 'var(--void)', strokeWidth: 2 }} name={line.label} />
         ))}
       </LineChart>
     </ResponsiveContainer>
@@ -56,11 +56,11 @@ export function SimpleBarChart({ data, dataKey = 'value', color = '#6366f1', pre
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-        <Tooltip content={<CustomTooltip prefix={prefix} />} />
-        <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-dim)' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 10, fill: 'var(--text-dim)' }} axisLine={false} tickLine={false} />
+        <Tooltip content={<CustomTooltip prefix={prefix} />} cursor={{ fill: 'var(--void)', opacity: 0.4 }} />
+        <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )
@@ -71,10 +71,10 @@ export function DonutChart({ data, colors }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius="55%" outerRadius="80%"
-          dataKey="value" paddingAngle={3}>
+        <Pie data={data} cx="50%" cy="50%" innerRadius="60%" outerRadius="85%"
+          dataKey="value" paddingAngle={5}>
           {data.map((_, i) => (
-            <Cell key={i} fill={colors[i % colors.length]} stroke="transparent" />
+            <Cell key={i} fill={colors[i % colors.length]} stroke="var(--surface)" strokeWidth={2} />
           ))}
         </Pie>
         <Tooltip content={<CustomTooltip />} />

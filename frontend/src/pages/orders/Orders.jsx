@@ -53,6 +53,8 @@ export default function Orders() {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Orders', value: orders.length, icon: ShoppingCart, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
@@ -72,6 +74,7 @@ export default function Orders() {
         ))}
       </div>
 
+      {/* Orders Table Card */}
       <div className="card !p-0 overflow-hidden">
         <div className="flex items-center gap-3 p-4 border-b border-border">
           <div className="relative flex-1 max-w-sm">
@@ -89,10 +92,63 @@ export default function Orders() {
           <button className="btn-ghost flex items-center gap-2 text-sm"><Download size={14} /> Export</button>
         </div>
 
+          {/* Status Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              className="input w-36 flex items-center justify-between gap-2"
+              onClick={() => setDropdownOpen(o => !o)}
+            >
+              <span>{statusLabels[statusFilter]}</span>
+              <svg
+                width="12" height="12"
+                viewBox="0 0 12 12"
+                style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}
+                fill="currentColor"
+              >
+                <path d="M6 8L1 3h10L6 8z" />
+              </svg>
+            </button>
+
+            {dropdownOpen && (
+              <div
+                className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}
+              >
+                {statusOptions.map(opt => (
+                  <div
+                    key={opt}
+                    className="px-3 py-2 text-sm cursor-pointer"
+                    style={{
+                      color: statusFilter === opt ? '#06b6d4' : 'var(--text-bright)',
+                      background: statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
+                    onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
+                    onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}
+                  >
+                    {statusLabels[opt]}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Export Button */}
+          <button
+            className="btn-ghost flex items-center gap-2 text-sm ml-auto"
+            onClick={handleExport}
+          >
+            <Download size={14} /> Export
+          </button>
+
+        </div>
+        {/* End Toolbar */}
+
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Order</th>
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-right">Amount</th>
@@ -135,6 +191,7 @@ export default function Orders() {
           </table>
         </div>
 
+        {/* Order Detail Panel */}
         {selected && (
           <div className="border-t border-border p-5 animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)' }}>
             <div className="flex items-center justify-between mb-4">
@@ -182,7 +239,10 @@ export default function Orders() {
         <div className="px-4 py-3 border-t border-border">
           <span className="text-xs text-text-dim">Showing {filtered.length} of {orders.length} orders</span>
         </div>
+
       </div>
+      {/* End Orders Table Card */}
+
     </div>
-  )
+    )
 }

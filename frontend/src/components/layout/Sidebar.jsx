@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, ShoppingCart, RotateCcw,
-  Megaphone, Settings, Brain, ChevronRight, Zap, Activity
+  Megaphone, Settings, Brain, ChevronRight, Zap, Activity,
+  Moon, Sun, LogOut, Bell
 } from 'lucide-react'
+import NotificationPanel from '../ui/NotificationPanel'
 
 const navGroups = [
   {
@@ -35,8 +38,37 @@ const navGroups = [
   }
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ toggleTheme, isDark }) {
   const location = useLocation()
+  const [showSettings, setShowSettings] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  
+  const sampleNotifications = [
+    {
+      type: 'info',
+      title: 'New Order Received',
+      message: 'Order #12345 from John Doe',
+      time: '2 minutes ago'
+    },
+    {
+      type: 'success',
+      title: 'Prediction Complete',
+      message: 'AI model has finished analyzing customer trends',
+      time: '15 minutes ago'
+    },
+    {
+      type: 'error',
+      title: 'Low Stock Alert',
+      message: 'Product SKU-789 is running low',
+      time: '1 hour ago'
+    },
+    {
+      type: 'info',
+      title: 'System Maintenance',
+      message: 'Database backup completed successfully',
+      time: '3 hours ago'
+    }
+  ]
 
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col h-screen overflow-y-auto"
@@ -56,7 +88,7 @@ export default function Sidebar() {
           <div className="text-text-white font-bold text-base leading-none" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px', fontSize: '20px', color: 'var(--text-white)' }}>
             NeuroEcom
           </div>
-          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>.BI v2.0</div>
+          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>.BI v1.0</div>
         </div>
       </div>
 
@@ -96,6 +128,44 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* Settings Dropdown/Popover */}
+      {showSettings && (
+        <div className="absolute bottom-20 left-4 right-4 glass rounded-xl border border-border p-2 animate-fade-up shadow-xl z-50">
+          <div className="p-2 border-b border-border mb-1">
+            <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider opacity-70">Quick Settings</div>
+          </div>
+          <button 
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors"
+          >
+            {isDark ? <Sun size={14} className="text-ember" /> : <Moon size={14} className="text-neo" />}
+            <span className="flex-1 text-left">{isDark ? 'Light' : 'Dark'} Mode</span>
+          </button>
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors relative"
+          >
+            <Bell size={14} className="text-pulse" />
+            <span className="flex-1 text-left">Notifications</span>
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-danger/10 text-sm text-danger transition-colors mt-1">
+            <LogOut size={14} />
+            <span className="flex-1 text-left">Logout</span>
+          </button>
+        </div>
+      )}
+
+      {/* Notification Panel for Settings */}
+      {showNotifications && (
+        <div className="absolute bottom-48 left-4 right-4 z-50">
+          <NotificationPanel 
+            notifications={sampleNotifications}
+            onClose={() => setShowNotifications(false)}
+            position="sidebar"
+          />
+        </div>
+      )}
+
       {/* Bottom user panel */}
       <div className="p-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
@@ -103,10 +173,10 @@ export default function Sidebar() {
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
             style={{ background: 'linear-gradient(135deg, var(--color-neo), var(--color-royal))' }}>A</div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-text-bright truncate">Admin</div>
-            <div className="text-xs text-text-dim">Super Admin</div>
+            <div className="text-sm font-semibold text-text-bright truncate">Admin</div>
+            <div className="text-[10px] text-text-dim font-medium uppercase tracking-tighter">Super Admin</div>
           </div>
-          <Settings size={14} className="text-text-dim" />
+          <Settings size={14} className={`text-text-dim transition-transform duration-300 ${showSettings ? 'rotate-90 text-neo' : ''}`} />
         </div>
       </div>
     </aside>

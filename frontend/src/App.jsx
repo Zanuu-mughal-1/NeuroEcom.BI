@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
@@ -11,22 +12,39 @@ import Decisions from './pages/decisions/Decisions'
 import Predictions from './pages/predictions/Predictions'
 
 export default function App() {
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved ? saved === 'dark' : true
+  })
+
+  useEffect(() => {
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDark])
+
+  const toggleTheme = () => setIsDark(!isDark)
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Background effects */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 transition-colors duration-500"
+           style={{ background: 'var(--void)' }}>
         {/* Grid */}
-        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-100" />
-        {/* Top glow */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%)', filter: 'blur(60px)' }} />
-        <div className="absolute top-0 right-1/4 w-80 h-80 rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.3), transparent 70%)', filter: 'blur(60px)' }} />
+        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.02] dark:opacity-[0.08]" />
+        {/* Top glows */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full opacity-10 dark:opacity-20 transition-opacity duration-700"
+          style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)', filter: 'blur(80px)' }} />
+        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-10 dark:opacity-15 transition-opacity duration-700"
+          style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)', filter: 'blur(80px)' }} />
       </div>
 
       {/* Sidebar */}
       <div className="relative z-10">
-        <Sidebar />
+        <Sidebar toggleTheme={toggleTheme} isDark={isDark} />
       </div>
 
       {/* Main Content */}

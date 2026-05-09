@@ -47,12 +47,42 @@ export default function Customers() {
     setIsModalOpen(true)
   }
 
+  const [tierDropdownOpen, setTierDropdownOpen] = useState(false)
+  const tierDropdownRef = useRef(null)
+  const tierOptions = ['', 'VIP', 'Gold', 'Silver', 'Bronze', 'New']
+  const tierLabels = { '': 'All Tiers', VIP: '💎 VIP', Gold: '⭐ Gold', Silver: '🥈 Silver', Bronze: '🥉 Bronze', New: '🆕 New' }
+
+
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newCustomer, setNewCustomer] = useState({
+    FirstName: '', LastName: '', Email: '', City: '', LoyaltyTier: 'New'
+  })
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (tierDropdownRef.current && !tierDropdownRef.current.contains(e.target)) {
+        setTierDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   const filtered = customers.filter(c =>
     (!search || `${c.FirstName} ${c.LastName} ${c.Email}`.toLowerCase().includes(search.toLowerCase())) &&
     (!tierFilter || c.LoyaltyTier === tierFilter)
   )
 
-  if (selected) return <CustomerDetail customer={selected} onBack={() => setSelected(null)} />
+  if (selected) return (
+    <CustomerDetail
+      customer={selected}
+      onBack={() => setSelected(null)}
+      onUpdate={(updatedCustomer) => {
+        setCustomers(prev => prev.map(c => c.Id === updatedCustomer.Id ? updatedCustomer : c))
+        setSelected(updatedCustomer)
+      }}
+    />
+  )
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
@@ -103,7 +133,7 @@ export default function Customers() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-left">City</th>
                 <th className="table-header text-center">Tier</th>
@@ -150,6 +180,6 @@ export default function Customers() {
           <span className="text-xs text-text-dim">Showing {filtered.length} of {customers.length} customers</span>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

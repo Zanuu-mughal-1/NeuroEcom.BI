@@ -21,11 +21,11 @@ export default function KPICard({ label, value, change, changeLabel, icon: Icon,
         boxShadow: `var(--card-shadow), 0 0 40px ${c.glow}` 
       }}>
       
-      {/* Background glow */}
-      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 pointer-events-none"
+      {/* Background glow overlay */}
+      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.08] dark:opacity-20 pointer-events-none"
         style={{ background: `radial-gradient(circle, ${c.icon}, transparent)`, transform: 'translate(40%, -40%)' }} />
 
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-3 relative z-10">
         <span className="stat-label">{label}</span>
         {Icon && (
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -43,7 +43,7 @@ export default function KPICard({ label, value, change, changeLabel, icon: Icon,
       </div>
 
       {change !== undefined && (
-        <div className={`flex items-center gap-1.5 text-xs font-medium ${isPositive ? 'text-bloom' : isNegative ? 'text-danger' : 'text-text-dim'}`}>
+        <div className={`flex items-center gap-1.5 text-xs font-medium relative z-10 ${isPositive ? 'text-bloom' : isNegative ? 'text-danger' : 'text-text-dim'}`}>
           {isPositive ? <TrendingUp size={12} /> : isNegative ? <TrendingDown size={12} /> : <Minus size={12} />}
           <span>{isPositive ? '+' : ''}{change}%</span>
           {changeLabel && <span className="text-text-dim font-normal">{changeLabel}</span>}
