@@ -29,6 +29,7 @@ public class Product
     private string GetHealthStatus()
     {
         if (IsDiscontinued) return "Discontinued";
+        if (!IsActive) return "Inactive";
         if (HealthScore >= 80) return "Healthy";
         if (HealthScore >= 50) return "Warning";
         return "Critical";

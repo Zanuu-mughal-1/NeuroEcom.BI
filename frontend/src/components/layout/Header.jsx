@@ -59,7 +59,7 @@ export default function Header() {
 
   return (
     <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b border-border bg-abyss/80 backdrop-blur-xl sticky top-0 z-40">
-      
+
       <div className="flex items-center gap-4">
         <h1 className="page-title text-2xl">{title}</h1>
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-text-dim bg-surface border border-border">
@@ -69,29 +69,26 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-text-dim transition-all focus-within:border-neo/50 focus-within:bg-surface border border-border bg-void min-w-[240px]">
-          <Search size={14} className={searchQuery ? 'text-neo-bright' : ''} />
-          <input 
-            type="text"
-            placeholder="Quick search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-text-bright w-full placeholder:text-text-dim/50"
-          />
-          {!searchQuery && (
-            <kbd className="ml-auto px-1.5 py-0.5 rounded text-[10px] bg-abyss border border-border">Ctrl+K</kbd>
-          )}
+        <div 
+          onClick={() => alert('Search feature coming soon!')}
+          className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '240px' }}>
+          <Search size={14} />
+          <span className="text-xs">Quick search...</span>
+          <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
         </div>
         <button 
           onClick={handleRefresh}
           className={`btn-ghost p-2 !px-2 transition-all ${isRefreshing ? 'text-neo-bright' : ''}`}
+          title="Refresh Page"
         >
           <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
         <div className="relative">
           <button 
             onClick={() => setShowHeaderNotifications(!showHeaderNotifications)}
-            className="relative btn-ghost p-2 !px-2"
+            className="relative btn-ghost p-2 !px-2 transition-all hover:bg-white/10"
           >
             <Bell size={15} />
             {hasAlerts && (

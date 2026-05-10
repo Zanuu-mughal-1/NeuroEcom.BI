@@ -103,6 +103,9 @@ public class ProductsController : ControllerBase
             case "StopSelling":
                 product.IsActive = false; product.IsDiscontinued = true;
                 details = "Product stopped and marked discontinued"; break;
+            case "ResumeSelling":
+                product.IsActive = true; product.IsDiscontinued = false;
+                details = "Product resumed and marked active"; break;
             case "IncreaseInventory":
                 product.Stock += action.Quantity ?? 0;
                 product.LastRestockDate = DateTime.UtcNow;
@@ -112,10 +115,10 @@ public class ProductsController : ControllerBase
                 details = $"Stock decreased by {action.Quantity}"; break;
             case "IncreasePrice":
                 product.Price = action.NewPrice ?? product.Price;
-                details = $"Price changed to ${action.NewPrice}"; break;
+                details = $"Price changed to Rs{action.NewPrice}"; break;
             case "DecreasePrice":
                 product.Price = action.NewPrice ?? product.Price;
-                details = $"Price changed to ${action.NewPrice}"; break;
+                details = $"Price changed to Rs{action.NewPrice}"; break;
             case "Delete":
                 product.IsActive = false;
                 details = "Product archived"; break;
@@ -168,9 +171,21 @@ public class ProductsController : ControllerBase
     {
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
-        product.IsActive = false;
-        await _db.SaveChangesAsync();
-        return Ok(new { message = "Product archived" });
+
+        try 
+        {
+            _db.Products.Remove(product);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Product deleted permanently" });
+        }
+        catch (Exception)
+        {
+            // If it fails (e.g. because of foreign keys), we archive it instead
+            product.IsActive = false;
+            product.IsDiscontinued = true;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Product archived due to existing orders" });
+        }
     }
 }
 
