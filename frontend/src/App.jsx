@@ -32,8 +32,7 @@ export default function App() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
   return (
-    <div className={`flex h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'dark' : ''}`} 
-         style={{ background: 'var(--void)', color: 'var(--text-bright)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none z-0 transition-colors duration-500"
            style={{ background: 'var(--void)' }}>

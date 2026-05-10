@@ -1,14 +1,51 @@
-import { useState, useRef, useEffect } from 'react'
-import { Search, Plus, Download, Users, UserCheck, TrendingUp, Flag } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Search, Plus, Download, Users, UserCheck, TrendingUp, Flag, RefreshCw, Trash2, Edit2 } from 'lucide-react'
 import { LoyaltyBadge, FlagBadge } from '../../components/ui/StatusBadge'
-import { mockCustomers } from '../../utils/api'
+import api from '../../utils/api'
 import CustomerDetail from './CustomerDetail'
+import CustomerModal from '../../components/modals/CustomerModal'
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(mockCustomers)
+  const [customers, setCustomers] = useState([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState('')
   const [selected, setSelected] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState(null)
+
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/customers')
+      setCustomers(data)
+    } catch (err) {
+      console.error('Failed to fetch customers', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchCustomers()
+  }, [fetchCustomers])
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation()
+    if (!window.confirm('Are you sure you want to delete this customer?')) return
+    try {
+      await api.delete(`/customers/${id}`)
+      fetchCustomers()
+    } catch (err) {
+      console.error('Failed to delete customer', err)
+    }
+  }
+
+  const handleEdit = (customer, e) => {
+    e.stopPropagation()
+    setEditingCustomer(customer)
+    setIsModalOpen(true)
+  }
 
   const [tierDropdownOpen, setTierDropdownOpen] = useState(false)
   const tierDropdownRef = useRef(null)
@@ -49,12 +86,19 @@ export default function Customers() {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+      <CustomerModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setEditingCustomer(null); }} 
+        onSuccess={fetchCustomers} 
+        customer={editingCustomer}
+      />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Customers', value: customers.length, icon: Users, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
           { label: 'VIP Customers', value: customers.filter(c => c.LoyaltyTier === 'VIP').length, icon: TrendingUp, bg: 'rgba(99,102,241,0.1)', color: '#6366f1' },
           { label: 'Flagged', value: customers.filter(c => c.Flags?.length > 0).length, icon: Flag, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-          { label: 'Total LTV', value: `$${customers.reduce((s, c) => s + c.TotalSpent, 0).toLocaleString()}`, icon: UserCheck, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Total LTV', value: `$${customers.reduce((s, c) => s + (c.TotalSpent || 0), 0).toLocaleString()}`, icon: UserCheck, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
@@ -62,126 +106,28 @@ export default function Customers() {
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
+              <div className="text-xl font-bold text-text-white mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="card !p-0 overflow-hidden">
-        <div className="flex items-center gap-3 p-4 border-b border-border/50">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <div className="relative flex-1 max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
             <input className="input pl-9" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <div className="relative" ref={tierDropdownRef}>
-            <button
-              className="input w-36 flex items-center justify-between gap-2"
-              onClick={() => setTierDropdownOpen(o => !o)}
-            >
-              <span>{tierLabels[tierFilter]}</span>
-              <svg width="12" height="12" viewBox="0 0 12 12"
-                style={{ transform: tierDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}
-                fill="currentColor">
-                <path d="M6 8L1 3h10L6 8z" />
-              </svg>
-            </button>
-            {tierDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}>
-                {tierOptions.map(opt => (
-                  <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
-                    style={{
-                      color: tierFilter !== '' && tierFilter === opt ? '#06b6d4' : 'var(--text-bright)',
-                      background: tierFilter !== '' && tierFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
-                    onMouseLeave={e => e.currentTarget.style.background = tierFilter !== '' && tierFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { setTierFilter(opt); setTierDropdownOpen(false) }}>
-                    {tierLabels[opt]}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <button
-            className="btn-ghost flex items-center gap-2 text-sm"
-            onClick={() => {
-              const headers = ['Name', 'Email', 'City', 'Tier', 'Total Spent', 'Orders', 'Points', 'Status']
-              const rows = filtered.map(c => [
-                `${c.FirstName} ${c.LastName}`,
-                c.Email,
-                c.City,
-                c.LoyaltyTier,
-                c.TotalSpent,
-                c.TotalOrders,
-                c.LoyaltyPoints,
-                c.IsBlocked ? 'Blocked' : 'Active'
-              ])
-
-              const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
-              const blob = new Blob([csv], { type: 'text/csv' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = 'customers.csv'
-              a.click()
-              URL.revokeObjectURL(url)
-            }}
-          >
-            <Download size={14} /> Export
-          </button>
-          <button className="btn-primary flex items-center gap-2 ml-auto"
-            onClick={() => setShowAddModal(true)}>
-            <Plus size={14} /> Add Customer
-          </button>
-          {showAddModal && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-              <div className="card w-full max-w-md p-6 space-y-4">
-                <h2 className="text-lg font-bold text-text-white">Add New Customer</h2>
-
-                {[['FirstName', 'First Name'], ['LastName', 'Last Name'], ['Email', 'Email'], ['City', 'City']].map(([field, label]) => (
-                  <div key={field}>
-                    <label className="text-xs text-text-dim mb-1 block">{label}</label>
-                    <input className="input w-full" value={newCustomer[field]}
-                      onChange={e => setNewCustomer(p => ({ ...p, [field]: e.target.value }))} />
-                  </div>
-                ))}
-
-                <div>
-                  <label className="text-xs text-text-dim mb-1 block">Tier</label>
-                  <select className="select w-full"
-                    value={newCustomer.LoyaltyTier}
-                    onChange={e => setNewCustomer(p => ({ ...p, LoyaltyTier: e.target.value }))}>
-                    <option value="New">🆕 New</option>
-                    <option value="Bronze">🥉 Bronze</option>
-                    <option value="Silver">🥈 Silver</option>
-                    <option value="Gold">⭐ Gold</option>
-                    <option value="VIP">💎 VIP</option>
-                  </select>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button className="btn-ghost flex-1" onClick={() => setShowAddModal(false)}>Cancel</button>
-                  <button className="btn-primary flex-1" onClick={() => {
-                    const customer =
-                    {
-                      ...newCustomer,
-                      Id: customers.length + 1,
-                      TotalSpent: 0,
-                      TotalOrders: 0,
-                      LoyaltyPoints: 0,
-                      IsBlocked: false,
-                      Flags: []
-                    }
-                    setCustomers(p => [...p, customer])
-                    setShowAddModal(false)
-                    setNewCustomer({ FirstName: '', LastName: '', Email: '', City: '', LoyaltyTier: 'New' })
-                  }}>Add Customer</button>
-                </div>
-              </div>
-            </div>
-          )}
+          <select className="select w-32" value={tierFilter} onChange={e => setTierFilter(e.target.value)}>
+            <option value="">All Tiers</option>
+            <option value="VIP">💎 VIP</option>
+            <option value="Gold">⭐ Gold</option>
+            <option value="Silver">🥈 Silver</option>
+            <option value="Bronze">🥉 Bronze</option>
+            <option value="New">🆕 New</option>
+          </select>
+          <button onClick={fetchCustomers} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center gap-2 ml-auto"><Plus size={14} /> Add Customer</button>
         </div>
 
         <div className="overflow-x-auto">
@@ -193,13 +139,15 @@ export default function Customers() {
                 <th className="table-header text-center">Tier</th>
                 <th className="table-header text-right">Total Spent</th>
                 <th className="table-header text-right">Orders</th>
-                <th className="table-header text-right">Points</th>
-                <th className="table-header text-center">Flags</th>
-                <th className="table-header text-center">Status</th>
+                <th className="table-header text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => (
+              {loading && customers.length === 0 ? (
+                <tr><td colSpan="6" className="py-10 text-center text-text-dim">Loading customers...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="6" className="py-10 text-center text-text-dim">No customers found</td></tr>
+              ) : filtered.map(c => (
                 <tr key={c.Id} className="table-row cursor-pointer" onClick={() => setSelected(c)}>
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
@@ -215,29 +163,20 @@ export default function Customers() {
                   </td>
                   <td className="table-cell text-text-dim">{c.City}</td>
                   <td className="table-cell text-center"><LoyaltyBadge tier={c.LoyaltyTier} /></td>
-                  <td className="table-cell text-right font-semibold text-text-white">${c.TotalSpent.toLocaleString()}</td>
-                  <td className="table-cell text-right text-text-mid">{c.TotalOrders}</td>
-                  <td className="table-cell text-right">
-                    <span className="text-xs font-mono text-neo-bright">{c.LoyaltyPoints.toLocaleString()}</span>
-                  </td>
+                  <td className="table-cell text-right font-semibold text-text-white">${(c.TotalSpent || 0).toLocaleString()}</td>
+                  <td className="table-cell text-right text-text-mid">{c.TotalOrders || 0}</td>
                   <td className="table-cell text-center">
-                    {c.Flags?.length > 0 ? (
-                      <FlagBadge type={c.Flags[0].FlagType} />
-                    ) : (
-                      <span className="text-xs text-text-dim">—</span>
-                    )}
-                  </td>
-                  <td className="table-cell text-center">
-                    {c.IsBlocked
-                      ? <span className="badge-danger">Blocked</span>
-                      : <span className="badge-bloom">Active</span>}
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={(e) => handleEdit(c, e)} className="btn-ghost !p-1.5 text-neo"><Edit2 size={14} /></button>
+                      <button onClick={(e) => handleDelete(c.Id, e)} className="btn-ghost !p-1.5 text-danger"><Trash2 size={14} /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div className="px-4 py-3 border-t border-border/50">
+        <div className="px-4 py-3 border-t border-border">
           <span className="text-xs text-text-dim">Showing {filtered.length} of {customers.length} customers</span>
         </div>
       </div>
