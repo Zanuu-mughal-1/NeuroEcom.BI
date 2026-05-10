@@ -1,18 +1,39 @@
-import { useState, useEffect, useRef } from 'react'
-import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RotateCw } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
-import { mockOrders } from '../../utils/api'
+import api from '../../utils/api'
 
 export default function Orders() {
-  const [orders] = useState(mockOrders)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [selected, setSelected] = useState(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
 
   const statusOptions = ['', 'Pending', 'Shipped', 'Delivered', 'Cancelled']
   const statusLabels = { '': 'All Status', Pending: 'Pending', Shipped: 'Shipped', Delivered: 'Delivered', Cancelled: 'Cancelled' }
+
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status) setStatusFilter(status)
+    fetchOrders()
+  }, [searchParams, statusFilter])
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const res = await api.get(`/orders?status=${statusFilter}`)
+      setOrders(res.data)
+    } catch (err) {
+      console.error('Failed to fetch orders', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const handler = (e) => {
@@ -25,8 +46,7 @@ export default function Orders() {
   }, [])
 
   const filtered = orders.filter(o =>
-    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!statusFilter || o.FulfillmentStatus === statusFilter)
+    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase()))
   )
 
   const handleExport = () => {
@@ -123,7 +143,11 @@ export default function Orders() {
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
                     onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}
+                    onClick={() => { 
+                      setStatusFilter(opt); 
+                      setSearchParams(opt ? { status: opt } : {}); 
+                      setDropdownOpen(false) 
+                    }}
                   >
                     {statusLabels[opt]}
                   </div>
@@ -134,7 +158,15 @@ export default function Orders() {
 
           {/* Export Button */}
           <button
-            className="btn-ghost flex items-center gap-2 text-sm ml-auto"
+            className="btn-ghost p-2 rounded-lg"
+            onClick={fetchOrders}
+            disabled={loading}
+          >
+            <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            className="btn-ghost flex items-center gap-2 text-sm ml-2"
             onClick={handleExport}
           >
             <Download size={14} /> Export

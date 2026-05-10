@@ -17,6 +17,8 @@ export default function App() {
     return saved ? saved === 'dark' : true
   })
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
   useEffect(() => {
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
     if (isDark) {
@@ -27,6 +29,7 @@ export default function App() {
   }, [isDark])
 
   const toggleTheme = () => setIsDark(!isDark)
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'dark' : ''}`} 
@@ -43,14 +46,22 @@ export default function App() {
           style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)', filter: 'blur(80px)' }} />
       </div>
 
+      {/* Sidebar - Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-fade-in"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="relative z-10">
-        <Sidebar toggleTheme={toggleTheme} isDark={isDark} />
+      <div className={`fixed inset-y-0 left-0 z-50 transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <Sidebar toggleTheme={toggleTheme} isDark={isDark} onClose={() => setIsSidebarOpen(false)} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Dashboard />} />

@@ -138,9 +138,11 @@ public class OrdersController : ControllerBase
     public OrdersController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
         var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(o => o.OrderNumber.Contains(search) || (o.Customer != null && (o.Customer.FirstName.Contains(search) || o.Customer.LastName.Contains(search))));
         if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
         if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
         if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
@@ -553,16 +555,17 @@ public class DashboardController : ControllerBase
             var date = now.AddDays(-i).Date;
             var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
             return new {
-                date = date.ToString("MMM d"),
-                revenue = dayOrders.Sum(o => o.TotalAmount),
-                orders = dayOrders.Count,
-                returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
+                Date = date.ToString("MMM d"),
+                Revenue = dayOrders.Sum(o => o.TotalAmount),
+                Orders = dayOrders.Count,
+                Returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
             };
         }).ToList();
 
         return Ok(new {
             Revenue = new { Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount) },
+                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount),
+                            Total = await _db.Orders.SumAsync(o => o.TotalAmount) },
             Orders = new { Total = ordersPeriod.Count, Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") },
             Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= startDate) },
             ReturnRate = ordersPeriod.Count > 0 ? Math.Round((double)returnsCount / ordersPeriod.Count * 100, 1) : 0,
