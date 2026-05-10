@@ -8,19 +8,19 @@ const allRules = [
   { Id: 9, Category: 'Product', RuleName: 'Dynamic Pricing', Condition: 'Profit Margin > {v}%', Action: 'Enable Aggressive Sale', CurrentValue: '45', DefaultValue: '40' },
   { Id: 10, Category: 'Product', RuleName: 'Overstock Alert', Condition: 'Stock > {v} units', Action: 'Bundle with Bestseller', CurrentValue: '300', DefaultValue: '500' },
 
-  { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > ${v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
+  { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > Rs {v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
   { Id: 4, Category: 'Customer', RuleName: 'Churn Prevention', Condition: 'Inactive > {v} days', Action: 'Send "Miss You" Email', CurrentValue: '60', DefaultValue: '90' },
   { Id: 11, Category: 'Customer', RuleName: 'Loyalty Referral', Condition: 'Total Orders > {v}', Action: 'Invite to Affiliate', CurrentValue: '25', DefaultValue: '20' },
   { Id: 12, Category: 'Customer', RuleName: 'High-Return Risk', Condition: 'Return Rate > {v}%', Action: 'Audit Purchases', CurrentValue: '20', DefaultValue: '25' },
 
   { Id: 5, Category: 'Ads', RuleName: 'Budget Kill-Switch', Condition: 'ROI < {v}%', Action: 'Pause Campaign', CurrentValue: '5', DefaultValue: '10' },
   { Id: 6, Category: 'Ads', RuleName: 'High Performance', Condition: 'ROAS > {v}x', Action: 'Boost Budget 20%', CurrentValue: '4.5', DefaultValue: '3.0' },
-  { Id: 13, Category: 'Ads', RuleName: 'CPC Efficiency', Condition: 'CPC < ${v}', Action: 'Scale Daily Spend', CurrentValue: '0.15', DefaultValue: '0.20' },
+  { Id: 13, Category: 'Ads', RuleName: 'CPC Efficiency', Condition: 'CPC < Rs {v}', Action: 'Scale Daily Spend', CurrentValue: '15', DefaultValue: '20' },
   { Id: 14, Category: 'Ads', RuleName: 'Creative Fatigue', Condition: 'CTR Drop > {v}%', Action: 'Rotate Creatives', CurrentValue: '35', DefaultValue: '30' },
 
   { Id: 7, Category: 'RTO', RuleName: 'Fraud Shield', Condition: 'RTO Score > {v}', Action: 'Force Prepaid Only', CurrentValue: '75', DefaultValue: '80' },
   { Id: 8, Category: 'RTO', RuleName: 'Address Risk', Condition: 'Incomplete Match', Action: 'Flag for Call', CurrentValue: 'Yes', DefaultValue: 'Yes' },
-  { Id: 15, Category: 'RTO', RuleName: 'High Value Check', Condition: 'Order Value > ${v}', Action: 'Admin Review Required', CurrentValue: '1500', DefaultValue: '2000' },
+  { Id: 15, Category: 'RTO', RuleName: 'High Value Check', Condition: 'Order Value > Rs {v}', Action: 'Admin Review Required', CurrentValue: '1500', DefaultValue: '2000' },
   { Id: 16, Category: 'RTO', RuleName: 'Shipment Delay', Condition: 'Unshipped > {v} hrs', Action: 'Notify Customer', CurrentValue: '48', DefaultValue: '48' },
 ]
 
@@ -109,7 +109,7 @@ export default function Decisions() {
               const baseDecisions = [
                 ...decisions,
                 { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now() - 18000000).toISOString(), Status: 'Applied' },
-                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > $5000)', CreatedAt: new Date(Date.now() - 25200000).toISOString(), Status: 'Applied' },
+                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > Rs 5000)', CreatedAt: new Date(Date.now() - 25200000).toISOString(), Status: 'Applied' },
                 { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now() - 32400000).toISOString(), Status: 'Applied' },
               ];
 
@@ -391,33 +391,14 @@ export default function Decisions() {
               {(() => {
                 const impactData = [
                   { section: 'Products', decision: 'Price Drop: Wireless Mouse', impact: '+150%', metric: 'Sales Vol.', score: 92, status: 'positive' },
-                  { section: 'Products', decision: 'Inventory: Gaming KB', impact: '+$4.2k', metric: 'Est. Revenue', score: 85, status: 'positive' },
+                  { section: 'Products', decision: 'Inventory: Gaming KB', impact: '+Rs 4.2k', metric: 'Est. Revenue', score: 85, status: 'positive' },
                   { section: 'Customers', decision: 'VIP Upgrade: R. Martinez', impact: '+22%', metric: 'LTV Growth', score: 78, status: 'positive' },
-                  { section: 'Orders', decision: 'RTO Block: ORD-00238', impact: '$120', metric: 'Loss Saved', score: 95, status: 'positive' },
-                  { section: 'Ads', decision: 'Pause: Low ROI Social', impact: '$900', metric: 'Spend Saved', score: 88, status: 'positive' },
+                  { section: 'Orders', decision: 'RTO Block: ORD-00238', impact: 'Rs 120', metric: 'Loss Saved', score: 95, status: 'positive' },
+                  { section: 'Ads', decision: 'Pause: Low ROI Social', impact: 'Rs 900', metric: 'Spend Saved', score: 88, status: 'positive' },
                   { section: 'Customers', decision: 'Flag: High Returner', impact: 'Review', metric: 'Risk Control', score: 70, status: 'neutral' },
                   { section: 'Ads', decision: 'Scale: Search Bestseller', impact: '+35%', metric: 'ROI Boost', score: 82, status: 'positive' },
                 ];
 
-<<<<<<< HEAD
-                <div className="card">
-                  <div className="section-title mb-4">Impact Analysis</div>
-                  <div className="space-y-3">
-                    {[
-                      { decision: 'Price Decrease — Wireless Mouse', impact: '+150% sales', positive: true },
-                      { decision: 'Stock Restock — Gaming KB', impact: '+89 units sold', positive: true },
-                      { decision: 'RTO Reject — ORD-00238', impact: 'Fraud prevented', positive: true },
-                      { decision: 'Ad Pause — Back to School', impact: 'Rs900 spend saved', positive: true },
-                      { decision: 'Customer Flag — R. Martinez', impact: 'Order blocked', positive: false },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <span className="text-xs text-text-dim truncate flex-1 mr-3">{item.decision}</span>
-                        <span className={`text-xs font-semibold flex-shrink-0 ${item.positive ? 'text-bloom' : 'text-danger'}`}>
-                          {item.positive ? '✓' : '✗'} {item.impact}
-                        </span>
-                      </div>
-                    ))}
-=======
                 const filtered = decisionFilter === 'All'
                   ? impactData
                   : impactData.filter(d => d.section === decisionFilter);
@@ -425,32 +406,31 @@ export default function Decisions() {
                 if (filtered.length === 0) return <div className="col-span-2 py-10 text-center text-text-dim text-xs italic">No impact data for this section yet.</div>;
 
                 return filtered.map((item, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
-                      <div className="flex-shrink-0 relative">
-                        <svg className="w-12 h-12 rotate-[-90deg]">
-                          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />
-                          <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4"
-                            strokeDasharray="125.6" strokeDashoffset={125.6 - (125.6 * item.score / 100)} className="transition-all duration-1000" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-text-bright">{item.score}</div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-text-bright truncate">{item.decision}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] text-text-dim uppercase tracking-wider">{item.metric}:</span>
-                          <span className={`text-[10px] font-black ${item.status === 'positive' ? 'text-bloom' : 'text-ember'}`}>
-                            {item.impact}
-                          </span>
-                        </div>
+                  <div key={i} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
+                    <div className="flex-shrink-0 relative">
+                      <svg className="w-12 h-12 rotate-[-90deg]">
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />
+                        <circle cx="24" cy="24" r="20" fill="none" stroke={item.status === 'positive' ? '#10b981' : '#f59e0b'} strokeWidth="4"
+                          strokeDasharray="125.6" strokeDashoffset={125.6 - (125.6 * item.score / 100)} className="transition-all duration-1000" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-text-bright">{item.score}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-text-bright truncate">{item.decision}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-text-dim uppercase tracking-wider">{item.metric}:</span>
+                        <span className={`text-[10px] font-black ${item.status === 'positive' ? 'text-bloom' : 'text-ember'}`}>
+                          {item.impact}
+                        </span>
                       </div>
                     </div>
-                    ));
-              })()}
->>>>>>> b688224e9e543fcc5025cc0072a1e0a0744f00a9
                   </div>
-                </div>
+                ));
+              })()}
+            </div>
+          </div>
         </div>
       )}
-          </div>
-          )
+    </div>
+  )
 }

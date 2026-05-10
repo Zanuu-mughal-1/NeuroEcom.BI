@@ -116,8 +116,8 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Price', value: `$${product.Price}`, color: 'var(--text-bright)' },
-                { label: 'Cost', value: `$${product.Cost}`, color: '#9ca3af' },
+                { label: 'Price', value: `Rs ${product.Price}`, color: 'var(--text-bright)' },
+                { label: 'Cost', value: `Rs ${product.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${margin}%`, color: '#34d399' },
                 { label: 'Profit/Unit', value: `Rs ${profit}`, color: '#818cf8' },
               ].map(m => (
@@ -221,11 +221,11 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                   <button onClick={() => setActiveAction(isExpanded ? null : action.id)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
                     style={{
-                      background: isActive ? c.bg : 'var(--abyss)',
-                      border: `1px solid ${isActive ? c.border : 'var(--border)'}`,
+                      background: isExpanded ? c.bg : 'var(--abyss)',
+                      border: `1px solid ${isExpanded ? c.border : 'var(--border)'}`,
                     }}>
                     <action.icon size={15} style={{ color: c.text }} />
-                    <span className="text-sm font-medium" style={{ color: isActive ? c.text : 'var(--text-mid)' }}>{action.label}</span>
+                    <span className="text-sm font-medium" style={{ color: isExpanded ? c.text : 'var(--text-mid)' }}>{action.label}</span>
                   </button>
                   {isExpanded && (
                     <div className="mt-1 p-3 rounded-lg space-y-2" style={{ background: c.bg, border: `1px solid ${c.border}` }}>

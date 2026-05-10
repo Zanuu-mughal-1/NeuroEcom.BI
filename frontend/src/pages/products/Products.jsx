@@ -154,6 +154,7 @@ export default function Products() {
           <table className="w-full">
             <thead>
               <tr className="bg-abyss border-b border-border">
+                <th className="table-header text-left">ID</th>
                 <th className="table-header text-left">Product</th>
                 <th className="table-header text-left">Category</th>
                 <th className="table-header text-right">Price</th>
@@ -192,7 +193,7 @@ export default function Products() {
                   <td className="table-cell text-center">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-16 h-1.5 rounded-full overflow-hidden bg-abyss">
-                        <div className="h-full rounded-full" style={{ width: `${p.HealthScore}%`, background: p.HealthScore >= 80 ? '#10b981' : p.HealthScore >= 50 ? '#f59e0b' : '#ef4444' }} />
+                        <div className="h-full rounded-full" style={{ width: `${p.HealthScore || 0}%`, background: (p.HealthScore || 0) >= 80 ? '#10b981' : (p.HealthScore || 0) >= 50 ? '#f59e0b' : '#ef4444' }} />
                       </div>
                       <span className="text-xs font-mono text-text-dim">{p.HealthScore || 0}</span>
                     </div>
