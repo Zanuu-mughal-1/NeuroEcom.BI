@@ -1,19 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        'void': '#050508',
-        'abyss': '#0a0a12',
-        'surface': '#0f0f1a',
-        'panel': '#141420',
-        'border': '#1e1e2e',
-        'border-bright': '#2a2a40',
-        'text-dim': '#6b7280',
-        'text-mid': '#9ca3af',
-        'text-bright': '#e2e8f0',
-        'text-white': '#f8fafc',
+        'void': 'var(--void)',
+        'abyss': 'var(--abyss)',
+        'surface': 'var(--surface)',
+        'panel': 'var(--panel)',
+        'border': 'var(--border)',
+        'border-bright': 'var(--border-bright)',
+        'text-dim': 'var(--text-dim)',
+        'text-mid': 'var(--text-mid)',
+        'text-bright': 'var(--text-bright)',
+        'text-white': 'var(--text-white)',
         'neo': '#6366f1',
         'neo-bright': '#818cf8',
         'neo-glow': '#4f46e5',

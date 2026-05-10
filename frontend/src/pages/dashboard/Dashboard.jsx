@@ -19,7 +19,7 @@ export default function Dashboard() {
     try {
       if (!isRefresh) setLoading(true)
       else setRefreshing(true)
-      
+
       const days = timeRange === '7D' ? 7 : timeRange === '90D' ? 90 : 30
       const res = await api.get(`/dashboard?days=${days}`)
       setData(res.data)
@@ -57,9 +57,9 @@ export default function Dashboard() {
   const decisionColors = { Products: 'text-neo', Customers: 'text-pulse', Orders: 'text-ember', Ads: 'text-bloom', Returns: 'text-royal' }
 
   const alertStyles = {
-    Critical: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', icon: XCircle, color: '#f87171' },
-    Warning: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: AlertTriangle, color: '#fbbf24' },
-    Info: { bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', icon: CheckCircle, color: '#22d3ee' },
+    Critical: { className: 'bg-danger/10 border-danger/20 text-danger dark:text-danger-bright', icon: XCircle },
+    Warning: { className: 'bg-ember/10 border-ember/20 text-ember dark:text-ember-bright', icon: AlertTriangle },
+    Info: { className: 'bg-pulse/10 border-pulse/20 text-pulse dark:text-pulse-bright', icon: CheckCircle },
   }
 
   return (
@@ -75,8 +75,8 @@ export default function Dashboard() {
             <div className="text-xs text-text-dim uppercase tracking-wider font-semibold">Last Updated</div>
             <div className="text-xs text-bloom font-mono">{new Date().toLocaleTimeString()}</div>
           </div>
-          <button 
-            onClick={() => fetchDashboard(true)} 
+          <button
+            onClick={() => fetchDashboard(true)}
             disabled={refreshing}
             className={`p-2.5 rounded-xl border border-white/10 transition-all ${refreshing ? 'animate-spin opacity-50' : 'hover:bg-white/5 active:scale-95'}`}
           >
@@ -92,7 +92,7 @@ export default function Dashboard() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Link to="/orders" className="block hover:no-underline">
-          <KpiCard label="Monthly Revenue" value={`Rs ${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
+          <KpiCard label="Monthly Revenue" value={`Rs ${(data.Revenue.ThisMonth / 1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
         </Link>
         <Link to="/orders" className="block hover:no-underline">
           <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
@@ -118,9 +118,9 @@ export default function Dashboard() {
               <div className="section-subtitle">Last {timeRange === '7D' ? '7 days' : timeRange === '90D' ? '90 days' : '30 days'} performance</div>
             </div>
             <div className="flex gap-2">
-              {['7D','30D','90D'].map((d) => (
-                <button 
-                  key={d} 
+              {['7D', '30D', '90D'].map((d) => (
+                <button
+                  key={d}
                   onClick={() => setTimeRange(d)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${timeRange === d ? 'bg-neo text-white shadow-lg shadow-neo/20' : 'bg-white/5 text-text-dim hover:bg-white/10 hover:text-text-mid'}`}
                 >
@@ -162,10 +162,10 @@ export default function Dashboard() {
             <span className="text-xs font-bold text-bloom">85%</span>
           </div>
           <div className="section-subtitle mb-4">Monthly target: Rs 1,000,000</div>
-          
+
           <div className="space-y-4">
             <div className="relative h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <div 
+              <div
                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-neo to-pulse transition-all duration-1000 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
                 style={{ width: '85%' }}
               />
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Rs 850,240 reached</span>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                 <div className="text-[10px] text-text-dim uppercase tracking-wider">Remaining</div>
@@ -194,7 +194,7 @@ export default function Dashboard() {
         {/* RTO Shield */}
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.1)' }}>
+            <div className="p-1.5 rounded-lg bg-neo/10">
               <Activity size={14} className="text-neo" />
             </div>
             <div>
@@ -203,24 +203,24 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-bloom/5 border border-bloom/20 transition-all hover:bg-bloom/10">
               <div className="flex items-center gap-2">
                 <CheckCircle size={14} className="text-bloom" />
-                <span className="text-xs text-text-mid">Auto-approved</span>
+                <span className="text-xs text-text-mid font-medium">Auto-approved</span>
               </div>
               <span className="text-lg font-bold text-bloom">{data.RTOToday.AutoApproved}</span>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-ember/5 border border-ember/20 transition-all hover:bg-ember/10">
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-ember" />
-                <span className="text-xs text-text-mid">Manual review</span>
+                <span className="text-xs text-text-mid font-medium">Manual review</span>
               </div>
               <span className="text-lg font-bold text-ember">{data.RTOToday.ManualReview}</span>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-danger/5 border border-danger/20 transition-all hover:bg-danger/10">
               <div className="flex items-center gap-2">
                 <XCircle size={14} className="text-danger" />
-                <span className="text-xs text-text-mid">Auto-rejected</span>
+                <span className="text-xs text-text-mid font-medium">Auto-rejected</span>
               </div>
               <span className="text-lg font-bold text-danger">{data.RTOToday.AutoRejected}</span>
             </div>
@@ -230,7 +230,7 @@ export default function Dashboard() {
         {/* Active Ads */}
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}>
+            <div className="p-1.5 rounded-lg bg-bloom/10">
               <Megaphone size={14} className="text-bloom" />
             </div>
             <div>
@@ -277,7 +277,7 @@ export default function Dashboard() {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Avg order value</span>
-                <span className="font-bold text-text-bright">Rs 264.89</span>
+              <span className="font-bold text-text-bright">Rs 264.89</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-text-dim">Pending fulfillment</span>
@@ -299,17 +299,15 @@ export default function Dashboard() {
             {data.RecentDecisions.map(d => {
               const Icon = decisionIcons[d.Section] || Activity
               return (
-                <div key={d.Id} className="flex items-start gap-3 p-2.5 rounded-lg table-row border-none"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div key={d.Id} className="flex items-start gap-3 p-2.5 rounded-lg bg-surface/50 border border-border hover:bg-surface transition-all">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 bg-void">
                     <Icon size={13} className={decisionColors[d.Section] || 'text-text-dim'} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-text-bright truncate">{d.ItemName}</div>
                     <div className="text-xs text-text-dim truncate">{d.DecisionDetails}</div>
                   </div>
-                  <span className="text-xs text-text-dim flex-shrink-0">
+                  <span className="text-xs text-text-dim flex-shrink-0 font-mono">
                     {new Date(d.CreatedAt).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -329,10 +327,9 @@ export default function Dashboard() {
               const style = alertStyles[alert.Level] || alertStyles.Info
               const Icon = style.icon
               return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg"
-                  style={{ background: style.bg, border: `1px solid ${style.border}` }}>
-                  <Icon size={14} style={{ color: style.color }} className="flex-shrink-0 mt-0.5" />
-                  <div className="text-xs text-text-mid leading-relaxed">{alert.Message}</div>
+                <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${style.className}`}>
+                  <Icon size={14} className="flex-shrink-0 mt-0.5" />
+                  <div className="text-xs leading-relaxed">{alert.Message}</div>
                 </div>
               )
             })}
@@ -345,30 +342,25 @@ export default function Dashboard() {
           <div className="section-subtitle mb-4">Common tasks</div>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { to: '/products', icon: Plus, label: 'Add Product', color: 'neo' },
-              { to: '/returns', icon: FlaskConical, label: 'Test RTO', color: 'ember' },
-              { to: '/ads', icon: Megaphone, label: 'Create Ad', color: 'bloom' },
-              { to: '/decisions', icon: Activity, label: 'View Rules', color: 'royal' },
+              { to: '/products', icon: Plus, label: 'Add Product', color: 'neo', classes: 'bg-neo/10 border-neo/20 text-neo dark:text-neo-bright' },
+              { to: '/returns', icon: FlaskConical, label: 'Test RTO', color: 'ember', classes: 'bg-ember/10 border-ember/20 text-ember dark:text-ember-bright' },
+              { to: '/ads', icon: Megaphone, label: 'Create Ad', color: 'bloom', classes: 'bg-bloom/10 border-bloom/20 text-bloom dark:text-bloom-bright' },
+              { to: '/decisions', icon: Activity, label: 'View Rules', color: 'royal', classes: 'bg-royal/10 border-royal/20 text-royal dark:text-royal-bright' },
             ].map(action => {
-              const colorBg = { neo: 'rgba(99,102,241,0.1)', ember: 'rgba(245,158,11,0.1)', bloom: 'rgba(16,185,129,0.1)', royal: 'rgba(139,92,246,0.1)' }
-              const colorBorder = { neo: 'rgba(99,102,241,0.2)', ember: 'rgba(245,158,11,0.2)', bloom: 'rgba(16,185,129,0.2)', royal: 'rgba(139,92,246,0.2)' }
-              const colorText = { neo: '#818cf8', ember: '#fbbf24', bloom: '#34d399', royal: '#a78bfa' }
               return (
                 <Link key={action.label} to={action.to}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all hover:scale-105 cursor-pointer"
-                  style={{ background: colorBg[action.color], border: `1px solid ${colorBorder[action.color]}` }}>
-                  <action.icon size={20} style={{ color: colorText[action.color] }} />
-                  <span className="text-xs font-medium text-text-mid text-center">{action.label}</span>
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all hover:scale-105 cursor-pointer border ${action.classes}`}>
+                  <action.icon size={20} />
+                  <span className="text-xs font-medium text-center opacity-80">{action.label}</span>
                 </Link>
               )
             })}
           </div>
-          <div className="mt-4 p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all hover:opacity-80"
-            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))', border: '1px solid rgba(99,102,241,0.2)' }}>
-            <Zap size={16} className="text-neo-bright" />
+          <div className="mt-4 p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all hover:bg-surface border border-neo/20 bg-gradient-to-br from-neo/5 to-royal/5">
+            <Zap size={16} className="text-neo dark:text-neo-bright" />
             <div>
-              <div className="text-xs font-semibold text-neo-bright">AI Insights Ready</div>
-              <div className="text-xs text-text-dim">3 recommendations available</div>
+              <div className="text-xs font-bold text-neo dark:text-neo-bright">AI Insights Ready</div>
+              <div className="text-[10px] text-text-dim uppercase font-bold tracking-tighter">3 recommendations available</div>
             </div>
           </div>
         </div>
