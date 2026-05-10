@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RefreshCw, XCircle, Truck, PackageCheck } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RotateCw } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 
 export default function Orders() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [selected, setSelected] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
@@ -35,6 +39,27 @@ export default function Orders() {
       if (selected?.Id === id) {
         const { data } = await api.get(`/orders/${id}`)
         setSelected(data.order)
+    const status = searchParams.get('status')
+    if (status) setStatusFilter(status)
+    fetchOrders()
+  }, [searchParams, statusFilter])
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const res = await api.get(`/orders?status=${statusFilter}`)
+      setOrders(res.data)
+    } catch (err) {
+      console.error('Failed to fetch orders', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
       }
     } catch (err) {
       console.error(`Failed to ${action} order`, err)
@@ -44,8 +69,7 @@ export default function Orders() {
   }
 
   const filtered = orders.filter(o =>
-    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!statusFilter || o.FulfillmentStatus === statusFilter)
+    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase()))
   )
 
   const totalRevenue = orders.reduce((s, o) => s + (o.TotalAmount || 0), 0)
@@ -58,8 +82,8 @@ export default function Orders() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Orders', value: orders.length, icon: ShoppingCart, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
-          { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-          { label: 'Avg Order Value', value: `$${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Total Revenue', value: `Rs ${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Avg Order Value', value: `Rs ${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
           { label: 'Pending', value: orders.filter(o => o.FulfillmentStatus === 'Pending').length, icon: CheckCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
@@ -124,7 +148,11 @@ export default function Orders() {
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
                     onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}
+                    onClick={() => { 
+                      setStatusFilter(opt); 
+                      setSearchParams(opt ? { status: opt } : {}); 
+                      setDropdownOpen(false) 
+                    }}
                   >
                     {statusLabels[opt]}
                   </div>
@@ -135,7 +163,15 @@ export default function Orders() {
 
           {/* Export Button */}
           <button
-            className="btn-ghost flex items-center gap-2 text-sm ml-auto"
+            className="btn-ghost p-2 rounded-lg"
+            onClick={fetchOrders}
+            disabled={loading}
+          >
+            <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            className="btn-ghost flex items-center gap-2 text-sm ml-2"
             onClick={handleExport}
           >
             <Download size={14} /> Export
@@ -173,7 +209,7 @@ export default function Orders() {
                     <div className="text-xs text-text-dim">{o.Customer?.Email}</div>
                   </td>
                   <td className="table-cell text-right">
-                    <span className="font-bold text-text-white">${o.TotalAmount.toLocaleString()}</span>
+                    <span className="font-bold text-text-white">Rs {o.TotalAmount.toLocaleString()}</span>
                   </td>
                   <td className="table-cell text-center">
                     <span className={`badge ${o.PaymentMethod === 'COD' ? 'badge-ember' : o.PaymentMethod === 'UPI' ? 'badge-pulse' : 'badge-neo'}`}>
@@ -202,7 +238,7 @@ export default function Orders() {
               {[
                 { label: 'Status', value: selected.FulfillmentStatus },
                 { label: 'Payment', value: selected.PaymentMethod },
-                { label: 'Amount', value: `$${selected.TotalAmount}` },
+                { label: 'Amount', value: `Rs ${selected.TotalAmount}` },
                 { label: 'RTO Decision', value: selected.RTODecision || '—' },
               ].map(m => (
                 <div key={m.label}>

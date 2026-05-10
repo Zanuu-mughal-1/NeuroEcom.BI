@@ -62,6 +62,31 @@
     --color-ember-bright: #f59e0b;
     --color-royal: #7c3aed;
     --color-royal-bright: #8b5cf6;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    --accent-glow: rgba(99, 102, 241, 0.1);
+    --faint-white: rgba(0, 0, 0, 0.04);
+    --scroll-track: #f1f5f9;
+    --scroll-thumb: #cbd5e1;
+  }
+
+  .dark {
+    --void: #050508;
+    --abyss: #0a0a12;
+    --surface: #0f0f1a;
+    --panel: #141420;
+    --border: #1e1e2e;
+    --border-bright: #2a2a40;
+    --text-dim: #6b7280;
+    --text-mid: #9ca3af;
+    --text-bright: #e2e8f0;
+    --text-white: #f8fafc;
+    --glass-bg: rgba(20, 20, 32, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --accent-glow: rgba(99, 102, 241, 0.2);
+    --faint-white: rgba(255, 255, 255, 0.04);
+    --scroll-track: #0a0a12;
+    --scroll-thumb: #1e1e2e;
   }
 
   * {
@@ -93,6 +118,22 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text-dim);
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scroll-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-bright);
   }
 }
 
@@ -185,6 +226,18 @@
 
   .btn-danger:hover {
     opacity: 0.9;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-xl font-semibold text-sm text-white transition-all duration-300;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
     transform: translateY(-1px);
   }
 
@@ -192,6 +245,11 @@
     @apply px-4 py-2 rounded-lg font-medium text-sm text-text-mid transition-all duration-200;
     background: var(--input-bg);
     border: 1px solid var(--border-color);
+  }
+
+  .btn-ghost:hover {
+    background: var(--abyss);
+    color: var(--text-bright);
   }
 
   .btn-ghost:hover {
@@ -221,6 +279,8 @@
     border-color: var(--color-neo);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     background: var(--glass-border);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   }
 
   .select {
@@ -242,6 +302,8 @@
     background: rgba(99, 102, 241, 0.1);
     color: var(--color-neo-bright);
     border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+    border-color: rgba(99, 102, 241, 0.2);
   }
 
   .badge-bloom {
@@ -249,6 +311,8 @@
     background: rgba(16, 185, 129, 0.1);
     color: var(--color-bloom);
     border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.2);
   }
 
   .badge-danger {
@@ -256,6 +320,8 @@
     background: rgba(239, 68, 68, 0.1);
     color: var(--color-danger);
     border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
   }
 
   .badge-ember {
@@ -263,6 +329,8 @@
     background: rgba(245, 158, 11, 0.1);
     color: var(--color-ember);
     border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.2);
   }
 
   .badge-pulse {
@@ -270,6 +338,8 @@
     background: rgba(6, 182, 212, 0.1);
     color: var(--color-pulse);
     border: 1px solid rgba(6, 182, 212, 0.2);
+    color: #0891b2;
+    border-color: rgba(6, 182, 212, 0.2);
   }
 
   .badge-royal {
@@ -277,6 +347,8 @@
     background: rgba(139, 92, 246, 0.1);
     color: var(--color-royal);
     border: 1px solid rgba(139, 92, 246, 0.2);
+    color: #7c3aed;
+    border-color: rgba(139, 92, 246, 0.2);
   }
 
   .badge-dim {
@@ -292,6 +364,9 @@
 
   .table-row:hover {
     background: var(--glass-border);
+    background: var(--void);
+    color: var(--text-dim);
+    border-color: var(--border);
   }
 
   .table-header {
@@ -302,7 +377,10 @@
   .table-row {
     @apply border-b border-border transition-colors duration-150;
   }
-  .table-row:hover { background: var(--abyss); }
+
+  .table-row:hover {
+    background: var(--abyss);
+  }
 
   .table-cell {
     @apply px-4 py-4 text-sm text-text-bright;
@@ -322,6 +400,19 @@
 
   .stat-change-down {
     @apply text-xs text-danger flex items-center gap-1;
+    @apply text-[10px] uppercase tracking-wider font-bold text-text-dim opacity-70;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-text-bright font-display tracking-tight;
+  }
+
+  .stat-change-up {
+    @apply text-xs text-bloom font-bold flex items-center gap-1;
+  }
+
+  .stat-change-down {
+    @apply text-xs text-danger font-bold flex items-center gap-1;
   }
 
   .section-title {
@@ -348,6 +439,7 @@
 
   .nav-item:hover {
     background: var(--input-bg);
+    background: var(--surface);
     color: var(--text-bright);
   }
 
@@ -364,6 +456,17 @@
 
   .page-header {
     @apply flex items-center justify-between mb-6;
+    background: var(--surface);
+    color: #6366f1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+  }
+
+  .dark .nav-item.active {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
   }
 
   .page-title {
@@ -389,6 +492,49 @@
   .metric-neutral {
     color: var(--text-dim);
   }
+    @apply text-bloom font-bold;
+  }
+
+  .metric-down {
+    @apply text-danger font-bold;
+  }
+
+  .metric-neutral {
+    @apply text-text-dim font-bold;
+  }
+
+  .health-healthy {
+    @apply text-bloom;
+  }
+
+  .health-warning {
+    @apply text-ember;
+  }
+
+  .health-critical {
+    @apply text-danger;
+  }
+
+  .health-discontinued {
+    @apply text-text-dim;
+  }
+
+  .risk-low {
+    @apply text-bloom;
+  }
+
+  .risk-medium {
+    @apply text-ember;
+  }
+
+  .risk-high {
+    @apply text-orange-500;
+  }
+
+  .risk-critical {
+    @apply text-danger;
+  }
+}
 
   .health-healthy {
     color: var(--color-bloom);
@@ -456,4 +602,6 @@
   100% {
     background-position: 200% 0;
   }
+}
+  opacity: 0.1;
 }

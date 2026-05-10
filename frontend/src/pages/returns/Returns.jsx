@@ -71,6 +71,15 @@ export default function Returns() {
     } finally {
       setAssessing(false)
     }
+  const testRTO = () => {
+    let score = 0
+    const triggered = []
+    if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
+    if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >Rs500 (+20 pts)') }
+    if (new Date().getDay() === 5 || new Date().getDay() === 6) { score += 10; triggered.push('Weekend order (+10 pts)') }
+    score = Math.min(100, score)
+    const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : score <= 80 ? 'Additional Verification' : 'Auto-Rejected'
+    setRtoResult({ score, decision, triggered })
   }
 
   const updateRule = async (id, newValue) => {
@@ -133,6 +142,22 @@ export default function Returns() {
         <KpiCard label="Return Rate" value={`${metrics?.returnRate || 0}%`} icon={AlertTriangle} color="danger" />
         <KpiCard label="Pending Review" value={returns.filter(r => r.Status === 'Pending').length} icon={Clock} color="ember" onClick={() => setStatusFilter('Pending')} />
         <KpiCard label="Total Refunds" value={metrics?.totalRefundAmount || 0} prefix="$" icon={DollarSign} color="bloom" onClick={() => setStatusFilter('Refunded')} />
+        {[
+          { label: 'Total Returns', value: returns.length, icon: RotateCcw, bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
+          { label: 'Return Rate', value: '12.4%', icon: XCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
+          { label: 'Pending Review', value: returns.filter(r => r.Status === 'Pending').length, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Refund Amount', value: `Rs${returns.reduce((s, r) => s + (r.RefundAmount || 0), 0).toFixed(2)}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+        ].map(s => (
+          <div key={s.label} className="card flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
+              <s.icon size={18} style={{ color: s.color }} />
+            </div>
+            <div>
+              <div className="stat-label">{s.label}</div>
+              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Returns List Tab */}
@@ -199,6 +224,7 @@ export default function Returns() {
                       </td>
                       <td className="table-cell text-right font-semibold text-text-white">
                         {r.RefundAmount ? `$${r.RefundAmount.toLocaleString()}` : '—'}
+                        Rs {r.RefundAmount?.toFixed(2) || '—'}
                       </td>
                       <td className="table-cell text-center">
                         <span className="badge text-xs font-medium" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
@@ -244,6 +270,37 @@ export default function Returns() {
                   <div className="section-title">AI Fraud & RTO Engine</div>
                   <div className="section-subtitle">Real-time risk assessment</div>
                 </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="card">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <Shield size={16} className="text-neo" />
+              </div>
+              <div>
+                <div className="section-title">RTO Shield — Test Order</div>
+                <div className="section-subtitle">Assess risk before fulfillment</div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="stat-label mb-1 block">Order Value (Rs)</label>
+                <input type="number" className="input" value={rtoInput.orderValue}
+                  onChange={e => setRtoInput(p => ({ ...p, orderValue: e.target.value }))} />
+              </div>
+              <div>
+                <label className="stat-label mb-1 block">Payment Method</label>
+                <select className="select" value={rtoInput.paymentMethod}
+                  onChange={e => setRtoInput(p => ({ ...p, paymentMethod: e.target.value }))}>
+                  <option value="COD">COD</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CreditCard">Credit Card</option>
+                  <option value="NetBanking">Net Banking</option>
+                </select>
+              </div>
+              <div>
+                <label className="stat-label mb-1 block">Customer ID (optional)</label>
+                <input className="input" placeholder="Enter customer ID..." value={rtoInput.customerId}
+                  onChange={e => setRtoInput(p => ({ ...p, customerId: e.target.value }))} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="space-y-4">

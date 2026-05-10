@@ -38,7 +38,7 @@ const navGroups = [
   }
 ]
 
-export default function Sidebar({ toggleTheme, isDark }) {
+export default function Sidebar({ toggleTheme, isDark, onClose }) {
   const location = useLocation()
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -115,6 +115,9 @@ export default function Sidebar({ toggleTheme, isDark }) {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    onClick={() => {
+                      if (window.innerWidth < 1024) onClose()
+                    }}
                     className={`nav-item group ${isActive ? 'active' : ''}`}
                   >
                     <item.icon size={16} className={isActive ? '' : 'text-text-dim group-hover:text-text-mid'} />
