@@ -533,14 +533,15 @@ public class DashboardController : ControllerBase
     public DashboardController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] int days = 30)
     {
         var now = DateTime.UtcNow;
-        var orders30d = await _db.Orders.Where(o => o.OrderDate >= now.AddDays(-30)).ToListAsync();
+        var startDate = now.AddDays(-days);
+        var ordersPeriod = await _db.Orders.Where(o => o.OrderDate >= startDate).ToListAsync();
         var customers = await _db.Customers.ToListAsync();
         var products = await _db.Products.ToListAsync();
-        var returnsList30d = await _db.Returns.Where(r => r.RequestDate >= now.AddDays(-30)).ToListAsync();
-        var returns30d = returnsList30d.Count;
+        var returnsListPeriod = await _db.Returns.Where(r => r.RequestDate >= startDate).ToListAsync();
+        var returnsCount = returnsListPeriod.Count;
         var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
         var decisions = await _db.Decisions.OrderByDescending(d => d.CreatedAt).Take(5).ToListAsync();
         var rtoToday = await _db.RTOAssessments.Where(r => r.AssessedAt >= now.Date).ToListAsync();
@@ -548,23 +549,23 @@ public class DashboardController : ControllerBase
         var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
         var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
 
-        var salesData = Enumerable.Range(0, 30).Reverse().Select(i => {
+        var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
             var date = now.AddDays(-i).Date;
-            var dayOrders = orders30d.Where(o => o.OrderDate.Date == date).ToList();
+            var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
             return new {
                 date = date.ToString("MMM d"),
                 revenue = dayOrders.Sum(o => o.TotalAmount),
                 orders = dayOrders.Count,
-                returns = returnsList30d.Count(r => r.RequestDate.Date == date)
+                returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
             };
         }).ToList();
 
         return Ok(new {
-            Revenue = new { Today = orders30d.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = orders30d.Sum(o => o.TotalAmount) },
-            Orders = new { Total = orders30d.Count, Pending = orders30d.Count(o => o.FulfillmentStatus == "Pending") },
-            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)) },
-            ReturnRate = orders30d.Count > 0 ? Math.Round((double)returns30d / orders30d.Count * 100, 1) : 0,
+            Revenue = new { Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
+                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount) },
+            Orders = new { Total = ordersPeriod.Count, Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") },
+            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= startDate) },
+            ReturnRate = ordersPeriod.Count > 0 ? Math.Round((double)returnsCount / ordersPeriod.Count * 100, 1) : 0,
             ROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0,
             ProductHealth = new {
                 Healthy = products.Count(p => p.HealthStatus == "Healthy"),
@@ -590,7 +591,7 @@ public class DashboardController : ControllerBase
                 AvgROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0
             },
             RecentDecisions = decisions,
-            Alerts = GetAlerts(products, orders30d),
+            Alerts = GetAlerts(products, ordersPeriod),
             SalesData = salesData
         });
     }

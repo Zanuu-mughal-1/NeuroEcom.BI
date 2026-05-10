@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   DollarSign, ShoppingCart, Users, RotateCcw, TrendingUp,
   AlertTriangle, CheckCircle, Clock, XCircle, Package,
-  Plus, FlaskConical, Megaphone, Upload, Activity, Zap
+  Plus, FlaskConical, Megaphone, Upload, Activity, Zap, Download
 } from 'lucide-react'
 import KpiCard from '../../components/ui/KpiCard'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
@@ -12,21 +12,28 @@ import api from '../../utils/api'
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [timeRange, setTimeRange] = useState('30D')
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchDashboard = async (isRefresh = false) => {
+    try {
+      if (!isRefresh) setLoading(true)
+      else setRefreshing(true)
+      
+      const days = timeRange === '7D' ? 7 : timeRange === '90D' ? 90 : 30
+      const res = await api.get(`/dashboard?days=${days}`)
+      setData(res.data)
+    } catch (err) {
+      console.error('Failed to fetch dashboard', err)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true)
-        const res = await api.get('/dashboard')
-        setData(res.data)
-      } catch (err) {
-        console.error('Failed to fetch dashboard', err)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchDashboard()
-  }, [])
+  }, [timeRange])
 
   if (loading || !data) return <div className="p-6 text-text-dim">Loading Neuro-Dashboard...</div>
 
@@ -57,13 +64,48 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-up">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-bright">Executive Overview</h1>
+          <p className="text-sm text-text-dim">Real-time business intelligence & analytics</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden md:block">
+            <div className="text-xs text-text-dim uppercase tracking-wider font-semibold">Last Updated</div>
+            <div className="text-xs text-bloom font-mono">{new Date().toLocaleTimeString()}</div>
+          </div>
+          <button 
+            onClick={() => fetchDashboard(true)} 
+            disabled={refreshing}
+            className={`p-2.5 rounded-xl border border-white/10 transition-all ${refreshing ? 'animate-spin opacity-50' : 'hover:bg-white/5 active:scale-95'}`}
+          >
+            <RotateCcw size={18} className="text-text-mid" />
+          </button>
+          <button className="btn-primary flex items-center gap-2">
+            <Download size={14} />
+            <span className="hidden sm:inline">Export Report</span>
+          </button>
+        </div>
+      </div>
+
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Monthly Revenue" value={`Rs ${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
-        <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
-        <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" />
-        <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" />
-        <KpiCard label="Ad ROI" value={`${data.ROI}%`} change={15} changeLabel="vs last month" icon={TrendingUp} color="royal" />
+        <Link to="/orders" className="block hover:no-underline">
+          <KpiCard label="Monthly Revenue" value={`Rs ${(data.Revenue.ThisMonth/1000).toFixed(1)}K`} change={12} changeLabel="vs last month" icon={DollarSign} color="neo" />
+        </Link>
+        <Link to="/orders" className="block hover:no-underline">
+          <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" />
+        </Link>
+        <Link to="/customers" className="block hover:no-underline">
+          <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" />
+        </Link>
+        <Link to="/returns" className="block hover:no-underline">
+          <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" />
+        </Link>
+        <Link to="/ads" className="block hover:no-underline">
+          <KpiCard label="Ad ROI" value={`${data.ROI}%`} change={15} changeLabel="vs last month" icon={TrendingUp} color="royal" />
+        </Link>
       </div>
 
       {/* Charts Row */}
@@ -73,11 +115,17 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="section-title">Revenue Trend</div>
-              <div className="section-subtitle">Last 30 days performance</div>
+              <div className="section-subtitle">Last {timeRange === '7D' ? '7 days' : timeRange === '90D' ? '90 days' : '30 days'} performance</div>
             </div>
             <div className="flex gap-2">
-              {['7D','30D','90D'].map((d,i) => (
-                <button key={d} className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${i===1 ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>{d}</button>
+              {['7D','30D','90D'].map((d) => (
+                <button 
+                  key={d} 
+                  onClick={() => setTimeRange(d)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${timeRange === d ? 'bg-neo text-white shadow-lg shadow-neo/20' : 'bg-white/5 text-text-dim hover:bg-white/10 hover:text-text-mid'}`}
+                >
+                  {d}
+                </button>
               ))}
             </div>
           </div>
@@ -107,24 +155,39 @@ export default function Dashboard() {
 
       {/* Middle Row */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Customer Loyalty */}
+        {/* Revenue Goal Tracking */}
         <div className="card">
-          <div className="section-title mb-1">Customer Loyalty</div>
-          <div className="section-subtitle mb-4">Tier distribution</div>
-          <div className="h-32">
-            <DonutChart data={loyaltyData} colors={loyaltyColors} />
+          <div className="flex items-center justify-between mb-1">
+            <div className="section-title">Revenue Goal</div>
+            <span className="text-xs font-bold text-bloom">85%</span>
           </div>
-          <div className="space-y-1.5 mt-2">
-            {[
-              { tier: 'VIP', val: data.CustomerLoyalty.VIP, icon: '💎', color: '#818cf8' },
-              { tier: 'Gold', val: data.CustomerLoyalty.Gold, icon: '⭐', color: '#fbbf24' },
-              { tier: 'Silver', val: data.CustomerLoyalty.Silver, icon: '🥈', color: '#9ca3af' },
-            ].map(t => (
-              <div key={t.tier} className="flex items-center justify-between text-xs">
-                <span className="text-text-dim">{t.icon} {t.tier}</span>
-                <span className="font-bold" style={{ color: t.color }}>{t.val.toLocaleString()}</span>
+          <div className="section-subtitle mb-4">Monthly target: Rs 1,000,000</div>
+          
+          <div className="space-y-4">
+            <div className="relative h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-neo to-pulse transition-all duration-1000 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
+                style={{ width: '85%' }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Rs 850,240 reached</span>
               </div>
-            ))}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                <div className="text-[10px] text-text-dim uppercase tracking-wider">Remaining</div>
+                <div className="text-sm font-bold text-text-bright">Rs 149,760</div>
+              </div>
+              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                <div className="text-[10px] text-text-dim uppercase tracking-wider">Avg/Day Needed</div>
+                <div className="text-sm font-bold text-ember">Rs 12,480</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-bloom bg-bloom/5 p-2 rounded-lg border border-bloom/10">
+              <TrendingUp size={12} />
+              <span>On track to exceed target by 12%</span>
+            </div>
           </div>
         </div>
 

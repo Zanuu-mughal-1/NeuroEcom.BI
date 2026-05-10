@@ -32,17 +32,26 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '200px' }}>
+        <div 
+          onClick={() => alert('Search feature coming soon!')}
+          className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '240px' }}>
           <Search size={14} />
           <span className="text-xs">Quick search...</span>
-          <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs"
+          <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
         </div>
-        <button className="btn-ghost p-2 !px-2">
+        <button 
+          onClick={() => window.location.reload()}
+          className="btn-ghost p-2 !px-2 transition-all hover:bg-white/10 active:scale-95"
+          title="Refresh Page"
+        >
           <RefreshCw size={15} />
         </button>
-        <button className="relative btn-ghost p-2 !px-2">
+        <button 
+          onClick={() => alert('You have 3 new notifications')}
+          className="relative btn-ghost p-2 !px-2 transition-all hover:bg-white/10 active:scale-95"
+        >
           <Bell size={15} />
           {hasAlerts && (
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger"
