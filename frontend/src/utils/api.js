@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api', timeout: 10000 })
+const baseURL = import.meta.env?.VITE_API_BASE_URL || '/api'
+const api = axios.create({ baseURL, timeout: 10000 })
 
 api.interceptors.response.use(
   res => res,
@@ -9,8 +10,23 @@ api.interceptors.response.use(
 
 export default api
 
+// ===================== LIVE API ENDPOINTS =====================
+export const fetchDashboardData = (days = 30) => api.get(`/Dashboard?days=${days}`).then(res => res.data);
+export const fetchProducts = (params) => api.get('/Products', { params }).then(res => res.data);
+export const fetchProductById = (id) => api.get(`/Products/${id}`).then(res => res.data);
+export const fetchCustomers = (params) => api.get('/Customers', { params }).then(res => res.data);
+export const fetchCustomerById = (id) => api.get(`/Customers/${id}`).then(res => res.data);
+export const fetchOrders = (params) => api.get('/Orders', { params }).then(res => res.data);
+export const fetchOrderById = (id) => api.get(`/Orders/${id}`).then(res => res.data);
+export const fetchReturns = (params) => api.get('/Returns', { params }).then(res => res.data);
+export const fetchAds = (params) => api.get('/Ads', { params }).then(res => res.data);
+export const fetchDecisions = (section) => api.get('/Decisions', { params: { section } }).then(res => res.data);
+export const fetchRules = (category) => api.get('/Decisions/rules', { params: { category } }).then(res => res.data);
+export const updateRule = (id, newValue) => api.put(`/Decisions/rules/${id}`, { newValue }).then(res => res.data);
+export const performOrderAction = (id, action) => api.post(`/Orders/${id}/action`, action).then(res => res.data);
+
 // ===================== MOCK DATA =====================
-// Used when backend isn't connected
+// (Keeping mock data below for fallback/reference if needed)
 export const mockDashboard = {
   Revenue: { Today: 12450.50, ThisMonth: 124500.00 },
   Orders: { Total: 1247, Pending: 89 },

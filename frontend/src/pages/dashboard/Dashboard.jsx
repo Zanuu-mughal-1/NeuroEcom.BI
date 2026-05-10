@@ -36,6 +36,7 @@ export default function Dashboard() {
     <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
       <RefreshCw className="animate-spin text-neo" size={40} />
       <div className="text-text-dim animate-pulse">Loading NeuroEcom Intelligence...</div>
+  const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30D')
   const [refreshing, setRefreshing] = useState(false)
   const [revenueGoal, setRevenueGoal] = useState(1000000)
@@ -43,6 +44,7 @@ export default function Dashboard() {
 
   const fetchDashboard = async (isRefresh = false) => {
     try {
+      setError(null)
       if (!isRefresh) setLoading(true)
       else setRefreshing(true)
 
@@ -57,6 +59,7 @@ export default function Dashboard() {
       if (goalRule) setRevenueGoal(parseFloat(goalRule.CurrentValue))
     } catch (err) {
       console.error('Failed to fetch dashboard', err)
+      setError('Connection failed. Please ensure the backend and SQL Server are running.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -73,6 +76,19 @@ export default function Dashboard() {
       <div className="text-sm font-medium text-text-dim animate-pulse">Initializing Neural Intelligence...</div>
     </div>
   )
+  if (loading) return <div className="p-6 text-text-dim animate-pulse">Loading Neuro-Dashboard...</div>
+  
+  if (error) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
+        <h3 className="font-bold mb-1">Database Connection Error</h3>
+        <p className="text-sm opacity-80">{error}</p>
+      </div>
+      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
+    </div>
+  )
+
+  if (!data) return null
 
   const healthData = [
     { name: 'Healthy', value: data.ProductHealth.Healthy },

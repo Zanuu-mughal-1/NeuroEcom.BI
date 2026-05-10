@@ -10,6 +10,8 @@ import Returns from './pages/returns/Returns'
 import Ads from './pages/ads/Ads'
 import Decisions from './pages/decisions/Decisions'
 import Predictions from './pages/predictions/Predictions'
+import Logistics from './pages/logistics/Logistics'
+import CompetitorIntel from './pages/competitors/CompetitorIntel'
 
 export default function App() {
   const [isDark, setIsDark] = useState(() => {
@@ -71,6 +73,8 @@ export default function App() {
             <Route path="/ads" element={<Ads />} />
             <Route path="/decisions" element={<Decisions />} />
             <Route path="/predictions" element={<Predictions />} />
+            <Route path="/logistics" element={<Logistics />} />
+            <Route path="/competitors" element={<CompetitorIntel />} />
           </Routes>
         </main>
       </div>

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, ShoppingCart, RotateCcw,
   Megaphone, Settings, Brain, ChevronRight, Zap, Activity,
-  Moon, Sun, LogOut, Bell
+  Moon, Sun, LogOut, Bell, Truck, Globe
 } from 'lucide-react'
 import NotificationPanel from '../ui/NotificationPanel'
 
@@ -21,6 +21,7 @@ const navGroups = [
       { to: '/customers', icon: Users, label: 'Customers' },
       { to: '/orders', icon: ShoppingCart, label: 'Orders' },
       { to: '/returns', icon: RotateCcw, label: 'Returns & RTO' },
+      { to: '/logistics', icon: Truck, label: 'Logistics' },
     ]
   },
   {
@@ -28,6 +29,7 @@ const navGroups = [
     items: [
       { to: '/ads', icon: Megaphone, label: 'Ads Manager' },
       { to: '/predictions', icon: Brain, label: 'AI Predictions' },
+      { to: '/competitors', icon: Globe, label: 'Competitor Intel' },
     ]
   },
   {
