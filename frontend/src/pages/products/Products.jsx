@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, X } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 import ProductDetail from './ProductDetail'
 
 export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [healthFilter, setHealthFilter] = useState('')
+  const [healthFilter, setHealthFilter] = useState(searchParams.get('health') || '')
   const [selected, setSelected] = useState(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
@@ -17,8 +19,10 @@ export default function Products() {
   })
 
   useEffect(() => {
+    const health = searchParams.get('health')
+    if (health) setHealthFilter(health)
     fetchProducts()
-  }, [])
+  }, [searchParams])
 
   const fetchProducts = async () => {
     try {
@@ -139,7 +143,7 @@ export default function Products() {
             className="select"
             style={{ width: '200px', background: '#1a1d2e', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}
             value={healthFilter}
-            onChange={e => setHealthFilter(e.target.value)}>
+            onChange={e => { setHealthFilter(e.target.value); setSearchParams({ health: e.target.value }) }}>
             <option value="">All Health</option>
             <option value="Healthy">🟢 Healthy</option>
             <option value="Warning">🟡 Warning</option>
