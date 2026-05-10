@@ -1,15 +1,55 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { Search, Filter, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, RefreshCw, Trash2, Edit2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, X } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 import ProductDetail from './ProductDetail'
+import ProductModal from '../../components/modals/ProductModal'
 
 export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [healthFilter, setHealthFilter] = useState('')
+  const [healthFilter, setHealthFilter] = useState(searchParams.get('health') || '')
   const [selected, setSelected] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/products')
+      setProducts(data)
+    } catch (err) {
+      console.error('Failed to fetch products', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation()
+    if (!window.confirm('Are you sure you want to delete this product?')) return
+    try {
+      await api.delete(`/products/${id}`)
+      fetchProducts()
+    } catch (err) {
+      console.error('Failed to delete product', err)
+    }
+  }
+
+  const handleEdit = (product, e) => {
+    e.stopPropagation()
+    setEditingProduct(product)
+    setIsModalOpen(true)
+  }
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const [newProduct, setNewProduct] = useState({
@@ -17,8 +57,10 @@ export default function Products() {
   })
 
   useEffect(() => {
+    const health = searchParams.get('health')
+    if (health) setHealthFilter(health)
     fetchProducts()
-  }, [])
+  }, [searchParams])
 
   const fetchProducts = async () => {
     try {
@@ -105,6 +147,15 @@ export default function Products() {
   }
 
   return (
+    <div className="p-6 space-y-5 animate-fade-up">
+      <ProductModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setEditingProduct(null); }} 
+        onSuccess={fetchProducts} 
+        product={editingProduct}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <div className="p-6 space-y-5 animate-fade-up relative">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
@@ -123,12 +174,14 @@ export default function Products() {
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
+              <div className="text-xl font-bold text-text-white mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
+      <div className="card !p-0 overflow-hidden">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
       <div className="card !p-0 overflow-hidden relative z-10">
         <div className="flex items-center gap-3 p-4 border-b border-border/50">
           <div className="relative flex-1 max-w-sm">
@@ -139,7 +192,7 @@ export default function Products() {
             className="select"
             style={{ width: '200px', background: '#1a1d2e', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}
             value={healthFilter}
-            onChange={e => setHealthFilter(e.target.value)}>
+            onChange={e => { setHealthFilter(e.target.value); setSearchParams({ health: e.target.value }) }}>
             <option value="">All Health</option>
             <option value="Healthy">🟢 Healthy</option>
             <option value="Warning">🟡 Warning</option>
@@ -147,6 +200,8 @@ export default function Products() {
             <option value="Inactive">⚪ Inactive</option>
             <option value="Discontinued">⚫ Discontinued</option>
           </select>
+          <button onClick={fetchProducts} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center gap-2 ml-auto"><Plus size={14} /> Add Product</button>
           <button className="btn-ghost flex items-center gap-2 text-sm" onClick={handleExport}><Download size={14} /> Export</button>
           <button className="btn-primary flex items-center gap-2 ml-auto" onClick={() => setIsAddModalOpen(true)}><Plus size={14} /> Add Product</button>
         </div>
@@ -161,11 +216,15 @@ export default function Products() {
                 <th className="table-header text-right">Margin</th>
                 <th className="table-header text-right">Stock</th>
                 <th className="table-header text-center">Health</th>
-                <th className="table-header text-center">Score</th>
+                <th className="table-header text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {loading && products.length === 0 ? (
+                <tr><td colSpan="7" className="py-10 text-center text-text-dim">Loading products...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="7" className="py-10 text-center text-text-dim">No products found</td></tr>
+              ) : filtered.map(p => (
                 <tr key={p.Id} className="table-row cursor-pointer" onClick={() => setSelected(p)}>
                   <td className="table-cell font-mono text-text-dim">{p.Id}</td>
                   <td className="table-cell">
@@ -183,6 +242,7 @@ export default function Products() {
                   <td className="table-cell text-right font-medium text-text-white">Rs {p.Price}</td>
                   <td className="table-cell text-right">
                     <span className={p.Margin >= 50 ? 'text-bloom font-semibold' : p.Margin >= 30 ? 'text-ember' : 'text-danger'}>
+                      {p.Margin?.toFixed(1)}%
                       {p.Margin?.toFixed(1) || 0}%
                     </span>
                   </td>
@@ -192,6 +252,8 @@ export default function Products() {
                   <td className="table-cell text-center"><HealthBadge status={!p.IsActive ? 'Inactive' : (p.IsDiscontinued ? 'Discontinued' : (p.HealthStatus || 'Warning'))} /></td>
                   <td className="table-cell text-center">
                     <div className="flex items-center justify-center gap-2">
+                      <button onClick={(e) => handleEdit(p, e)} className="btn-ghost !p-1.5 text-neo"><Edit2 size={14} /></button>
+                      <button onClick={(e) => handleDelete(p.Id, e)} className="btn-ghost !p-1.5 text-danger"><Trash2 size={14} /></button>
                       <div className="w-16 h-1.5 rounded-full overflow-hidden bg-abyss">
                         <div className="h-full rounded-full" style={{ width: `${p.HealthScore || 0}%`, background: (p.HealthScore || 0) >= 80 ? '#10b981' : (p.HealthScore || 0) >= 50 ? '#f59e0b' : '#ef4444' }} />
                       </div>
@@ -203,7 +265,7 @@ export default function Products() {
             </tbody>
           </table>
         </div>
-        <div className="px-4 py-3 border-t border-border/50">
+        <div className="px-4 py-3 border-t border-border">
           <span className="text-xs text-text-dim">Showing {filtered.length} of {products.length} products</span>
         </div>
       </div>

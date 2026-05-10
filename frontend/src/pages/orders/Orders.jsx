@@ -1,6 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
-import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RefreshCw, XCircle, Truck, PackageCheck } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RotateCw } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
+import api from '../../utils/api'
+
+export default function Orders() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
 import { fetchOrders } from '../../utils/api'
 
 export default function Orders() {
@@ -8,23 +17,62 @@ export default function Orders() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [selected, setSelected] = useState(null)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef(null)
+  const [actionLoading, setActionLoading] = useState(null)
 
-  const statusOptions = ['', 'Pending', 'Shipped', 'Delivered', 'Cancelled']
-  const statusLabels = { '': 'All Status', Pending: 'Pending', Shipped: 'Shipped', Delivered: 'Delivered', Cancelled: 'Cancelled' }
+  const fetchOrders = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/orders')
+      setOrders(data)
+    } catch (err) {
+      console.error('Failed to fetch orders', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
+
+  const handleAction = async (id, action) => {
+    setActionLoading(id)
+    try {
+      await api.post(`/orders/${id}/action`, { Action: action, Notes: `System update: ${action}` })
+      fetchOrders()
+      if (selected?.Id === id) {
+        const { data } = await api.get(`/orders/${id}`)
+        setSelected(data.order)
+    const status = searchParams.get('status')
+    if (status) setStatusFilter(status)
+    fetchOrders()
+  }, [searchParams, statusFilter])
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const res = await api.get(`/orders?status=${statusFilter}`)
+      setOrders(res.data)
+    } catch (err) {
+      console.error('Failed to fetch orders', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false)
       }
+    } catch (err) {
+      console.error(`Failed to ${action} order`, err)
+    } finally {
+      setActionLoading(null)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }
 
   useEffect(() => {
     let mounted = true
@@ -38,35 +86,10 @@ export default function Orders() {
   }, [])
 
   const filtered = orders.filter(o =>
-    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!statusFilter || o.FulfillmentStatus === statusFilter)
+    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const handleExport = () => {
-    const csv = [
-      ['Order', 'Customer', 'Email', 'Amount', 'Payment', 'Status', 'RTO Risk', 'Date'],
-      ...filtered.map(o => [
-        o.OrderNumber,
-        `${o.Customer?.FirstName} ${o.Customer?.LastName}`,
-        o.Customer?.Email,
-        o.TotalAmount,
-        o.PaymentMethod,
-        o.FulfillmentStatus,
-        o.RTORiskScore,
-        new Date(o.OrderDate).toLocaleDateString()
-      ])
-    ].map(row => row.join(',')).join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'orders.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const totalRevenue = orders.reduce((s, o) => s + o.TotalAmount, 0)
+  const totalRevenue = orders.reduce((s, o) => s + (o.TotalAmount || 0), 0)
   const avgValue = orders.length ? totalRevenue / orders.length : 0
 
   return (
@@ -99,7 +122,7 @@ export default function Orders() {
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
+              <div className="text-xl font-bold text-text-white mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
@@ -107,15 +130,21 @@ export default function Orders() {
 
       {/* Orders Table Card */}
       <div className="card !p-0 overflow-hidden">
-
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 p-4 border-b border-border/50">
-
-          {/* Search */}
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <div className="relative flex-1 max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
             <input className="input pl-9" placeholder="Order ID or customer..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <select className="select w-36" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <button onClick={fetchOrders} className="btn-ghost !p-2 ml-auto"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
+          <button className="btn-ghost flex items-center gap-2 text-sm"><Download size={14} /> Export</button>
+        </div>
 
           {/* Status Dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -149,7 +178,11 @@ export default function Orders() {
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
                     onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}
+                    onClick={() => { 
+                      setStatusFilter(opt); 
+                      setSearchParams(opt ? { status: opt } : {}); 
+                      setDropdownOpen(false) 
+                    }}
                   >
                     {statusLabels[opt]}
                   </div>
@@ -160,7 +193,15 @@ export default function Orders() {
 
           {/* Export Button */}
           <button
-            className="btn-ghost flex items-center gap-2 text-sm ml-auto"
+            className="btn-ghost p-2 rounded-lg"
+            onClick={fetchOrders}
+            disabled={loading}
+          >
+            <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            className="btn-ghost flex items-center gap-2 text-sm ml-2"
             onClick={handleExport}
           >
             <Download size={14} /> Export
@@ -184,7 +225,11 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(o => (
+              {loading && orders.length === 0 ? (
+                <tr><td colSpan="7" className="py-10 text-center text-text-dim">Loading orders...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="7" className="py-10 text-center text-text-dim">No orders found</td></tr>
+              ) : filtered.map(o => (
                 <tr key={o.Id} className="table-row cursor-pointer" onClick={() => setSelected(o)}>
                   <td className="table-cell">
                     <span className="font-mono text-neo-bright text-sm font-semibold">{o.OrderNumber}</span>
@@ -214,7 +259,7 @@ export default function Orders() {
 
         {/* Order Detail Panel */}
         {selected && (
-          <div className="border-t border-border/50 p-5 bg-neo/5">
+          <div className="border-t border-border p-5 animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)' }}>
             <div className="flex items-center justify-between mb-4">
               <div className="section-title">Order Details — {selected.OrderNumber}</div>
               <button onClick={() => setSelected(null)} className="btn-ghost text-xs">Close</button>
@@ -233,16 +278,31 @@ export default function Orders() {
               ))}
             </div>
             <div className="flex gap-2 flex-wrap">
-              {['Confirm', 'Ship', 'Deliver', 'Cancel'].map(a => (
-                <button key={a} className="btn-ghost text-xs">{a} Order</button>
-              ))}
-              <button className="btn-primary text-xs">Print Invoice</button>
+              {selected.FulfillmentStatus === 'Pending' && (
+                <button onClick={() => handleAction(selected.Id, 'Confirm')} disabled={actionLoading === selected.Id} className="btn-primary flex items-center gap-2 text-xs">
+                  <CheckCircle size={14} /> Confirm Order
+                </button>
+              )}
+              {selected.FulfillmentStatus === 'Confirmed' && (
+                <button onClick={() => handleAction(selected.Id, 'Ship')} disabled={actionLoading === selected.Id} className="btn-success flex items-center gap-2 text-xs">
+                  <Truck size={14} /> Ship Order
+                </button>
+              )}
+              {selected.FulfillmentStatus === 'Shipped' && (
+                <button onClick={() => handleAction(selected.Id, 'Deliver')} disabled={actionLoading === selected.Id} className="btn-bloom flex items-center gap-2 text-xs">
+                  <PackageCheck size={14} /> Mark Delivered
+                </button>
+              )}
+              {['Pending', 'Confirmed'].includes(selected.FulfillmentStatus) && (
+                <button onClick={() => handleAction(selected.Id, 'Cancel')} disabled={actionLoading === selected.Id} className="btn-ghost text-danger flex items-center gap-2 text-xs border border-danger/20">
+                  <XCircle size={14} /> Cancel Order
+                </button>
+              )}
+              <button className="btn-ghost text-xs border border-border">Print Invoice</button>
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-border/50">
+        <div className="px-4 py-3 border-t border-border">
           <span className="text-xs text-text-dim">Showing {filtered.length} of {orders.length} orders</span>
         </div>
 

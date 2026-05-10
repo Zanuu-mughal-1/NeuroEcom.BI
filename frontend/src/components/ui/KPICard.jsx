@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
-export default function KPICard({ label, value, change, changeLabel, icon: Icon, color = 'neo', prefix = '', suffix = '', subtitle }) {
+export default function KPICard({ label, value, change, changeLabel, icon: Icon, color = 'neo', prefix = '', suffix = '', subtitle, onClick }) {
   const colorMap = {
     neo: { bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)', glow: 'rgba(99,102,241,0.15)', text: '#818cf8', icon: '#6366f1' },
     pulse: { bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', glow: 'rgba(6,182,212,0.15)', text: '#22d3ee', icon: '#06b6d4' },
@@ -14,7 +14,12 @@ export default function KPICard({ label, value, change, changeLabel, icon: Icon,
   const isNegative = change < 0
 
   return (
-    <div className={`kpi-card relative overflow-hidden bg-surface border border-border shadow-lg transition-all duration-300`}>
+    <div className="kpi-card relative overflow-hidden"
+      style={{ 
+        background: `linear-gradient(135deg, ${c.bg}, var(--bg-secondary))`, 
+        border: `1px solid ${c.border}`, 
+        boxShadow: `var(--card-shadow), 0 0 40px ${c.glow}` 
+      }}>
       
       {/* Background glow overlay */}
       <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.08] dark:opacity-20 pointer-events-none"
@@ -30,8 +35,8 @@ export default function KPICard({ label, value, change, changeLabel, icon: Icon,
         )}
       </div>
 
-      <div className="mb-2 relative z-10">
-        <span className="stat-value text-text-bright">
+      <div className="mb-2">
+        <span className="stat-value" style={{ color: 'var(--text-white)' }}>
           {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}
         </span>
         {subtitle && <div className="text-xs text-text-dim mt-0.5">{subtitle}</div>}

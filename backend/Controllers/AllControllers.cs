@@ -47,7 +47,7 @@ public class CustomersController : ControllerBase
             Flags = customer.Flags.Where(f => f.IsActive),
             RecentOrders = customer.Orders.OrderByDescending(o => o.OrderDate).Take(10),
             TotalReturns = returns.Count,
-            ReturnRate = customer.TotalOrders > 0 ? Math.Round((double)returns.Count / customer.TotalOrders * 100, 1) : 0
+            ReturnRate = (customer.TotalOrders ?? 0) > 0 ? Math.Round((double)returns.Count / (double)customer.TotalOrders.Value * 100, 1) : 0
         });
     }
 
@@ -112,9 +112,32 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Create([FromBody] Customer customer)
     {
         customer.CreatedAt = DateTime.UtcNow;
+        customer.JoinedDate = DateTime.UtcNow;
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Customer update)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        if (customer == null) return NotFound();
+        customer.FirstName = update.FirstName; customer.LastName = update.LastName;
+        customer.Email = update.Email; customer.Phone = update.Phone;
+        customer.City = update.City; customer.LoyaltyTier = update.LoyaltyTier;
+        await _db.SaveChangesAsync();
+        return Ok(customer);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        if (customer == null) return NotFound();
+        _db.Customers.Remove(customer);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 }
 
@@ -138,9 +161,11 @@ public class OrdersController : ControllerBase
     public OrdersController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
         var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(o => o.OrderNumber.Contains(search) || (o.Customer != null && (o.Customer.FirstName.Contains(search) || o.Customer.LastName.Contains(search))));
         if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
         if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
         if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
@@ -208,6 +233,10 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto input)
     {
+        order.OrderNumber = $"ORD-{DateTime.UtcNow.Ticks.ToString()[^8..]}";
+        order.OrderDate = DateTime.UtcNow;
+        order.CreatedAt = DateTime.UtcNow;
+        order.UpdatedAt = DateTime.UtcNow;
         // Resolve/create customer
         int customerId = input.CustomerId ?? 0;
         if (customerId <= 0)
@@ -283,6 +312,28 @@ public class OrdersController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Order update)
+    {
+        var order = await _db.Orders.FindAsync(id);
+        if (order == null) return NotFound();
+        order.FulfillmentStatus = update.FulfillmentStatus;
+        order.PaymentStatus = update.PaymentStatus;
+        order.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(order);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var order = await _db.Orders.FindAsync(id);
+        if (order == null) return NotFound();
+        _db.Orders.Remove(order);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
 }
 
 public class CreateOrderDto
@@ -354,6 +405,52 @@ public class ReturnsController : ControllerBase
         return Ok(ret);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] Return ret)
+    {
+        try 
+        {
+            ret.ReturnNumber = $"RET-{DateTime.UtcNow.Ticks.ToString()[^8..]}";
+            ret.RequestDate = DateTime.UtcNow;
+            ret.CreatedAt = DateTime.UtcNow;
+            ret.UpdatedAt = DateTime.UtcNow;
+            _db.Returns.Add(ret);
+            
+            // Auto-action for defective items
+            if (ret.ReturnReason == "Defective")
+            {
+                _db.Decisions.Add(new Decision { Section = "Returns", ItemId = ret.ProductId, ItemName = $"Product ID: {ret.ProductId}", DecisionType = "Alert", DecisionDetails = "Product quality alert triggered due to defective return." });
+            }
+
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = ret.Id }, ret);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Database error while creating return", details = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Return ret)
+    {
+        if (id != ret.Id) return BadRequest();
+        ret.UpdatedAt = DateTime.UtcNow;
+        _db.Entry(ret).State = EntityState.Modified;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var ret = await _db.Returns.FindAsync(id);
+        if (ret == null) return NotFound();
+        _db.Returns.Remove(ret);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpPost("{id}/action")]
     public async Task<IActionResult> TakeAction(int id, [FromBody] ReturnActionDto action)
     {
@@ -414,12 +511,12 @@ public class AdsController : ControllerBase
         return Ok(campaigns.Select(c => new {
             c.Id, c.Name, c.Platform, c.Budget, c.Status, c.StartDate, c.EndDate,
             Product = c.Product == null ? null : new { c.Product.Name },
-            TotalSpend = c.Performance.Sum(p => p.Spend),
-            TotalRevenue = c.Performance.Sum(p => p.Revenue),
-            ROI = c.Performance.Sum(p => p.Spend) > 0
-                ? Math.Round((double)(c.Performance.Sum(p => p.Revenue) - c.Performance.Sum(p => p.Spend)) / (double)c.Performance.Sum(p => p.Spend) * 100, 1) : 0,
-            Clicks = c.Performance.Sum(p => p.Clicks),
-            Impressions = c.Performance.Sum(p => p.Impressions)
+            TotalSpend = c.Performance.Sum(p => p.Spend ?? 0),
+            TotalRevenue = c.Performance.Sum(p => p.Revenue ?? 0),
+            ROI = c.Performance.Sum(p => p.Spend ?? 0) > 0
+                ? Math.Round((double)(c.Performance.Sum(p => p.Revenue ?? 0) - c.Performance.Sum(p => p.Spend ?? 0)) / (double)c.Performance.Sum(p => p.Spend ?? 0) * 100, 1) : 0,
+            Clicks = c.Performance.Sum(p => p.Clicks ?? 0),
+            Impressions = c.Performance.Sum(p => p.Impressions ?? 0)
         }));
     }
 
@@ -448,18 +545,36 @@ public class AdsController : ControllerBase
         return Ok(new { message = $"Campaign {action.Action}" });
     }
 
+    [HttpGet("history")]
+    public async Task<IActionResult> GetPerformanceHistory([FromQuery] int days = 30)
+    {
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-days));
+        var performance = await _db.AdPerformance
+            .Where(p => p.PerformanceDate >= startDate)
+            .GroupBy(p => p.PerformanceDate)
+            .OrderBy(g => g.Key)
+            .Select(g => new {
+                date = g.Key.ToString("MMM dd"),
+                spend = g.Sum(p => p.Spend ?? 0),
+                revenue = g.Sum(p => p.Revenue ?? 0),
+                clicks = g.Sum(p => p.Clicks ?? 0)
+            })
+            .ToListAsync();
+        return Ok(performance);
+    }
+
     [HttpGet("analytics")]
     public async Task<IActionResult> GetAnalytics()
     {
         var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
-        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
-        var totalRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
+        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend ?? 0);
+        var totalRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue ?? 0);
         var roi = totalSpend > 0 ? Math.Round((double)(totalRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0;
         var roas = totalSpend > 0 ? Math.Round((double)totalRevenue / (double)totalSpend, 2) : 0;
         var byPlatform = campaigns.GroupBy(c => c.Platform).Select(g => new {
             Platform = g.Key,
-            Spend = g.SelectMany(c => c.Performance).Sum(p => p.Spend),
-            Revenue = g.SelectMany(c => c.Performance).Sum(p => p.Revenue)
+            Spend = g.SelectMany(c => c.Performance).Sum(p => p.Spend ?? 0),
+            Revenue = g.SelectMany(c => c.Performance).Sum(p => p.Revenue ?? 0)
         }).ToList();
         return Ok(new {
             ActiveCampaigns = campaigns.Count(c => c.Status == "Active"),
@@ -469,12 +584,61 @@ public class AdsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] AdCampaign campaign)
+    public async Task<IActionResult> Create([FromBody] CampaignRequestDto req)
     {
-        campaign.CreatedAt = DateTime.UtcNow;
+        var campaign = new AdCampaign
+        {
+            Name = req.Name,
+            Platform = req.Platform,
+            ProductId = req.ProductId,
+            Budget = req.Budget,
+            Status = req.Status,
+            CreatedAt = DateTime.UtcNow,
+            StartDate = DateOnly.FromDateTime(DateTime.UtcNow)
+        };
         _db.AdCampaigns.Add(campaign);
         await _db.SaveChangesAsync();
+
+        // Seed initial performance if provided
+        if (req.InitialSpend > 0 || req.InitialRevenue > 0 || req.InitialClicks > 0)
+        {
+            _db.AdPerformance.Add(new AdPerformance
+            {
+                CampaignId = campaign.Id,
+                PerformanceDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                Spend = req.InitialSpend ?? 0,
+                Revenue = req.InitialRevenue ?? 0,
+                Clicks = req.InitialClicks ?? 0,
+                Impressions = (int)((req.InitialClicks ?? 0) * 10) // Mock impressions
+            });
+            await _db.SaveChangesAsync();
+        }
+
         return CreatedAtAction(nameof(GetById), new { id = campaign.Id }, campaign);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] CampaignRequestDto req)
+    {
+        var campaign = await _db.AdCampaigns.FindAsync(id);
+        if (campaign == null) return NotFound();
+        campaign.Name = req.Name;
+        campaign.Budget = req.Budget;
+        campaign.Platform = req.Platform;
+        campaign.Status = req.Status;
+        campaign.ProductId = req.ProductId;
+        await _db.SaveChangesAsync();
+        return Ok(campaign);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var campaign = await _db.AdCampaigns.FindAsync(id);
+        if (campaign == null) return NotFound();
+        _db.AdCampaigns.Remove(campaign);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 }
 
@@ -482,6 +646,18 @@ public class AdActionDto
 {
     public string Action { get; set; } = "";
     public decimal? Budget { get; set; }
+}
+
+public class CampaignRequestDto
+{
+    public string Name { get; set; } = "";
+    public string Platform { get; set; } = "";
+    public int? ProductId { get; set; }
+    public decimal Budget { get; set; }
+    public string Status { get; set; } = "Draft";
+    public decimal? InitialSpend { get; set; }
+    public decimal? InitialRevenue { get; set; }
+    public int? InitialClicks { get; set; }
 }
 
 // ===================== DECISIONS & RULES =====================
@@ -592,10 +768,62 @@ public class RTOController : ControllerBase
         return Ok(new { Score = score, Decision = decision, TriggeredRules = triggeredRules, Recommendation = decision });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] string? status)
+    {
+        var query = _db.RTOs.Include(r => r.Customer).Include(r => r.Order).AsQueryable();
+        if (!string.IsNullOrEmpty(status)) query = query.Where(r => r.Status == status);
+        return Ok(await query.OrderByDescending(r => r.CreatedAt).ToListAsync());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] RTO rto)
+    {
+        rto.CreatedAt = DateTime.UtcNow;
+        rto.UpdatedAt = DateTime.UtcNow;
+        _db.RTOs.Add(rto);
+        await _db.SaveChangesAsync();
+        
+        // Recalculate customer risk
+        await RecalculateRisk(rto.CustomerId);
+        
+        return Ok(rto);
+    }
+
+    [HttpPost("recalculate/{customerId}")]
+    public async Task<IActionResult> RecalculateRisk(int customerId)
+    {
+        var customer = await _db.Customers.FindAsync(customerId);
+        if (customer == null) return NotFound();
+
+        var returns = await _db.Returns.CountAsync(r => r.CustomerId == customerId);
+        var rtos = await _db.RTOs.CountAsync(r => r.CustomerId == customerId);
+        var codOrders = await _db.Orders.CountAsync(o => o.CustomerId == customerId && o.PaymentMethod == "COD");
+
+        // Formula: (returns * 2) + (rto * 3) + (cod_orders * 1.5)
+        double score = (returns * 2.0) + (rtos * 3.0) + (codOrders * 1.5);
+        customer.RTORiskScore = (int)Math.Min(100, score);
+        
+        if (customer.RTORiskScore > 50)
+        {
+            customer.IsCODBlocked = true;
+            customer.BlockReason = "High RTO/Fraud risk score";
+            _db.Decisions.Add(new Decision { 
+                Section = "Customers", ItemId = customerId, ItemName = customer.FullName, 
+                DecisionType = "BlockCOD", DecisionDetails = $"Auto-blocked COD due to risk score: {customer.RTORiskScore}" 
+            });
+        }
+
+        customer.TotalReturns = returns;
+        customer.TotalRTO = rtos;
+        await _db.SaveChangesAsync();
+        return Ok(new { Score = customer.RTORiskScore, IsCODBlocked = customer.IsCODBlocked });
+    }
+
     [HttpGet("logs")]
     public async Task<IActionResult> GetLogs()
     {
-        var logs = await _db.RTOAssessments.Include(r => r.Order).OrderByDescending(r => r.AssessedAt).Take(50).ToListAsync();
+        var logs = await _db.RTOs.Include(r => r.Order).Include(r => r.Customer).OrderByDescending(r => r.CreatedAt).Take(50).ToListAsync();
         return Ok(logs);
     }
 
@@ -648,20 +876,38 @@ public class DashboardController : ControllerBase
         var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
         var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
 
+        var revenueTrend = orders30d
+            .Where(o => o.OrderDate.HasValue)
+            .GroupBy(o => o.OrderDate.Value.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new {
+                date = g.Key.ToString("MMM dd"),
+                revenue = g.Sum(o => o.TotalAmount)
+            })
+            .ToList();
+
+        return Ok(new {
+            Revenue = new { Today = orders30d.Where(o => o.OrderDate.HasValue && o.OrderDate.Value.Date >= now.Date).Sum(o => o.TotalAmount),
+                            ThisMonth = orders30d.Sum(o => o.TotalAmount),
+                            Trend = revenueTrend },
+            Orders = new { Total = orders30d.Count, Pending = orders30d.Count(o => o.FulfillmentStatus == "Pending") },
+            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)) },
+            ReturnRate = orders30d.Count > 0 ? Math.Round((double)returns30d / orders30d.Count * 100, 1) : 0,
         var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
             var date = now.AddDays(-i).Date;
             var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
             return new {
-                date = date.ToString("MMM d"),
-                revenue = dayOrders.Sum(o => o.TotalAmount),
-                orders = dayOrders.Count,
-                returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
+                Date = date.ToString("MMM d"),
+                Revenue = dayOrders.Sum(o => o.TotalAmount),
+                Orders = dayOrders.Count,
+                Returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
             };
         }).ToList();
 
         return Ok(new {
             Revenue = new { Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount) },
+                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount),
+                            Total = await _db.Orders.SumAsync(o => o.TotalAmount) },
             Orders = new { Total = ordersPeriod.Count, Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") },
             Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= startDate) },
             ReturnRate = ordersPeriod.Count > 0 ? Math.Round((double)returnsCount / ordersPeriod.Count * 100, 1) : 0,
@@ -670,7 +916,7 @@ public class DashboardController : ControllerBase
                 Healthy = products.Count(p => p.HealthStatus == "Healthy"),
                 Warning = products.Count(p => p.HealthStatus == "Warning"),
                 Critical = products.Count(p => p.HealthStatus == "Critical"),
-                Discontinued = products.Count(p => p.IsDiscontinued)
+                Discontinued = products.Count(p => p.IsDiscontinued == true)
             },
             CustomerLoyalty = new {
                 VIP = customers.Count(c => c.LoyaltyTier == "VIP"),
@@ -698,7 +944,7 @@ public class DashboardController : ControllerBase
     private static List<object> GetAlerts(List<Product> products, List<Order> orders30d)
     {
         var alerts = new List<object>();
-        foreach (var p in products.Where(p => p.Stock == 0 && p.IsActive))
+        foreach (var p in products.Where(p => p.Stock == 0 && p.IsActive == true))
             alerts.Add(new { Level = "Critical", Message = $"'{p.Name}' is out of stock", Section = "Products" });
         foreach (var p in products.Where(p => p.Stock > 0 && p.Stock < p.ReorderLevel))
             alerts.Add(new { Level = "Warning", Message = $"'{p.Name}' - only {p.Stock} left in stock", Section = "Products" });
