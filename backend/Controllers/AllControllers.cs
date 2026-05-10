@@ -169,24 +169,22 @@ public class OrdersController : ControllerBase
     public OrdersController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status, [FromQuery] string? payment, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        try {
-            var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
-            if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
-            if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
-            if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
-            if (to.HasValue) query = query.Where(o => o.OrderDate <= to.Value);
-            var orders = await query.OrderByDescending(o => o.OrderDate).Take(200).ToListAsync();
-            return Ok(orders.Select(o => new {
-                o.Id, o.OrderNumber, o.OrderDate, o.TotalAmount, o.PaymentMethod,
-                o.PaymentStatus, o.FulfillmentStatus, o.RTORiskScore, o.RTODecision,
-                Customer = o.Customer == null ? null : new { o.Customer.FirstName, o.Customer.LastName, o.Customer.Email },
-                ItemCount = o.Items.Count
-            }));
-        } catch (Exception ex) {
-            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
-        }
+        var query = _db.Orders.Include(o => o.Customer).Include(o => o.Items).AsQueryable();
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(o => o.OrderNumber.Contains(search) || (o.Customer != null && (o.Customer.FirstName.Contains(search) || o.Customer.LastName.Contains(search))));
+        if (!string.IsNullOrEmpty(status)) query = query.Where(o => o.FulfillmentStatus == status);
+        if (!string.IsNullOrEmpty(payment)) query = query.Where(o => o.PaymentMethod == payment);
+        if (from.HasValue) query = query.Where(o => o.OrderDate >= from.Value);
+        if (to.HasValue) query = query.Where(o => o.OrderDate <= to.Value);
+        var orders = await query.OrderByDescending(o => o.OrderDate).Take(200).ToListAsync();
+        return Ok(orders.Select(o => new {
+            o.Id, o.OrderNumber, o.OrderDate, o.TotalAmount, o.PaymentMethod,
+            o.PaymentStatus, o.FulfillmentStatus, o.RTORiskScore, o.RTODecision,
+            Customer = o.Customer == null ? null : new { o.Customer.FirstName, o.Customer.LastName, o.Customer.Email },
+            ItemCount = o.Items.Count
+        }));
     }
 
     [HttpGet("{id}")]
@@ -502,7 +500,7 @@ public class RTOController : ControllerBase
         { score += (int)GetRule("COD Penalty"); triggeredRules.Add($"COD payment (+{GetRule("COD Penalty")} pts)"); }
 
         if (input.OrderValue > 500)
-        { score += (int)GetRule("High Value Penalty"); triggeredRules.Add($"High value order >$500 (+{GetRule("High Value Penalty")} pts)"); }
+        { score += (int)GetRule("High Value Penalty"); triggeredRules.Add($"High value order >Rs500 (+{GetRule("High Value Penalty")} pts)"); }
 
         if (input.CustomerId.HasValue)
         {
@@ -580,13 +578,15 @@ public class DashboardController : ControllerBase
     public DashboardController(AppDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] int days = 30)
     {
         var now = DateTime.UtcNow;
-        var orders30d = await _db.Orders.Where(o => o.OrderDate >= now.AddDays(-30)).ToListAsync();
+        var startDate = now.AddDays(-days);
+        var ordersPeriod = await _db.Orders.Where(o => o.OrderDate >= startDate).ToListAsync();
         var customers = await _db.Customers.ToListAsync();
         var products = await _db.Products.ToListAsync();
-        var returns30d = await _db.Returns.Where(r => r.RequestDate >= now.AddDays(-30)).CountAsync();
+        var returnsListPeriod = await _db.Returns.Where(r => r.RequestDate >= startDate).ToListAsync();
+        var returnsCount = returnsListPeriod.Count;
         var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
         var decisions = await _db.Decisions.OrderByDescending(d => d.CreatedAt).Take(5).ToListAsync();
         var rtoToday = await _db.RTOAssessments.Where(r => r.AssessedAt >= now.Date).ToListAsync();
@@ -594,12 +594,24 @@ public class DashboardController : ControllerBase
         var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
         var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
 
+        var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
+            var date = now.AddDays(-i).Date;
+            var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
+            return new {
+                Date = date.ToString("MMM d"),
+                Revenue = dayOrders.Sum(o => o.TotalAmount),
+                Orders = dayOrders.Count,
+                Returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
+            };
+        }).ToList();
+
         return Ok(new {
-            Revenue = new { Today = orders30d.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = orders30d.Sum(o => o.TotalAmount) },
-            Orders = new { Total = orders30d.Count, Pending = orders30d.Count(o => o.FulfillmentStatus == "Pending") },
-            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)) },
-            ReturnRate = orders30d.Count > 0 ? Math.Round((double)returns30d / orders30d.Count * 100, 1) : 0,
+            Revenue = new { Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
+                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount),
+                            Total = await _db.Orders.SumAsync(o => o.TotalAmount) },
+            Orders = new { Total = ordersPeriod.Count, Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") },
+            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= startDate) },
+            ReturnRate = ordersPeriod.Count > 0 ? Math.Round((double)returnsCount / ordersPeriod.Count * 100, 1) : 0,
             ROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0,
             ProductHealth = new {
                 Healthy = products.Count(p => p.HealthStatus == "Healthy"),
@@ -625,7 +637,8 @@ public class DashboardController : ControllerBase
                 AvgROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0
             },
             RecentDecisions = decisions,
-            Alerts = GetAlerts(products, orders30d)
+            Alerts = GetAlerts(products, ordersPeriod),
+            SalesData = salesData
         });
     }
 

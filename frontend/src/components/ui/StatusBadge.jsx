@@ -1,10 +1,7 @@
 export function HealthBadge({ status }) {
-  const map = {
-    Healthy: 'badge-bloom', Warning: 'badge-ember',
-    Critical: 'badge-danger', Discontinued: 'badge-dim'
-  }
-  const dots = { Healthy: '🟢', Warning: '🟡', Critical: '🔴', Discontinued: '⚫' }
-  return <span className={map[status] || 'badge-dim'}>{dots[status]} {status}</span>
+  const dots = { Healthy: '🟢', Warning: '🟡', Critical: '🔴', Discontinued: '⚫', Inactive: '⚪' }
+  const map = { Healthy: 'badge-bloom', Warning: 'badge-ember', Critical: 'badge-danger', Discontinued: 'badge-dim', Inactive: 'badge-dim' }
+  return <span className={map[status] || 'badge-dim'}>{dots[status] || '⚪'} {status}</span>
 }
 
 export function OrderStatusBadge({ status }) {

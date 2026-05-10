@@ -8,7 +8,7 @@ export default function Orders() {
   const { isOnline } = useData()
   const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [selected, setSelected] = useState(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -146,8 +146,8 @@ export default function Orders() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Orders', value: orders.length, icon: ShoppingCart, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
-          { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-          { label: 'Avg Order Value', value: `$${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Total Revenue', value: `Rs ${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Avg Order Value', value: `Rs ${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
           { label: 'Pending', value: orders.filter(o => o.FulfillmentStatus === 'Pending').length, icon: CheckCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
@@ -212,7 +212,7 @@ export default function Orders() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="bg-abyss border-b border-border">
                 <th className="table-header text-left">Order</th>
                 <th className="table-header text-left">Customer</th>
                 <th className="table-header text-right">Amount</th>
@@ -262,7 +262,7 @@ export default function Orders() {
 
         {/* Order Detail / Action Panel */}
         {selected && (
-          <div className="border-t border-border/50 p-5" style={{ background: 'rgba(99,102,241,0.04)' }}>
+          <div className="border-t border-border/50 p-5 bg-neo/5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="section-title">Order Details — {selected.OrderNumber}</div>

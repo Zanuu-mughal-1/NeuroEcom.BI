@@ -5,6 +5,7 @@ import {
   Megaphone, Settings, Brain, ChevronRight, Zap, Activity,
   Moon, Sun, LogOut, Bell
 } from 'lucide-react'
+import NotificationPanel from '../ui/NotificationPanel'
 
 const navGroups = [
   {
@@ -37,13 +38,41 @@ const navGroups = [
   }
 ]
 
-export default function Sidebar({ toggleTheme, isDark }) {
+export default function Sidebar({ toggleTheme, isDark, onClose }) {
   const location = useLocation()
   const [showSettings, setShowSettings] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+
+  const sampleNotifications = [
+    {
+      type: 'info',
+      title: 'New Order Received',
+      message: 'Order #12345 from John Doe',
+      time: '2 minutes ago'
+    },
+    {
+      type: 'success',
+      title: 'Prediction Complete',
+      message: 'AI model has finished analyzing customer trends',
+      time: '15 minutes ago'
+    },
+    {
+      type: 'error',
+      title: 'Low Stock Alert',
+      message: 'Product SKU-789 is running low',
+      time: '1 hour ago'
+    },
+    {
+      type: 'info',
+      title: 'System Maintenance',
+      message: 'Database backup completed successfully',
+      time: '3 hours ago'
+    }
+  ]
 
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col h-screen overflow-y-auto bg-abyss border-r border-border relative z-50">
-      
+
       {/* Logo */}
       <div className="px-5 py-6 flex items-center gap-3">
         <div className="relative">
@@ -84,6 +113,9 @@ export default function Sidebar({ toggleTheme, isDark }) {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    onClick={() => {
+                      if (window.innerWidth < 1024) onClose()
+                    }}
                     className={`nav-item group ${isActive ? 'active' : ''}`}
                   >
                     <item.icon size={16} className={isActive ? 'text-neo' : 'text-text-dim group-hover:text-text-mid'} />
@@ -103,14 +135,17 @@ export default function Sidebar({ toggleTheme, isDark }) {
           <div className="p-2 border-b border-border mb-1">
             <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider opacity-70">Quick Settings</div>
           </div>
-          <button 
+          <button
             onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors"
           >
             {isDark ? <Sun size={14} className="text-ember" /> : <Moon size={14} className="text-neo" />}
             <span className="flex-1 text-left">{isDark ? 'Light' : 'Dark'} Mode</span>
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors relative"
+          >
             <Bell size={14} className="text-pulse" />
             <span className="flex-1 text-left">Notifications</span>
           </button>
@@ -121,9 +156,20 @@ export default function Sidebar({ toggleTheme, isDark }) {
         </div>
       )}
 
+      {/* Notification Panel for Settings */}
+      {showNotifications && (
+        <div className="absolute bottom-48 left-4 right-4 z-50">
+          <NotificationPanel
+            notifications={sampleNotifications}
+            onClose={() => setShowNotifications(false)}
+            position="sidebar"
+          />
+        </div>
+      )}
+
       {/* Bottom user panel */}
       <div className="p-3 border-t border-border">
-        <div 
+        <div
           onClick={() => setShowSettings(!showSettings)}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-void ${showSettings ? 'bg-void ring-1 ring-border' : ''}`}
         >
