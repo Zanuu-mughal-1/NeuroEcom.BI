@@ -12,11 +12,13 @@ import api from '../../utils/api'
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30D')
   const [refreshing, setRefreshing] = useState(false)
 
   const fetchDashboard = async (isRefresh = false) => {
     try {
+      setError(null)
       if (!isRefresh) setLoading(true)
       else setRefreshing(true)
 
@@ -25,6 +27,7 @@ export default function Dashboard() {
       setData(res.data)
     } catch (err) {
       console.error('Failed to fetch dashboard', err)
+      setError('Connection failed. Please ensure the backend and SQL Server are running.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -35,7 +38,19 @@ export default function Dashboard() {
     fetchDashboard()
   }, [timeRange])
 
-  if (loading || !data) return <div className="p-6 text-text-dim">Loading Neuro-Dashboard...</div>
+  if (loading) return <div className="p-6 text-text-dim animate-pulse">Loading Neuro-Dashboard...</div>
+  
+  if (error) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
+        <h3 className="font-bold mb-1">Database Connection Error</h3>
+        <p className="text-sm opacity-80">{error}</p>
+      </div>
+      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
+    </div>
+  )
+
+  if (!data) return null
 
   const healthData = [
     { name: 'Healthy', value: data.ProductHealth.Healthy },

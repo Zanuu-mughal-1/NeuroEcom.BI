@@ -16,9 +16,24 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    {
+        // Always allow localhost (any port, http/https) for local development,
+        // plus optional configured origins (set in appsettings under Cors:AllowedOrigins).
+        var configuredOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+                if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(uri.Host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)) return true;
+                return configuredOrigins.Any(o => string.Equals(o, origin, StringComparison.OrdinalIgnoreCase));
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 builder.Services.AddEndpointsApiExplorer();

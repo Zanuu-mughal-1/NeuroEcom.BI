@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
-import { mockOrders } from '../../utils/api'
+import { fetchOrders } from '../../utils/api'
 
 export default function Orders() {
-  const [orders] = useState(mockOrders)
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [selected, setSelected] = useState(null)
@@ -22,6 +24,17 @@ export default function Orders() {
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+    setLoading(true)
+    setLoadError('')
+    fetchOrders()
+      .then(data => { if (mounted) setOrders(Array.isArray(data) ? data : []) })
+      .catch(() => { if (mounted) setLoadError('Failed to load orders from backend') })
+      .finally(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
   }, [])
 
   const filtered = orders.filter(o =>
@@ -58,6 +71,19 @@ export default function Orders() {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+
+      {loading && (
+        <div className="card">
+          <div className="text-sm text-text-dim">Loading orders…</div>
+        </div>
+      )}
+
+      {!loading && loadError && (
+        <div className="card">
+          <div className="text-sm text-red-400">{loadError}</div>
+          <div className="text-xs text-text-dim mt-1">Make sure backend is running on port 5000 and the `/api` proxy is enabled.</div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

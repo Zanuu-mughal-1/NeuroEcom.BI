@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Truck, Package, MapPin, Clock, BarChart3, 
   ShieldAlert, TrendingUp, Search, Filter, 
@@ -10,11 +10,27 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, ScatterChart, Scatter, ZAxis, ComposedChart
 } from 'recharts';
-import { mockOrders, mockRules, generateSalesData } from '../../utils/api';
+import { mockRules, generateSalesData, fetchOrders } from '../../utils/api';
 
 const Logistics = () => {
   const [activeTab, setActiveTab] = useState('directory');
   const [selectedCarrier, setSelectedCarrier] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const data = await fetchOrders();
+        setOrders(data);
+      } catch (err) {
+        console.error('Logistics fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOrders();
+  }, []);
 
   const performanceData = generateSalesData(7).map((d, i) => ({
     name: d.date,
@@ -45,6 +61,8 @@ const Logistics = () => {
     { status: 'In Transit', time: 'Yesterday, 11:30 PM', location: 'Delhi Gateway', description: 'Departed for destination' },
     { status: 'Picked Up', time: 'May 08, 4:00 PM', location: 'Warehouse Alpha', description: 'Shipment picked up by BlueDart' },
   ];
+
+  if (loading) return <div className="p-8 text-text-dim animate-pulse">Loading Logistics Intelligence...</div>;
 
   return (
     <div className="p-8 space-y-8 animate-fade-in">
@@ -281,7 +299,7 @@ const Logistics = () => {
                   <span className="badge-neo">124 In Transit</span>
                 </div>
                 <div className="space-y-4">
-                  {mockOrders.filter(o => o.FulfillmentStatus === 'Shipped' || o.FulfillmentStatus === 'Delivered').slice(0, 3).map((order, i) => (
+                  {(orders.length > 0 ? orders : []).filter(o => o.FulfillmentStatus === 'Shipped' || o.FulfillmentStatus === 'Delivered').slice(0, 3).map((order, i) => (
                     <div key={order.Id} className="p-4 rounded-xl border border-border hover:border-neo/30 transition-colors bg-void/50">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">

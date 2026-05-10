@@ -1,6 +1,5 @@
 E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\appsettings.json
 E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\NeuroEcom.BI.staticwebassets.endpoints.json
-E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\NeuroEcom.BI.exe
 E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\NeuroEcom.BI.deps.json
 E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\NeuroEcom.BI.runtimeconfig.json
 E:\My 2nd Sem Project\NeuroEcom.BI\NeuroEcom.BI\backend\bin\Debug\net8.0\NeuroEcom.BI.dll

@@ -206,15 +206,114 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Order order)
+    public async Task<IActionResult> Create([FromBody] CreateOrderDto input)
     {
-        order.OrderNumber = $"ORD-{DateTime.UtcNow.Ticks.ToString()[^8..]}";
-        order.CreatedAt = DateTime.UtcNow;
-        order.UpdatedAt = DateTime.UtcNow;
+        // Resolve/create customer
+        int customerId = input.CustomerId ?? 0;
+        if (customerId <= 0)
+        {
+            if (input.Customer == null) return BadRequest(new { message = "CustomerId or Customer is required" });
+
+            var existing = await _db.Customers.FirstOrDefaultAsync(c => c.Email == input.Customer.Email);
+            if (existing == null)
+            {
+                var customer = new Customer
+                {
+                    FirstName = input.Customer.FirstName,
+                    LastName = input.Customer.LastName,
+                    Email = input.Customer.Email,
+                    Phone = input.Customer.Phone,
+                    City = input.Customer.City,
+                    Pincode = input.Customer.Pincode,
+                    ShippingAddress = input.Customer.ShippingAddress,
+                    BillingAddress = input.Customer.BillingAddress,
+                    JoinedDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.Customers.Add(customer);
+                await _db.SaveChangesAsync();
+                customerId = customer.Id;
+            }
+            else
+            {
+                customerId = existing.Id;
+            }
+        }
+
+        var order = new Order
+        {
+            CustomerId = customerId,
+            OrderNumber = "ORD-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+            OrderDate = DateTime.UtcNow,
+            TotalAmount = input.TotalAmount,
+            PaymentMethod = input.PaymentMethod,
+            PaymentStatus = input.PaymentStatus ?? "Paid",
+            FulfillmentStatus = "Pending",
+            ShippingAddress = input.ShippingAddress,
+            Notes = input.Notes,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            Items = input.Items.Select(i => new OrderItem
+            {
+                ProductId = i.ProductId,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.Quantity * i.UnitPrice
+            }).ToList()
+        };
+
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
+
+        // Timeline is optional; don't fail the order if the table isn't present yet.
+        try
+        {
+            _db.OrderTimelines.Add(new OrderTimeline
+            {
+                OrderId = order.Id,
+                Status = "Ordered",
+                Description = "Order placed via nanoo'selectric store"
+            });
+            await _db.SaveChangesAsync();
+        }
+        catch
+        {
+            // Intentionally ignore (e.g., missing OrderTimelines table in older DB schema).
+        }
+
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
     }
+}
+
+public class CreateOrderDto
+{
+    public int? CustomerId { get; set; }
+    public CreateCustomerDto? Customer { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? PaymentStatus { get; set; }
+    public string? ShippingAddress { get; set; }
+    public string? Notes { get; set; }
+    public List<CreateOrderItemDto> Items { get; set; } = [];
+}
+
+public class CreateCustomerDto
+{
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string? Phone { get; set; }
+    public string? City { get; set; }
+    public string? Pincode { get; set; }
+    public string? ShippingAddress { get; set; }
+    public string? BillingAddress { get; set; }
+}
+
+public class CreateOrderItemDto
+{
+    public int ProductId { get; set; }
+    public int Quantity { get; set; } = 1;
+    public decimal UnitPrice { get; set; }
 }
 
 public class OrderActionDto
