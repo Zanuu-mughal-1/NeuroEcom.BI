@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, RefreshCw, Trash2, Edit2 } from 'lucide-react'
+import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, RefreshCw, Trash2, Edit2, X } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 import ProductDetail from './ProductDetail'

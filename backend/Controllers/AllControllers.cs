@@ -241,10 +241,8 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto input)
     {
-<<<<<<< HEAD
 
-=======
->>>>>>> 70036ac8d576401796d671c571dd0c81953d09fc
+
         // Resolve/create customer
         int customerId = input.CustomerId ?? 0;
         if (customerId <= 0)
@@ -918,11 +916,6 @@ public class DashboardController : ControllerBase
         var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend ?? 0);
         var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue ?? 0);
 
-<<<<<<< HEAD
-        var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
-            var date = now.AddDays(-i).Date;
-            var dayOrders = ordersPeriod.Where(o => o.OrderDate?.Date == date).ToList();
-=======
         // If we want actual Returns per day, we can do one grouped query:
         var returnsGrouped = await _db.Returns
             .Where(r => r.RequestDate >= startDate)
@@ -934,7 +927,6 @@ public class DashboardController : ControllerBase
             var date = now.AddDays(-i).Date;
             var dayOrders = ordersPeriod.Where(o => o.OrderDate.HasValue && o.OrderDate.Value.Date == date).ToList();
             var dayReturns = returnsGrouped.FirstOrDefault(rg => rg.Date == date)?.Count ?? 0;
->>>>>>> 70036ac8d576401796d671c571dd0c81953d09fc
             return new {
                 Date = date.ToString("MMM d"),
                 Revenue = dayOrders.Sum(o => o.TotalAmount),
