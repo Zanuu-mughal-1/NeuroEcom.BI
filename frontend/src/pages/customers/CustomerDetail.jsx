@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowLeft, Flag, Gift, Mail, Phone, Lock, Unlock, Star, Users } from 'lucide-react'
 import { LoyaltyBadge, FlagBadge } from '../../components/ui/StatusBadge'
+import { customerApi } from '../../utils/api'
 
 export default function CustomerDetail({ customer, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
@@ -34,27 +35,40 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
   const nextTierSpend = localCustomer.LoyaltyTier === 'Bronze' ? 500 : localCustomer.LoyaltyTier === 'Silver' ? 2000 : localCustomer.LoyaltyTier === 'Gold' ? 5000 : null
   const tierProgress = nextTierSpend ? Math.min(100, (ltv / nextTierSpend) * 100) : 100
 
-  const handleConfirm = (actionId) => {
+  const handleConfirm = async (actionId) => {
     let updated = { ...localCustomer }
 
-    if (actionId === 'Block') {
-      updated.IsBlocked = true
-      alert(`${updated.FirstName} has been blocked.`)
-    } else if (actionId === 'Unblock') {
-      updated.IsBlocked = false
-      alert(`${updated.FirstName} has been unblocked.`)
-    } else if (actionId === 'Flag') {
-      updated.Flags = [{ FlagType: selectedFlag }]
-      alert(`${updated.FirstName} flagged as ${selectedFlag}.`)
-    } else if (actionId === 'GiveDiscount') {
-      alert(`Discount of ${discountValue} applied to ${updated.FirstName}. Reason: ${discountReason}`)
-    } else if (actionId === 'ChangeTier') {
-      updated.LoyaltyTier = selectedTier
-      alert(`${updated.FirstName} tier changed to ${selectedTier}.`)
-    } else if (actionId === 'LogCall') {
-      alert(`Call logged for ${updated.FirstName}: ${callNote}`)
-    } else if (actionId === 'SendEmail') {
-      alert(`Email sent to ${updated.Email}: ${emailMessage}`)
+    // Prepare API data
+    let actionData = { Action: actionId }
+    if (actionId === 'Block') actionData.Reason = 'Administrative block'
+    if (actionId === 'Flag') actionData.FlagType = selectedFlag
+    if (actionId === 'GiveDiscount') {
+      actionData.DiscountValue = parseFloat(discountValue)
+      actionData.DiscountType = 'Percentage'
+      actionData.Reason = discountReason
+    }
+    if (actionId === 'ChangeTier') actionData.Tier = selectedTier
+
+    try {
+      // 1. Try to update Database
+      await customerApi.takeAction(localCustomer.Id, actionData)
+
+      // 2. If success, refresh local state from DB (or just update locally)
+      if (actionId === 'Block') updated.IsBlocked = true
+      else if (actionId === 'Unblock') updated.IsBlocked = false
+      else if (actionId === 'Flag') updated.Flags = [{ FlagType: selectedFlag }]
+      else if (actionId === 'ChangeTier') updated.LoyaltyTier = selectedTier
+
+      alert(`${actionId} updated in Database successfully`)
+    } catch (err) {
+      // 3. Fallback: Update only local state if backend is down
+      if (actionId === 'Block') updated.IsBlocked = true
+      else if (actionId === 'Unblock') updated.IsBlocked = false
+      else if (actionId === 'Flag') updated.Flags = [{ FlagType: selectedFlag }]
+      else if (actionId === 'ChangeTier') updated.LoyaltyTier = selectedTier
+
+      console.warn('Backend not reachable, updated locally only.')
+      alert(`${actionId} updated locally (Backend Offline)`)
     }
 
     setlocalCustomer(updated)
@@ -212,3 +226,4 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
     </div>
   )
 }
+

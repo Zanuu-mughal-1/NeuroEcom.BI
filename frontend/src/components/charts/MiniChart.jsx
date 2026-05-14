@@ -34,28 +34,28 @@ export function SalesAreaChart({ data, color = '#6366f1', dataKey = 'Revenue', p
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-          <XAxis 
-            dataKey="Date" 
-            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} 
-            axisLine={false} 
+          <XAxis
+            dataKey="Date"
+            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+            axisLine={false}
             tickLine={false}
             minTickGap={30}
           />
-          <YAxis 
-            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} 
-            axisLine={false} 
+          <YAxis
+            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+            axisLine={false}
             tickLine={false}
             width={40}
           />
           <Tooltip content={<CustomTooltip prefix={prefix} />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
-          <Area 
-            type="monotone" 
-            dataKey="Value" 
-            stroke={color} 
+          <Area
+            type="monotone"
+            dataKey="Value"
+            stroke={color}
             strokeWidth={3}
-            fill={`url(#grad-${color.replace('#', '')})`} 
-            dot={false} 
-            activeDot={{ r: 6, fill: color, stroke: '#0f0f1a', strokeWidth: 3 }} 
+            fill={`url(#grad-${color.replace('#', '')})`}
+            dot={false}
+            activeDot={{ r: 6, fill: color, stroke: '#0f0f1a', strokeWidth: 3 }}
             animationDuration={1500}
           />
         </AreaChart>
@@ -104,13 +104,13 @@ export function DonutChart({ data, colors }) {
     <div style={{ width: '100%', height: '100%', minHeight: '180px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie 
-            data={data} 
-            cx="50%" 
-            cy="50%" 
-            innerRadius="60%" 
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius="60%"
             outerRadius="85%"
-            dataKey="value" 
+            dataKey="value"
             paddingAngle={5}
             animationBegin={0}
             animationDuration={1500}
