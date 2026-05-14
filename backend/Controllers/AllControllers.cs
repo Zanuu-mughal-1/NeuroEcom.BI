@@ -51,7 +51,7 @@ public class CustomersController : ControllerBase
             Flags = customer.Flags.Where(f => f.IsActive),
             RecentOrders = customer.Orders.OrderByDescending(o => o.OrderDate).Take(10),
             TotalReturns = returns.Count,
-            ReturnRate = (customer.TotalOrders ?? 0) > 0 ? Math.Round((double)returns.Count / (double)customer.TotalOrders.Value * 100, 1) : 0
+            ReturnRate = (customer.TotalOrders ?? 0) > 0 ? Math.Round((double)returns.Count / (double)(customer.TotalOrders ?? 1) * 100, 1) : 0
         });
     }
 
@@ -103,11 +103,11 @@ public class CustomersController : ControllerBase
             .Select(g => new { Tier = g.Key, Count = g.Count() }).ToList();
         return Ok(new {
             Total = customers.Count,
-            Active30d = customers.Count(c => c.LastOrderDate >= now.AddDays(-30)),
-            New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)),
-            Churned = customers.Count(c => c.LastOrderDate < now.AddDays(-90)),
-            TotalLTV = customers.Sum(c => c.TotalSpent),
-            AvgLTV = customers.Count > 0 ? Math.Round(customers.Average(c => (double)c.TotalSpent), 2) : 0,
+            Active30d = customers.Count(c => c.LastOrderDate.HasValue && c.LastOrderDate >= now.AddDays(-30)),
+            New30d = customers.Count(c => c.JoinedDate.HasValue && c.JoinedDate >= now.AddDays(-30)),
+            Churned = customers.Count(c => c.LastOrderDate.HasValue && c.LastOrderDate < now.AddDays(-90)),
+            TotalLTV = customers.Sum(c => c.TotalSpent ?? 0),
+            AvgLTV = customers.Count > 0 ? Math.Round(customers.Average(c => (double)(c.TotalSpent ?? 0)), 2) : 0,
             TierDistribution = tierDist
         });
     }
@@ -133,13 +133,11 @@ public class CustomersController : ControllerBase
         customer.Phone        = updated.Phone     ?? customer.Phone;
         customer.City         = updated.City      ?? customer.City;
         customer.LoyaltyTier  = updated.LoyaltyTier ?? customer.LoyaltyTier;
-        customer.IsBlocked    = updated.IsBlocked;
+        customer.IsBlocked    = updated.IsBlocked ?? customer.IsBlocked;
         customer.BlockReason  = updated.BlockReason ?? customer.BlockReason;
         await _db.SaveChangesAsync();
         return Ok(new { message = "Customer updated", customer });
     }
-    }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -243,10 +241,7 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto input)
     {
-        order.OrderNumber = $"ORD-{DateTime.UtcNow.Ticks.ToString()[^8..]}";
-        order.OrderDate = DateTime.UtcNow;
-        order.CreatedAt = DateTime.UtcNow;
-        order.UpdatedAt = DateTime.UtcNow;
+
         // Resolve/create customer
         int customerId = input.CustomerId ?? 0;
         if (customerId <= 0)
@@ -304,7 +299,35 @@ public class OrdersController : ControllerBase
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
-        // Timeline is optional; don't fail the order if the table isn't present yet.
+        // Update Customer Stats
+        var existingCustomer = await _db.Customers.FindAsync(customerId);
+        if (existingCustomer != null)
+        {
+            existingCustomer.TotalOrders = (existingCustomer.TotalOrders ?? 0) + 1;
+            existingCustomer.TotalSpent = (existingCustomer.TotalSpent ?? 0) + input.TotalAmount;
+            existingCustomer.LastOrderDate = DateTime.UtcNow;
+        }
+
+        // Add ProductSalesHistory
+        foreach (var item in order.Items)
+        {
+            _db.ProductSalesHistory.Add(new ProductSalesHistory
+            {
+                ProductId = item.ProductId,
+                SaleDate = DateTime.UtcNow,
+                UnitsSold = item.Quantity,
+                Revenue = item.TotalPrice
+            });
+            
+            // Deduct stock
+            var product = await _db.Products.FindAsync(item.ProductId);
+            if (product != null)
+            {
+                product.Stock = Math.Max(0, (product.Stock ?? 0) - item.Quantity);
+            }
+        }
+
+        // Add Timeline
         try
         {
             _db.OrderTimelines.Add(new OrderTimeline
@@ -313,12 +336,10 @@ public class OrdersController : ControllerBase
                 Status = "Ordered",
                 Description = "Order placed via nanoo'selectric store"
             });
-            await _db.SaveChangesAsync();
         }
-        catch
-        {
-            // Intentionally ignore (e.g., missing OrderTimelines table in older DB schema).
-        }
+        catch { }
+
+        await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
     }
@@ -891,29 +912,12 @@ public class DashboardController : ControllerBase
         var decisions = await _db.Decisions.OrderByDescending(d => d.CreatedAt).Take(5).ToListAsync();
         var rtoToday = await _db.RTOAssessments.Where(r => r.AssessedAt >= now.Date).ToListAsync();
 
-        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
-        var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
+        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend ?? 0);
+        var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue ?? 0);
 
-        var revenueTrend = orders30d
-            .Where(o => o.OrderDate.HasValue)
-            .GroupBy(o => o.OrderDate.Value.Date)
-            .OrderBy(g => g.Key)
-            .Select(g => new {
-                date = g.Key.ToString("MMM dd"),
-                revenue = g.Sum(o => o.TotalAmount)
-            })
-            .ToList();
-
-        return Ok(new {
-            Revenue = new { Today = orders30d.Where(o => o.OrderDate.HasValue && o.OrderDate.Value.Date >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = orders30d.Sum(o => o.TotalAmount),
-                            Trend = revenueTrend },
-            Orders = new { Total = orders30d.Count, Pending = orders30d.Count(o => o.FulfillmentStatus == "Pending") },
-            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)) },
-            ReturnRate = orders30d.Count > 0 ? Math.Round((double)returns30d / orders30d.Count * 100, 1) : 0,
         var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
             var date = now.AddDays(-i).Date;
-            var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
+            var dayOrders = ordersPeriod.Where(o => o.OrderDate?.Date == date).ToList();
             return new {
                 Date = date.ToString("MMM d"),
                 Revenue = dayOrders.Sum(o => o.TotalAmount),
