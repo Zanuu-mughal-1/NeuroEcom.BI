@@ -7,19 +7,10 @@ import CampaignModal from '../../components/modals/CampaignModal'
 
 export default function Ads() {
   const [campaigns, setCampaigns] = useState([])
-import { useState, useEffect } from 'react'
-import { Megaphone, TrendingUp, DollarSign, Target, Play, Pause, Search } from 'lucide-react'
-import { CampaignStatusBadge } from '../../components/ui/StatusBadge'
-import { SalesAreaChart, SimpleBarChart } from '../../components/charts/MiniChart'
-import api from '../../utils/api'
-
-export default function Ads() {
-  const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [selected, setSelected] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [toast, setToast] = useState(null) // { type: 'success'|'error', message: string }
   const [actionLoading, setActionLoading] = useState(null) // campaignId being acted on
@@ -99,8 +90,6 @@ export default function Ads() {
   const overallROI = totalSpend > 0 ? (((totalRevenue - totalSpend) / totalSpend) * 100).toFixed(1) : 0
   const overallROAS = totalSpend > 0 ? (totalRevenue / totalSpend).toFixed(2) : 0
 
-  // Remove mock chartData generation
-
   // Dynamic platform data from campaigns
   const platformData = campaigns.reduce((acc, c) => {
     const existing = acc.find(p => p.name === c.Platform)
@@ -108,40 +97,6 @@ export default function Ads() {
     else acc.push({ name: c.Platform, value: (c.TotalRevenue || 0) })
     return acc
   }, []).filter(p => p.value > 0)
-  const fetchCampaigns = async () => {
-    try {
-      setLoading(true)
-      const res = await api.get('/ads')
-      setCampaigns(res.data)
-    } catch (err) {
-      console.error('Failed to fetch campaigns', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAction = async (id, action, budget = null) => {
-    try {
-      await api.post(`/ads/${id}/action`, { Action: action, Budget: budget })
-      fetchCampaigns()
-    } catch (err) {
-      console.error('Action failed', err)
-    }
-  }
-
-  const filtered = campaigns.filter(c => !statusFilter || c.Status === statusFilter)
-  const totalSpend = campaigns.reduce((s, c) => s + c.TotalSpend, 0)
-  const totalRevenue = campaigns.reduce((s, c) => s + c.TotalRevenue, 0)
-  const overallROI = totalSpend > 0 ? ((totalRevenue - totalSpend) / totalSpend * 100).toFixed(1) : 0
-  const overallROAS = totalSpend > 0 ? (totalRevenue / totalSpend).toFixed(2) : 0
-
-  // Build platform breakdown from live campaign data
-  const platformMap = {}
-  campaigns.forEach(c => {
-    if (!platformMap[c.Platform]) platformMap[c.Platform] = 0
-    platformMap[c.Platform] += c.TotalRevenue
-  })
-  const platformData = Object.entries(platformMap).map(([name, value]) => ({ name, value }))
 
   // Build 30-day spend/revenue trend from campaigns (approximated daily)
   const trendData = Array.from({ length: 30 }, (_, i) => {
@@ -153,7 +108,7 @@ export default function Ads() {
     }
   })
 
-  if (loading) return <div className="p-6 text-text-dim">Loading Campaigns...</div>
+  if (loading && campaigns.length === 0) return <div className="p-6 text-text-dim">Loading Campaigns...</div>
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
@@ -192,7 +147,7 @@ export default function Ads() {
             <div>
               <div className="stat-label">{s.label}</div>
               <div className="text-lg font-bold text-text-white mt-0.5">
-                {loading ? <span className="text-sm text-text-dim">...</span> : s.value}
+                {s.value}
               </div>
             </div>
           </div>
@@ -217,9 +172,6 @@ export default function Ads() {
             ) : (
               <div className="h-full flex items-center justify-center text-text-dim">No data available</div>
             )}
-          <div className="section-subtitle mb-4">Live campaign performance</div>
-          <div className="h-48">
-            <SimpleBarChart data={platformData.length ? platformData : [{ name: 'No data', value: 0 }]} dataKey="value" color="#6366f1" />
           </div>
         </div>
       </div>
@@ -265,11 +217,7 @@ export default function Ads() {
               </tr>
             </thead>
             <tbody>
-              {loading && campaigns.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="text-center py-8 text-text-dim">Loading campaigns...</td>
-                </tr>
-              ) : filtered.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center py-8 text-text-dim">No campaigns found.</td>
                 </tr>
@@ -321,42 +269,6 @@ export default function Ads() {
                   )
                 })
               )}
-              {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="table-cell text-center text-text-dim py-8">No campaigns found.</td></tr>
-              ) : filtered.map(c => {
-                const roi = c.TotalSpend > 0 ? ((c.TotalRevenue - c.TotalSpend) / c.TotalSpend * 100).toFixed(1) : 0
-                return (
-                  <tr key={c.Id} className="table-row cursor-pointer" onClick={() => setSelected(c === selected ? null : c)}>
-                    <td className="table-cell">
-                      <div className="font-semibold text-text-bright text-sm">{c.Name}</div>
-                      <div className="text-xs text-text-dim">{c.Product?.Name}</div>
-                    </td>
-                    <td className="table-cell">
-                      <span className={`badge ${c.Platform === 'Facebook' ? 'badge-neo' : c.Platform === 'Google' ? 'badge-danger' : 'badge-royal'}`}>
-                        {c.Platform}
-                      </span>
-                    </td>
-                    <td className="table-cell text-right text-text-mid">${c.Budget.toLocaleString()}</td>
-                    <td className="table-cell text-right text-danger font-medium">${c.TotalSpend.toLocaleString()}</td>
-                    <td className="table-cell text-right text-bloom font-medium">${c.TotalRevenue.toLocaleString()}</td>
-                    <td className="table-cell text-right">
-                      <span className={`font-bold ${+roi > 100 ? 'text-bloom' : +roi > 0 ? 'text-ember' : 'text-danger'}`}>
-                        {roi}%
-                      </span>
-                    </td>
-                    <td className="table-cell text-right text-text-mid font-mono">{c.Clicks.toLocaleString()}</td>
-                    <td className="table-cell text-center"><CampaignStatusBadge status={c.Status} /></td>
-                    <td className="table-cell text-center">
-                      <div className="flex gap-1 justify-center" onClick={e => e.stopPropagation()}>
-                        {c.Status === 'Active'
-                          ? <button onClick={() => handleAction(c.Id, 'Pause')} className="btn-ghost text-xs !py-1 !px-2 flex items-center gap-1"><Pause size={11} /> Pause</button>
-                          : <button onClick={() => handleAction(c.Id, 'Start')} className="btn-success text-xs !py-1 !px-2 flex items-center gap-1"><Play size={11} /> Start</button>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
             </tbody>
           </table>
         </div>

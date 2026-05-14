@@ -117,22 +117,6 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-dim);
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--scroll-track);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
     background: var(--border-bright);
   }
 }
@@ -490,16 +474,6 @@
   }
 
   .metric-up {
-    color: var(--color-bloom);
-  }
-
-  .metric-down {
-    color: var(--color-danger);
-  }
-
-  .metric-neutral {
-    color: var(--text-dim);
-  }
     @apply text-bloom font-bold;
   }
 
@@ -544,39 +518,6 @@
   }
 }
 
-  .health-healthy {
-    color: var(--color-bloom);
-  }
-
-  .health-warning {
-    color: var(--color-ember);
-  }
-
-  .health-critical {
-    color: var(--color-danger);
-  }
-
-  .health-discontinued {
-    color: var(--text-dim);
-  }
-
-  .risk-low {
-    color: var(--color-bloom);
-  }
-
-  .risk-medium {
-    color: var(--color-ember);
-  }
-
-  .risk-high {
-    color: #f97316;
-  }
-
-  .risk-critical {
-    color: var(--color-danger);
-  }
-}
-
 /* Noise texture overlay */
 .noise-overlay::after {
   content: '';
@@ -610,6 +551,4 @@
   100% {
     background-position: 200% 0;
   }
-}
-  opacity: 0.1;
 }

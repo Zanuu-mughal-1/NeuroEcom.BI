@@ -1,49 +1,16 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Package, StopCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Tag, Bell, Star, Copy, Trash2, DollarSign } from 'lucide-react'
 import { ArrowLeft, Package, StopCircle, PlayCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Trash2, DollarSign } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
 import api from '../../utils/api'
 
-export default function ProductDetail({ product, onBack, onRefresh }) {
 export default function ProductDetail({ product, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
   const [qty, setQty] = useState(0)
   const [newPrice, setNewPrice] = useState(product.Price)
   const [salesData, setSalesData] = useState([])
-  const [loading, setLoading] = useState(false)
-
-  const fetchHistory = async () => {
-    try {
-      const { data } = await api.get(`/products/${product.Id}/history`)
-      setSalesData(data)
-    } catch (err) {
-      console.error('Failed to fetch product history', err)
-    }
-  }
-
-  useEffect(() => {
-    fetchHistory()
-  }, [product.Id])
-
-  const handleAction = async (actionId) => {
-    setLoading(true)
-    try {
-      const payload = {
-        Action: actionId,
-        Quantity: parseInt(qty),
-        NewPrice: parseFloat(newPrice)
-      }
-      await api.post(`/products/${product.Id}/action`, payload)
-      setActiveAction(null)
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Action failed', err)
-      alert('Failed to perform action: ' + (err.response?.data?.message || err.message))
-    } finally {
-      setLoading(false)
   const [loading, setLoading] = useState(true)
-  const [isActive, setIsActive] = useState(product.IsActive) // local state so button switches instantly
+  const [isActive, setIsActive] = useState(product.IsActive)
 
   useEffect(() => {
     api.get(`/products/${product.Id}/history?days=30`)
@@ -71,15 +38,13 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
     try {
       if (actionId === 'Delete') {
         const res = await api.delete(`/products/${product.Id}`)
-        // We show the message from backend (it tells if it was deleted or archived)
         alert(res.data.message || 'Product removed')
         if (onUpdate) onUpdate()
         onBack()
         return
       }
 
-      const res = await api.post(`/products/${product.Id}/action`, payload)
-      // Update local active state so button switches immediately
+      await api.post(`/products/${product.Id}/action`, payload)
       if (actionId === 'StopSelling') setIsActive(false)
       if (actionId === 'ResumeSelling') setIsActive(true)
       setActiveAction(null)
@@ -91,7 +56,6 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
   }
 
   const actions = [
-    // Dynamically switch between Stop and Resume based on local isActive state
     isActive
       ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
       : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
@@ -276,11 +240,8 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                       )}
                       <button 
                         onClick={() => handleAction(action.id)}
-                        disabled={loading}
                         className="btn-primary w-full text-xs" 
                         style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
-                        {loading ? 'Processing...' : `Confirm ${action.label}`}
-                      <button onClick={() => handleAction(action.id)} className="btn-primary w-full text-xs" style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
                         Confirm {action.label}
                       </button>
                     </div>
