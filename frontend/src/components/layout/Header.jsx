@@ -18,15 +18,6 @@ const pageTitles = {
 
 export default function Header({ toggleSidebar }) {
   const location = useLocation()
-<<<<<<< HEAD
-  const [hasAlerts] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    // Simulate a brief reboot delay before reloading the entire page
-=======
   const [notifications, setNotifications] = useState([])
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showHeaderNotifications, setShowHeaderNotifications] = useState(false)
@@ -69,27 +60,10 @@ export default function Header({ toggleSidebar }) {
 
   const handleRefresh = () => {
     setIsRefreshing(true)
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
     setTimeout(() => {
       window.location.reload()
     }, 800)
   }
-<<<<<<< HEAD
-  const title = pageTitles[location.pathname] || pageTitles[Object.keys(pageTitles).find(k => location.pathname.startsWith(k) && k !== '/') || '/']
-
-  return (
-<<<<<<< HEAD
-    <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b"
-      style={{ background: 'rgba(10,10,18,0.8)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.05)' }}>
-
-=======
-    <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b border-border bg-abyss/80 backdrop-blur-xl sticky top-0 z-40">
-      
->>>>>>> 4e7156b846ee8aa516e2c2f21167b48ddaf29bdd
-      <div className="flex items-center gap-4">
-        <h1 className="page-title text-2xl">{title}</h1>
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-text-dim bg-surface border border-border">
-=======
 
   const title = pageTitles[location.pathname] || pageTitles[Object.keys(pageTitles).find(k => location.pathname.startsWith(k) && k !== '/') || '/']
 
@@ -108,27 +82,12 @@ export default function Header({ toggleSidebar }) {
         </button>
         <h1 className="page-title text-xl md:text-2xl truncate max-w-[150px] md:max-w-none">{title}</h1>
         <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-text-dim bg-surface border border-border">
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
           <Calendar size={11} />
           <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-<<<<<<< HEAD
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-text-dim transition-all focus-within:border-neo/50 focus-within:bg-surface border border-border bg-void min-w-[240px]">
-          <Search size={14} className={searchQuery ? 'text-neo-bright' : ''} />
-          <input 
-            type="text"
-            placeholder="Quick search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-text-bright w-full placeholder:text-text-dim/50"
-          />
-          {!searchQuery && (
-            <kbd className="ml-auto px-1.5 py-0.5 rounded text-[10px] bg-abyss border border-border">Ctrl+K</kbd>
-          )}
-=======
         <div 
           onClick={() => setIsSearchOpen(true)}
           className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
@@ -137,22 +96,10 @@ export default function Header({ toggleSidebar }) {
           <span className="text-xs">Quick search...</span>
           <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
         </div>
         <button 
           onClick={handleRefresh}
           className={`btn-ghost p-2 !px-2 transition-all ${isRefreshing ? 'text-neo-bright' : ''}`}
-<<<<<<< HEAD
-        >
-          <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
-        </button>
-        <button className="relative btn-ghost p-2 !px-2">
-          <Bell size={15} />
-          {hasAlerts && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
-          )}
-        </button>
-=======
           title="Refresh Page"
         >
           <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
@@ -175,7 +122,6 @@ export default function Header({ toggleSidebar }) {
             />
           )}
         </div>
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-bloom bg-bloom/10 border border-bloom/20">
           <span className="w-1.5 h-1.5 rounded-full bg-bloom animate-pulse" />
           LIVE

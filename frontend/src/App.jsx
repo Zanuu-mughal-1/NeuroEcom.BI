@@ -17,11 +17,8 @@ export default function App() {
     return saved ? saved === 'dark' : true
   })
 
-<<<<<<< HEAD
-=======
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
   useEffect(() => {
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
     if (isDark) {
@@ -32,10 +29,7 @@ export default function App() {
   }, [isDark])
 
   const toggleTheme = () => setIsDark(!isDark)
-<<<<<<< HEAD
-=======
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-500 ${isDark ? 'dark' : ''}`} 
@@ -61,13 +55,8 @@ export default function App() {
       )}
 
       {/* Sidebar */}
-<<<<<<< HEAD
-      <div className="relative z-10">
-        <Sidebar toggleTheme={toggleTheme} isDark={isDark} />
-=======
       <div className={`fixed inset-y-0 left-0 z-50 transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar toggleTheme={toggleTheme} isDark={isDark} onClose={() => setIsSidebarOpen(false)} />
->>>>>>> 4ee8a37a83c990de50c09de49be6cd677a3e723f
       </div>
 
       {/* Main Content */}

@@ -194,7 +194,6 @@ export default function Customers() {
             {tierDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}>
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}
                 {tierOptions.map(opt => (
                   <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
                     style={{ color: tierFilter === opt && opt !== '' ? '#06b6d4' : '#e2e8f0', background: tierFilter === opt && opt !== '' ? 'rgba(6,182,212,0.1)' : 'transparent' }}
@@ -221,16 +220,14 @@ export default function Customers() {
           <table className="w-full">
             <thead>
               <tr className="bg-abyss border-b border-border">
-                <tr className="bg-abyss border-b border-border">
-                  <th className="table-header text-left">Customer</th>
-                  <th className="table-header text-left">City</th>
-                  <th className="table-header text-center">Tier</th>
-                  <th className="table-header text-right">Total Spent</th>
-                  <th className="table-header text-right">Orders</th>
-                  <th className="table-header text-right">Points</th>
-                  <th className="table-header text-center">Flags</th>
-                  <th className="table-header text-center">Status</th>
-                </tr>
+                <th className="table-header text-left">Customer</th>
+                <th className="table-header text-left">City</th>
+                <th className="table-header text-center">Tier</th>
+                <th className="table-header text-right">Total Spent</th>
+                <th className="table-header text-right">Orders</th>
+                <th className="table-header text-right">Points</th>
+                <th className="table-header text-center">Flags</th>
+                <th className="table-header text-center">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -332,4 +329,3 @@ export default function Customers() {
     </div>
   )
 }
-

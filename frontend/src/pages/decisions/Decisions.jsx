@@ -1,28 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Activity, Settings, BarChart2, Package, Users, ShoppingCart, Megaphone, RotateCcw, Edit3, Save, X, RefreshCw } from 'lucide-react'
-import { mockDashboard, mockRules } from '../../utils/api'
-
-const allRules = [
-  { Id: 1, Category: 'Product', RuleName: 'Low Stock Trigger', Condition: 'Inventory < {v} units', Action: 'Alert Reorder', CurrentValue: '15', DefaultValue: '15' },
-  { Id: 2, Category: 'Product', RuleName: 'Price Elasticity', Condition: 'Sales Drop > {v}%', Action: 'Suggest Price Cut', CurrentValue: '20', DefaultValue: '20' },
-  { Id: 9, Category: 'Product', RuleName: 'Dynamic Pricing', Condition: 'Profit Margin > {v}%', Action: 'Enable Aggressive Sale', CurrentValue: '45', DefaultValue: '40' },
-  { Id: 10, Category: 'Product', RuleName: 'Overstock Alert', Condition: 'Stock > {v} units', Action: 'Bundle with Bestseller', CurrentValue: '300', DefaultValue: '500' },
-
-  { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > Rs {v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
-  { Id: 4, Category: 'Customer', RuleName: 'Churn Prevention', Condition: 'Inactive > {v} days', Action: 'Send "Miss You" Email', CurrentValue: '60', DefaultValue: '90' },
-  { Id: 11, Category: 'Customer', RuleName: 'Loyalty Referral', Condition: 'Total Orders > {v}', Action: 'Invite to Affiliate', CurrentValue: '25', DefaultValue: '20' },
-  { Id: 12, Category: 'Customer', RuleName: 'High-Return Risk', Condition: 'Return Rate > {v}%', Action: 'Audit Purchases', CurrentValue: '20', DefaultValue: '25' },
-
-  { Id: 5, Category: 'Ads', RuleName: 'Budget Kill-Switch', Condition: 'ROI < {v}%', Action: 'Pause Campaign', CurrentValue: '5', DefaultValue: '10' },
-  { Id: 6, Category: 'Ads', RuleName: 'High Performance', Condition: 'ROAS > {v}x', Action: 'Boost Budget 20%', CurrentValue: '4.5', DefaultValue: '3.0' },
-  { Id: 13, Category: 'Ads', RuleName: 'CPC Efficiency', Condition: 'CPC < Rs {v}', Action: 'Scale Daily Spend', CurrentValue: '15', DefaultValue: '20' },
-  { Id: 14, Category: 'Ads', RuleName: 'Creative Fatigue', Condition: 'CTR Drop > {v}%', Action: 'Rotate Creatives', CurrentValue: '35', DefaultValue: '30' },
-
-  { Id: 7, Category: 'RTO', RuleName: 'Fraud Shield', Condition: 'RTO Score > {v}', Action: 'Force Prepaid Only', CurrentValue: '75', DefaultValue: '80' },
-  { Id: 8, Category: 'RTO', RuleName: 'Address Risk', Condition: 'Incomplete Match', Action: 'Flag for Call', CurrentValue: 'Yes', DefaultValue: 'Yes' },
-  { Id: 15, Category: 'RTO', RuleName: 'High Value Check', Condition: 'Order Value > Rs {v}', Action: 'Admin Review Required', CurrentValue: '1500', DefaultValue: '2000' },
-  { Id: 16, Category: 'RTO', RuleName: 'Shipment Delay', Condition: 'Unshipped > {v} hrs', Action: 'Notify Customer', CurrentValue: '48', DefaultValue: '48' },
-]
+import { decisionsApi, mockRules } from '../../utils/api'
+import { useData } from '../../context/DataContext'
+import { toast } from 'react-hot-toast'
 
 export default function Decisions() {
   const { isOnline, dbStatus } = useData()
@@ -35,7 +15,6 @@ export default function Decisions() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [decisions, setDecisions] = useState([])
-  const [actionMsg, setActionMsg] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -57,28 +36,28 @@ export default function Decisions() {
       }
     } catch (err) {
       console.error('Failed to fetch decision data:', err)
-      toast.error('Data synchronization failed.')
     } finally {
       setLoading(false)
     }
   }
 
-  const startEdit = (rule) => { setEditingId(rule.Id); setEditValue(rule.CurrentValue) }
+  const startEdit = (rule) => { 
+    setEditingId(rule.Id)
+    setEditValue(rule.CurrentValue) 
+  }
 
   const saveEdit = async (id) => {
     if (!isOnline) {
-      toast.error('Cannot update rules in simulation mode.')
       return
     }
 
     setActionLoading(true)
     try {
       await decisionsApi.updateRule(id, { newValue: editValue })
-      toast.success('Core system rule updated!')
       fetchData()
       setEditingId(null)
     } catch (err) {
-      toast.error('Sync failed.')
+      console.error('Sync failed:', err)
     } finally {
       setActionLoading(false)
     }
@@ -86,17 +65,15 @@ export default function Decisions() {
 
   const resetRule = async (id) => {
     if (!isOnline) {
-      toast.error('Action restricted to live mode.')
       return
     }
 
     setActionLoading(true)
     try {
       await decisionsApi.resetRule(id)
-      toast.success('Rule restored to factory defaults.')
       fetchData()
     } catch (err) {
-      toast.error('Reset protocol failed.')
+      console.error('Reset protocol failed:', err)
     } finally {
       setActionLoading(false)
     }

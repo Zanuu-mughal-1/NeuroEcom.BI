@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, XCircle, Truck, Package, FileText, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
 import { orderApi, mockOrders } from '../../utils/api'
@@ -6,6 +7,7 @@ import { useData } from '../../context/DataContext'
 
 export default function Orders() {
   const { isOnline } = useData()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
@@ -20,6 +22,25 @@ export default function Orders() {
 
   const statusOptions = ['', 'Pending', 'Shipped', 'Delivered', 'Cancelled']
   const statusLabels = { '': 'All Status', Pending: 'Pending', Shipped: 'Shipped', Delivered: 'Delivered', Cancelled: 'Cancelled' }
+
+  // Sync statusFilter when URL searchParams change
+  useEffect(() => {
+    const status = searchParams.get('status') || ''
+    if (status !== statusFilter) {
+      setStatusFilter(status)
+    }
+  }, [searchParams])
+
+  // Update URL when statusFilter changes
+  const handleStatusChange = (newStatus) => {
+    setStatusFilter(newStatus)
+    if (newStatus) {
+      setSearchParams({ status: newStatus })
+    } else {
+      setSearchParams({})
+    }
+    setDropdownOpen(false)
+  }
 
   // ── Fetch orders from backend on mount and on filter/connection change ──
   useEffect(() => { fetchOrders() }, [statusFilter, isOnline])
@@ -195,7 +216,7 @@ export default function Orders() {
                     style={{ color: statusFilter === opt ? '#06b6d4' : '#e2e8f0', background: statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                     onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { setStatusFilter(opt); setDropdownOpen(false) }}>
+                    onClick={() => handleStatusChange(opt)}>
                     {statusLabels[opt]}
                   </div>
                 ))}
@@ -359,4 +380,3 @@ export default function Orders() {
     </div>
   )
 }
-
