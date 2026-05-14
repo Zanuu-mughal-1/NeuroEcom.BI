@@ -1,48 +1,25 @@
 import { useState, useEffect, useCallback } from 'react'
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   DollarSign, ShoppingCart, Users, RotateCcw, TrendingUp,
   AlertTriangle, CheckCircle, Clock, XCircle, Package,
-  Plus, FlaskConical, Megaphone, Upload, Activity, Zap, RefreshCw
   Plus, FlaskConical, Megaphone, Activity, Zap, Download,
-  ChevronRight, ArrowUpRight, ArrowDownRight, Target
+  ChevronRight, ArrowUpRight, ArrowDownRight, Target, RefreshCw
 } from 'lucide-react'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
-import api, { generateSalesData } from '../../utils/api'
 import api from '../../utils/api'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await api.get('/dashboard')
-      setData(res.data)
-    } catch (err) {
-      console.error('Failed to fetch dashboard data', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  if (!data) return (
-    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
-      <RefreshCw className="animate-spin text-neo" size={40} />
-      <div className="text-text-dim animate-pulse">Loading NeuroEcom Intelligence...</div>
   const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30D')
   const [refreshing, setRefreshing] = useState(false)
   const [revenueGoal, setRevenueGoal] = useState(1000000)
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
 
-  const fetchDashboard = async (isRefresh = false) => {
+  const fetchDashboard = useCallback(async (isRefresh = false) => {
     try {
       setError(null)
       if (!isRefresh) setLoading(true)
@@ -51,11 +28,11 @@ export default function Dashboard() {
       const days = timeRange === '7D' ? 7 : timeRange === '90D' ? 90 : 30
       const [dashRes, rulesRes] = await Promise.all([
         api.get(`/dashboard?days=${days}`),
-        api.get('/decisions/rules?category=Dashboard')
+        api.get('/decisions/rules?category=Dashboard').catch(() => ({ data: [] }))
       ])
 
       setData(dashRes.data)
-      const goalRule = rulesRes.data.find(r => r.RuleName === 'Monthly Revenue Goal')
+      const goalRule = rulesRes.data?.find(r => r.RuleName === 'Monthly Revenue Goal')
       if (goalRule) setRevenueGoal(parseFloat(goalRule.CurrentValue))
     } catch (err) {
       console.error('Failed to fetch dashboard', err)
@@ -64,39 +41,11 @@ export default function Dashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [timeRange])
 
   useEffect(() => {
     fetchDashboard()
-  }, [timeRange])
-
-  if (loading || !data) return (
-    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
-      <div className="w-12 h-12 border-4 border-neo/20 border-t-neo rounded-full animate-spin" />
-      <div className="text-sm font-medium text-text-dim animate-pulse">Initializing Neural Intelligence...</div>
-    </div>
-  )
-  if (loading) return <div className="p-6 text-text-dim animate-pulse">Loading Neuro-Dashboard...</div>
-  
-  if (error) return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
-      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
-        <h3 className="font-bold mb-1">Database Connection Error</h3>
-        <p className="text-sm opacity-80">{error}</p>
-      </div>
-      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
-    </div>
-  )
-
-  if (!data) return null
-
-  const healthData = [
-    { name: 'Healthy', value: data.ProductHealth.Healthy },
-    { name: 'Warning', value: data.ProductHealth.Warning },
-    { name: 'Critical', value: data.ProductHealth.Critical },
-    { name: 'Discontinued', value: data.ProductHealth.Discontinued },
-  ]
-  const healthColors = ['#10b981', '#f59e0b', '#ef4444', '#6b7280']
+  }, [fetchDashboard])
 
   const handleExport = () => {
     if (!data) return
@@ -117,31 +66,32 @@ export default function Dashboard() {
     a.click()
   }
 
-  return (
-    <div className="p-6 space-y-6 animate-fade-up">
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Monthly Revenue" value={data.Revenue.ThisMonth} prefix="$" change={12} changeLabel="vs last month" icon={DollarSign} color="neo" onClick={() => navigate('/orders')} />
-        <KpiCard label="Total Orders" value={data.Orders.Total.toLocaleString()} change={5} changeLabel="vs last month" icon={ShoppingCart} color="pulse" onClick={() => navigate('/orders')} />
-        <KpiCard label="Customers" value={data.Customers.Total.toLocaleString()} change={8} changeLabel="vs last month" icon={Users} color="bloom" onClick={() => navigate('/customers')} />
-        <KpiCard label="Return Rate" value={`${data.ReturnRate}%`} change={-2} changeLabel="vs last month" icon={RotateCcw} color="ember" onClick={() => navigate('/returns')} />
-        <KpiCard label="Ad ROI" value={`${data.ROI}%`} change={15} changeLabel="vs last month" icon={TrendingUp} color="royal" onClick={() => navigate('/ads')} />
+  if (error) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
+        <h3 className="font-bold mb-1">Dashboard Error</h3>
+        <p className="text-sm opacity-80">{error}</p>
       </div>
+      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
+    </div>
+  )
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Sales Trend */}
-        <div className="card lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="section-title">Revenue Trend</div>
-              <div className="section-subtitle">Last 30 days performance</div>
-            </div>
-            <button onClick={fetchData} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
-          </div>
-          <div className="h-52">
-            <SalesAreaChart data={data.Revenue.Trend} color="#6366f1" dataKey="revenue" prefix="$" />
-          </div>
+  if (loading || !data) return (
+    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
+      <div className="w-12 h-12 border-4 border-neo/20 border-t-neo rounded-full animate-spin" />
+      <div className="text-sm font-medium text-text-dim animate-pulse">Initializing Neural Intelligence...</div>
+    </div>
+  )
+
+  const healthData = [
+    { name: 'Healthy', value: data.ProductHealth.Healthy },
+    { name: 'Warning', value: data.ProductHealth.Warning },
+    { name: 'Critical', value: data.ProductHealth.Critical },
+    { name: 'Discontinued', value: data.ProductHealth.Discontinued },
+  ]
+  const healthColors = ['#10b981', '#f59e0b', '#ef4444', '#6b7280']
+
+  return (
     <div className="w-full mx-auto p-4 md:p-8 space-y-8 animate-fade-up">
       {/* Alerts Modal */}
       {isAlertsModalOpen && (
@@ -298,7 +248,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Goal Tracking (4 cols) */}
+        {/* Goal Tracking & Insights (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="card border-neo/20 bg-neo/5 flex-1 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 transition-transform group-hover:rotate-45">
@@ -336,30 +286,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-        {/* Today Revenue */}
-        <div className="card">
-          <div className="section-title mb-1">Today's Revenue</div>
-          <div className="section-subtitle mb-4">vs. yesterday</div>
-          <div className="text-4xl font-bold text-text-white mb-2" style={{ fontFamily: 'Bebas Neue' }}>
-            ${data.Revenue.Today.toLocaleString()}
-          </div>
-          <div className="flex items-center gap-1.5 mb-4">
-            <TrendingUp size={13} className="text-bloom" />
-            <span className="text-xs text-bloom font-semibold">+8.3% from yesterday</span>
-          </div>
-          <div className="divider mb-4" />
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-text-dim">Orders today</span>
-              <span className="font-bold text-text-bright">{data.Orders.Total > 0 ? Math.round(data.Orders.Total / 30) : 0}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-text-dim">Avg order value</span>
-              <span className="font-bold text-text-bright">${data.Revenue.Today > 0 ? (data.Revenue.Today / 1.5).toFixed(2) : "0.00"}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-text-dim">Pending fulfillment</span>
-              <span className="font-bold text-ember">{data.Orders.Pending}</span>
           <div className="card bg-bloom/5 border-bloom/20 group hover:border-bloom/40 transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-xl bg-bloom/10 text-bloom">
@@ -379,7 +305,7 @@ export default function Dashboard() {
 
       {/* --- SECONDARY METRICS GRID --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Product Health Card (Redesigned) */}
+        {/* Product Health Card */}
         <div className="card relative group hover:border-neo/30 transition-all cursor-pointer">
           <Link to="/products" className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-text-dim group-hover:text-neo transition-colors">
             <ChevronRight size={18} />
@@ -388,28 +314,12 @@ export default function Dashboard() {
             <h3 className="text-xl font-bold text-text-bright tracking-tight">Product Health</h3>
             <p className="text-[10px] text-text-dim uppercase font-bold tracking-widest">DISTRIBUTION OVERVIEW</p>
           </div>
-          <div className="space-y-2">
-            {data.RecentDecisions.length === 0 ? (
-              <div className="text-center py-10 text-text-dim text-xs">No recent decisions</div>
-            ) : data.RecentDecisions.map(d => {
-              const Icon = decisionIcons[d.Section] || Activity
-              return (
-                <div key={d.Id} className="flex items-start gap-3 p-2.5 rounded-lg table-row border-none"
-                  style={{ background: 'var(--input-bg)' }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'var(--glass-border)' }}>
-                    <Icon size={13} className={decisionColors[d.Section] || 'text-text-dim'} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-text-bright truncate">{d.ItemName}</div>
-                    <div className="text-xs text-text-dim truncate">{d.DecisionDetails}</div>
           
           <div className="flex flex-col items-center gap-6 py-2">
             <div className="w-40 h-40">
               <DonutChart data={healthData} colors={healthColors} />
             </div>
             
-            {/* Horizontal Legend (Refined) */}
             <div className="flex justify-center gap-4 w-full">
               {healthData.map((item, i) => (
                 <div key={item.name} className="flex items-center gap-1.5">
@@ -419,7 +329,6 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Bottom Grid Stats */}
             <div className="w-full grid grid-cols-2 gap-x-12 gap-y-3 pt-6 border-t border-white/5">
               {healthData.map((item, i) => (
                 <div key={item.name} className="flex items-center justify-between">
@@ -434,7 +343,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Critical Alerts */}
+        {/* System Alerts */}
         <div className="card border-ember/20">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-bold text-text-bright uppercase tracking-widest">System Alerts</h3>
@@ -445,12 +354,6 @@ export default function Dashboard() {
               {data.Alerts.length} Active
             </button>
           </div>
-          <div className="space-y-2.5">
-            {data.Alerts.length === 0 ? (
-              <div className="text-center py-10 text-text-dim text-xs">All systems operational</div>
-            ) : data.Alerts.map((alert, i) => {
-              const style = alertStyles[alert.Level] || alertStyles.Info
-              const Icon = style.icon
           <div className="space-y-3">
             {data.Alerts.slice(0, 3).map((alert, i) => {
               const target = alert.Section === 'Products' ? `/products?search=${alert.Message.split("'")[1] || ''}` : '/';
@@ -496,7 +399,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- BOTTOM ROW: Recent Decisions (Streamlined) --- */}
+      {/* --- BOTTOM ROW: Recent Decisions --- */}
       <div className="card border-white/5">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-text-bright uppercase tracking-widest">Recent Neural Decisions</h3>
@@ -537,4 +440,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

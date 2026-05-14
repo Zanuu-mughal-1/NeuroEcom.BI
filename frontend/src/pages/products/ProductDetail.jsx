@@ -1,66 +1,60 @@
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Package, StopCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Tag, Bell, Star, Copy, Trash2, DollarSign } from 'lucide-react'
-import { ArrowLeft, Package, StopCircle, PlayCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Trash2, DollarSign } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowLeft,
+  DollarSign,
+  MinusCircle,
+  Package,
+  PlayCircle,
+  PlusCircle,
+  StopCircle,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
 import api from '../../utils/api'
 
-export default function ProductDetail({ product, onBack, onRefresh }) {
 export default function ProductDetail({ product, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
   const [qty, setQty] = useState(0)
   const [newPrice, setNewPrice] = useState(product.Price)
   const [salesData, setSalesData] = useState([])
-  const [loading, setLoading] = useState(false)
-
-  const fetchHistory = async () => {
-    try {
-      const { data } = await api.get(`/products/${product.Id}/history`)
-      setSalesData(data)
-    } catch (err) {
-      console.error('Failed to fetch product history', err)
-    }
-  }
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [isActive, setIsActive] = useState(product.IsActive)
 
   useEffect(() => {
-    fetchHistory()
+    setIsActive(product.IsActive)
+    setNewPrice(product.Price)
+    setQty(0)
   }, [product.Id])
 
-  const handleAction = async (actionId) => {
-    setLoading(true)
-    try {
-      const payload = {
-        Action: actionId,
-        Quantity: parseInt(qty),
-        NewPrice: parseFloat(newPrice)
-      }
-      await api.post(`/products/${product.Id}/action`, payload)
-      setActiveAction(null)
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Action failed', err)
-      alert('Failed to perform action: ' + (err.response?.data?.message || err.message))
-    } finally {
-      setLoading(false)
-  const [loading, setLoading] = useState(true)
-  const [isActive, setIsActive] = useState(product.IsActive) // local state so button switches instantly
-
   useEffect(() => {
-    api.get(`/products/${product.Id}/history?days=30`)
-      .then(res => {
-        const mapped = res.data.map(d => ({
+    let mounted = true
+    setHistoryLoading(true)
+    api
+      .get(`/products/${product.Id}/history?days=30`)
+      .then((res) => {
+        if (!mounted) return
+        const mapped = (res.data || []).map((d) => ({
           date: new Date(d.SaleDate).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
           orders: d.UnitsSold,
           revenue: d.Revenue,
-          returns: d.Returns
+          returns: d.Returns,
         }))
         setSalesData(mapped)
-        setLoading(false)
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to load history', err)
-        setLoading(false)
+        if (mounted) setSalesData([])
       })
+      .finally(() => {
+        if (mounted) setHistoryLoading(false)
+      })
+    return () => {
+      mounted = false
+    }
   }, [product.Id])
 
   const handleAction = async (actionId) => {
@@ -68,39 +62,42 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
     if (actionId === 'IncreaseInventory' || actionId === 'DecreaseInventory') payload.Quantity = parseInt(qty)
     if (actionId === 'IncreasePrice' || actionId === 'DecreasePrice') payload.NewPrice = parseFloat(newPrice)
 
+    setActionLoading(true)
     try {
       if (actionId === 'Delete') {
         const res = await api.delete(`/products/${product.Id}`)
-        // We show the message from backend (it tells if it was deleted or archived)
-        alert(res.data.message || 'Product removed')
-        if (onUpdate) onUpdate()
+        alert(res.data?.message || 'Product removed')
+        if (onUpdate) await onUpdate()
         onBack()
         return
       }
 
-      const res = await api.post(`/products/${product.Id}/action`, payload)
-      // Update local active state so button switches immediately
+      await api.post(`/products/${product.Id}/action`, payload)
       if (actionId === 'StopSelling') setIsActive(false)
       if (actionId === 'ResumeSelling') setIsActive(true)
       setActiveAction(null)
-      if (onUpdate) onUpdate()
+      if (onUpdate) await onUpdate()
     } catch (e) {
       console.error(e)
       alert('Action failed: ' + (e.response?.data?.message || e.message))
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const actions = [
-    // Dynamically switch between Stop and Resume based on local isActive state
-    isActive
-      ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
-      : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
-    { id: 'IncreaseInventory', icon: PlusCircle, label: 'Increase Stock', color: 'bloom' },
-    { id: 'DecreaseInventory', icon: MinusCircle, label: 'Decrease Stock', color: 'ember' },
-    { id: 'IncreasePrice', icon: TrendingUp, label: 'Increase Price', color: 'bloom' },
-    { id: 'DecreasePrice', icon: TrendingDown, label: 'Decrease Price', color: 'danger' },
-    { id: 'Delete', icon: Trash2, label: 'Delete Product', color: 'danger' },
-  ]
+  const actions = useMemo(
+    () => [
+      isActive
+        ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
+        : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
+      { id: 'IncreaseInventory', icon: PlusCircle, label: 'Increase Stock', color: 'bloom' },
+      { id: 'DecreaseInventory', icon: MinusCircle, label: 'Decrease Stock', color: 'ember' },
+      { id: 'IncreasePrice', icon: TrendingUp, label: 'Increase Price', color: 'bloom' },
+      { id: 'DecreasePrice', icon: TrendingDown, label: 'Decrease Price', color: 'danger' },
+      { id: 'Delete', icon: Trash2, label: 'Delete Product', color: 'danger' },
+    ],
+    [isActive]
+  )
 
   const colorMap = {
     neo: { bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.2)', text: '#818cf8' },
@@ -220,8 +217,8 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
             <div className="section-title mb-1">Sales Trend</div>
             <div className="section-subtitle mb-4">Last 30 days</div>
             <div className="h-52">
-              {!loading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
-              {loading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
+              {!historyLoading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
+              {historyLoading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
             </div>
           </div>
           <div className="card">
@@ -276,12 +273,10 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                       )}
                       <button 
                         onClick={() => handleAction(action.id)}
-                        disabled={loading}
+                        disabled={actionLoading}
                         className="btn-primary w-full text-xs" 
                         style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
-                        {loading ? 'Processing...' : `Confirm ${action.label}`}
-                      <button onClick={() => handleAction(action.id)} className="btn-primary w-full text-xs" style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
-                        Confirm {action.label}
+                        {actionLoading ? 'Processing...' : `Confirm ${action.label}`}
                       </button>
                     </div>
                   )}

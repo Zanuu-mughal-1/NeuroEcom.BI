@@ -12,7 +12,6 @@ export default function Returns() {
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
   
-  // Filtering states
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -26,10 +25,10 @@ export default function Returns() {
     setLoading(true)
     try {
       const [retRes, rtoRes, ruleRes, metRes] = await Promise.all([
-        api.get('/returns'),
-        api.get('/rto/logs'),
-        api.get('/decisions/rules?category=RTO'),
-        api.get('/returns/analytics')
+        api.get('/returns').catch(() => ({ data: [] })),
+        api.get('/rto/logs').catch(() => ({ data: [] })),
+        api.get('/decisions/rules?category=RTO').catch(() => ({ data: [] })),
+        api.get('/returns/analytics').catch(() => ({ data: null }))
       ])
       setReturns(retRes.data)
       setRtoLogs(rtoRes.data)
@@ -68,18 +67,17 @@ export default function Returns() {
       fetchData() // Refresh logs
     } catch (err) {
       console.error('RTO assessment failed', err)
+      // Fallback local assessment if API fails
+      let score = 0
+      const triggered = []
+      if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
+      if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >Rs500 (+20 pts)') }
+      score = Math.min(100, score)
+      const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : 'Additional Verification'
+      setRtoResult({ score, decision, triggeredRules: triggered })
     } finally {
       setAssessing(false)
     }
-  const testRTO = () => {
-    let score = 0
-    const triggered = []
-    if (rtoInput.paymentMethod === 'COD') { score += 15; triggered.push('COD payment (+15 pts)') }
-    if (+rtoInput.orderValue > 500) { score += 20; triggered.push('High value order >Rs500 (+20 pts)') }
-    if (new Date().getDay() === 5 || new Date().getDay() === 6) { score += 10; triggered.push('Weekend order (+10 pts)') }
-    score = Math.min(100, score)
-    const decision = score <= 20 ? 'Auto-Approved' : score <= 50 ? 'Manual Review' : score <= 80 ? 'Additional Verification' : 'Auto-Rejected'
-    setRtoResult({ score, decision, triggered })
   }
 
   const updateRule = async (id, newValue) => {
@@ -119,80 +117,60 @@ export default function Returns() {
     Refunded: { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.2)', color: '#a78bfa' },
   }
 
+  if (loading && returns.length === 0) {
+    return <div className="p-6 flex items-center justify-center h-[60vh] text-text-dim"><RefreshCw className="animate-spin mr-2" /> Initializing Returns Module...</div>
+  }
+
   return (
     <div className="p-6 space-y-5 animate-fade-up">
       <ReturnModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={fetchData} />
 
       {/* Header & Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--input-bg)', border: '1px solid var(--border-color)', width: 'fit-content' }}>
+        <div className="flex gap-1 p-1 rounded-xl bg-input-bg border border-border" style={{ width: 'fit-content' }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30' : 'text-text-dim hover:text-text-mid'}`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? 'bg-neo/20 text-neo-bright border border-neo/30 shadow-lg shadow-neo/5' : 'text-text-dim hover:text-text-mid'}`}>
               <t.icon size={14} /> {t.label}
             </button>
           ))}
         </div>
-        <button onClick={fetchData} className="btn-ghost !p-2"><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
+        <div className="flex items-center gap-3">
+          <button onClick={fetchData} className="btn-ghost !p-2 hover:bg-surface"><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center gap-2 text-xs">
+            <Plus size={14} /> New Request
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total Returns" value={metrics?.totalReturns || 0} icon={RotateCcw} color="royal" onClick={() => setStatusFilter('All')} />
-        <KpiCard label="Return Rate" value={`${metrics?.returnRate || 0}%`} icon={AlertTriangle} color="danger" />
+        <KpiCard label="Total Returns" value={metrics?.totalReturns || returns.length} icon={RotateCcw} color="royal" onClick={() => setStatusFilter('All')} />
+        <KpiCard label="Return Rate" value={`${metrics?.returnRate || '12.4'}%`} icon={AlertTriangle} color="danger" />
         <KpiCard label="Pending Review" value={returns.filter(r => r.Status === 'Pending').length} icon={Clock} color="ember" onClick={() => setStatusFilter('Pending')} />
-        <KpiCard label="Total Refunds" value={metrics?.totalRefundAmount || 0} prefix="$" icon={DollarSign} color="bloom" onClick={() => setStatusFilter('Refunded')} />
-        {[
-          { label: 'Total Returns', value: returns.length, icon: RotateCcw, bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
-          { label: 'Return Rate', value: '12.4%', icon: XCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-          { label: 'Pending Review', value: returns.filter(r => r.Status === 'Pending').length, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
-          { label: 'Refund Amount', value: `Rs${returns.reduce((s, r) => s + (r.RefundAmount || 0), 0).toFixed(2)}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-        ].map(s => (
-          <div key={s.label} className="card flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
-              <s.icon size={18} style={{ color: s.color }} />
-            </div>
-            <div>
-              <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
-            </div>
-          </div>
-        ))}
+        <KpiCard label="Refund Amount" value={`Rs ${(metrics?.totalRefundAmount || returns.reduce((s, r) => s + (r.RefundAmount || 0), 0)).toLocaleString()}`} icon={DollarSign} color="bloom" onClick={() => setStatusFilter('Refunded')} />
       </div>
 
       {/* Returns List Tab */}
       {activeTab === 'returns' && (
         <div className="card !p-0 overflow-hidden">
           <div className="flex flex-wrap items-center justify-between p-4 border-b border-border gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-[300px]">
-              <div className="flex gap-2 flex-1 max-w-md">
-                <div className="relative flex-1">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-                  <input className="input pl-9" placeholder="Search returns by ID or Customer..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                </div>
-                <button 
-                  onClick={() => document.querySelector('.input.pl-9')?.focus()}
-                  className="btn-ghost !p-2 px-3 border border-border text-xs flex items-center gap-2"
-                >
-                  <Search size={14} /> Search
-                </button>
-              </div>
-              <select className="select w-40" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                <option value="All">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Refunded">Refunded</option>
-              </select>
+            <div className="relative flex-1 max-w-sm">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
+              <input className="input pl-9 w-full" placeholder="Search by ID or Customer..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
-            <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center gap-2 text-xs">
-              <Plus size={14} /> New Return Request
-            </button>
+            <select className="select w-40" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="All">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Refunded">Refunded</option>
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ background: 'var(--input-bg)', borderBottom: '1px solid var(--border-color)' }}>
+                <tr className="bg-abyss border-b border-border">
                   <th className="table-header text-left">Return ID</th>
                   <th className="table-header text-left">Customer</th>
                   <th className="table-header text-left">Product</th>
@@ -205,7 +183,7 @@ export default function Returns() {
               </thead>
               <tbody>
                 {filteredReturns.length === 0 ? (
-                  <tr><td colSpan="8" className="py-10 text-center text-text-dim">No matching returns found</td></tr>
+                  <tr><td colSpan="8" className="py-12 text-center text-text-dim">No matching returns found.</td></tr>
                 ) : filteredReturns.map(r => {
                   const s = statusStyles[r.Status] || statusStyles.Pending
                   return (
@@ -216,34 +194,33 @@ export default function Returns() {
                         <div className="text-xs text-text-dim">Order: {r.OrderNumber}</div>
                       </td>
                       <td className="table-cell">
-                        <div className="text-sm text-text-bright">{r.Product?.Name}</div>
+                        <div className="text-sm text-text-bright truncate max-w-[200px]">{r.Product?.Name}</div>
                         <div className="text-xs text-text-dim">{r.Product?.SKU}</div>
                       </td>
                       <td className="table-cell text-center">
-                        <span className="badge-dim text-xs">{r.ReturnReason}</span>
+                        <span className="badge-dim text-[10px] uppercase font-bold tracking-wider px-2 py-1">{r.ReturnReason}</span>
                       </td>
-                      <td className="table-cell text-right font-semibold text-text-white">
-                        {r.RefundAmount ? `$${r.RefundAmount.toLocaleString()}` : '—'}
-                        Rs {r.RefundAmount?.toFixed(2) || '—'}
+                      <td className="table-cell text-right font-semibold text-text-bright">
+                        {r.RefundAmount ? `Rs ${r.RefundAmount.toLocaleString()}` : '—'}
                       </td>
                       <td className="table-cell text-center">
-                        <span className="badge text-xs font-medium" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
+                        <span className="badge text-[10px] font-bold uppercase tracking-wider" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
                           {r.Status}
                         </span>
                       </td>
-                      <td className="table-cell text-right text-xs text-text-dim">
+                      <td className="table-cell text-right text-xs text-text-dim font-mono">
                         {new Date(r.RequestDate).toLocaleDateString()}
                       </td>
                       <td className="table-cell text-center">
-                        <div className="flex gap-1 justify-center">
+                        <div className="flex gap-2 justify-center">
                           {r.Status === 'Pending' && (
                             <>
-                              <button onClick={() => handleReturnAction(r.Id, 'Approve')} className="btn-success !p-1.5" title="Approve"><CheckCircle size={14} /></button>
-                              <button onClick={() => handleReturnAction(r.Id, 'Reject', 'Policy Violation')} className="btn-danger !p-1.5" title="Reject"><XCircle size={14} /></button>
+                              <button onClick={() => handleReturnAction(r.Id, 'Approve')} className="p-1.5 rounded-lg hover:bg-bloom/10 text-bloom transition-colors" title="Approve"><CheckCircle size={16} /></button>
+                              <button onClick={() => handleReturnAction(r.Id, 'Reject')} className="p-1.5 rounded-lg hover:bg-danger/10 text-danger transition-colors" title="Reject"><XCircle size={16} /></button>
                             </>
                           )}
                           {r.Status === 'Approved' && (
-                            <button onClick={() => handleReturnAction(r.Id, 'Refund', 50)} className="btn-primary text-xs !py-1">Process Refund</button>
+                            <button onClick={() => handleReturnAction(r.Id, 'Refund')} className="btn-primary text-[10px] !py-1 !px-3">Process Refund</button>
                           )}
                         </div>
                       </td>
@@ -258,167 +235,139 @@ export default function Returns() {
 
       {/* RTO Shield Tab */}
       {activeTab === 'rto' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Risk Assessment Engine */}
-            <div className="card">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 rounded-lg" style={{ background: 'var(--color-neo-glow)' }}>
-                  <Shield size={18} className="text-neo" />
-                </div>
-                <div>
-                  <div className="section-title">AI Fraud & RTO Engine</div>
-                  <div className="section-subtitle">Real-time risk assessment</div>
-                </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.15)' }}>
-                <Shield size={16} className="text-neo" />
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-neo/10 text-neo">
+                <Shield size={20} />
               </div>
               <div>
-                <div className="section-title">RTO Shield — Test Order</div>
-                <div className="section-subtitle">Assess risk before fulfillment</div>
+                <h3 className="text-xl font-bold text-text-bright tracking-tight">RTO Shield Intelligence</h3>
+                <p className="text-xs text-text-dim">Predictive risk scoring engine</p>
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="stat-label mb-1 block">Order Value (Rs)</label>
-                <input type="number" className="input" value={rtoInput.orderValue}
-                  onChange={e => setRtoInput(p => ({ ...p, orderValue: e.target.value }))} />
+            
+            <div className="space-y-4 mb-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Order Value (Rs)</label>
+                  <input type="number" className="input w-full" value={rtoInput.orderValue}
+                    onChange={e => setRtoInput(p => ({ ...p, orderValue: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Payment Method</label>
+                  <select className="select w-full" value={rtoInput.paymentMethod}
+                    onChange={e => setRtoInput(p => ({ ...p, paymentMethod: e.target.value }))}>
+                    <option value="COD">COD (Riskier)</option>
+                    <option value="Prepaid">Prepaid (Safe)</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="stat-label mb-1 block">Payment Method</label>
-                <select className="select" value={rtoInput.paymentMethod}
-                  onChange={e => setRtoInput(p => ({ ...p, paymentMethod: e.target.value }))}>
-                  <option value="COD">COD</option>
-                  <option value="UPI">UPI</option>
-                  <option value="CreditCard">Credit Card</option>
-                  <option value="NetBanking">Net Banking</option>
-                </select>
-              </div>
-              <div>
-                <label className="stat-label mb-1 block">Customer ID (optional)</label>
-                <input className="input" placeholder="Enter customer ID..." value={rtoInput.customerId}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Customer Context (Optional)</label>
+                <input className="input w-full" placeholder="Enter customer ID for historical analysis..." value={rtoInput.customerId}
                   onChange={e => setRtoInput(p => ({ ...p, customerId: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="stat-label mb-1.5 block">Order Value ($)</label>
-                    <input type="number" className="input w-full" value={rtoInput.orderValue}
-                      onChange={e => setRtoInput(p => ({ ...p, orderValue: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="stat-label mb-1.5 block">Customer ID</label>
-                    <input className="input w-full" placeholder="Existing user ID..." value={rtoInput.customerId}
-                      onChange={e => setRtoInput(p => ({ ...p, customerId: e.target.value }))} />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="stat-label mb-1.5 block">Payment Method</label>
-                    <select className="select w-full" value={rtoInput.paymentMethod}
-                      onChange={e => setRtoInput(p => ({ ...p, paymentMethod: e.target.value }))}>
-                      <option value="COD">COD (Cash on Delivery)</option>
-                      <option value="Prepaid">Prepaid (Card/UPI)</option>
-                    </select>
-                  </div>
-                  <div className="pt-6">
-                    <button onClick={runRTOAssessment} disabled={assessing} className="btn-primary w-full flex items-center justify-center gap-2">
-                      {assessing ? <RefreshCw size={15} className="animate-spin" /> : <Shield size={15} />}
-                      Assess Order Risk
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Assessment Results Area */}
-              <div className={`p-5 rounded-xl border transition-all ${!rtoResult ? 'bg-void/10 border-dashed border-border' : 'bg-bg-secondary shadow-card border-border'}`}>
-                {rtoResult ? (
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-16 h-16">
-                          <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border-color)" strokeWidth="3" />
-                            <circle cx="18" cy="18" r="15.9" fill="none"
-                              stroke={rtoResult.score <= 20 ? '#10b981' : rtoResult.score <= 50 ? '#f59e0b' : '#ef4444'}
-                              strokeWidth="3" strokeDasharray={`${rtoResult.score} 100`} strokeLinecap="round" />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center text-lg font-bold text-text-white">{rtoResult.score}</div>
-                        </div>
-                        <div>
-                          <div className="stat-label">Decision Recommendation</div>
-                          <div className={`text-xl font-bold ${rtoResult.score <= 20 ? 'text-bloom' : rtoResult.score <= 50 ? 'text-ember' : 'text-danger'}`}>
-                            {rtoResult.decision}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="badge-dim px-3 py-1 flex items-center gap-1">
-                        <Zap size={12} className="text-neo" /> AI Powered
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="stat-label">Next Best Action (Decision Engine)</div>
-                      <div className="flex items-center gap-2 p-3 rounded-lg bg-neo/5 border border-neo/20">
-                        <ArrowRight size={14} className="text-neo" />
-                        <span className="text-sm font-medium text-text-bright">
-                          {rtoResult.score > 50 ? "Recommend blocking COD for this customer and flagging the account." : "Safe to fulfill immediately with priority shipping."}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="stat-label">Triggered Risk Rules</div>
-                      <div className="flex flex-wrap gap-2">
-                        {rtoResult.triggeredRules?.map((rule, i) => (
-                          <span key={i} className="px-2 py-1 bg-danger/5 text-danger border border-danger/20 rounded-md text-[10px] font-semibold">
-                            {rule}
-                          </span>
-                        )) || <span className="text-xs text-text-dim italic">No rules triggered</span>}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-10 opacity-30">
-                    <Shield size={32} className="mb-2" />
-                    <p className="text-xs">Input order details to run AI assessment</p>
-                  </div>
-                )}
-              </div>
+              <button onClick={runRTOAssessment} disabled={assessing} className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs">
+                {assessing ? <RefreshCw size={16} className="animate-spin" /> : <Shield size={16} />}
+                Execute Risk Analysis
+              </button>
             </div>
 
-            {/* RTO History Logs */}
-            <div className="card !p-0 flex flex-col">
-              <div className="p-4 border-b border-border flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <History size={16} className="text-text-mid" />
-                  <span className="font-bold text-text-white">RTO Audit Trail</span>
-                </div>
-                <span className="text-[10px] text-text-dim uppercase tracking-widest font-bold">Latest Logs</span>
-              </div>
-              <div className="flex-1 overflow-y-auto max-h-[480px]">
-                {rtoLogs.length === 0 ? (
-                  <div className="p-10 text-center text-text-dim text-xs">No RTO logs available</div>
-                ) : rtoLogs.map(log => (
-                  <div key={log.Id} className="p-4 border-b border-border/40 hover:bg-white/5 transition-colors group">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="text-xs font-mono text-neo">ORD-{log.OrderId || '???'}</div>
-                      <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${log.Status === 'Returned' ? 'bg-danger/10 text-danger' : 'bg-ember/10 text-ember'}`}>
-                        {log.Status}
+            <div className={`p-5 rounded-2xl border transition-all ${!rtoResult ? 'bg-void/10 border-dashed border-white/5' : 'bg-surface border-white/10 shadow-xl shadow-black/20'}`}>
+              {rtoResult ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16">
+                        <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                          <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke={rtoResult.score <= 20 ? '#10b981' : rtoResult.score <= 50 ? '#f59e0b' : '#ef4444'}
+                            strokeWidth="3" strokeDasharray={`${rtoResult.score} 100`} strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-lg font-black text-text-bright">{rtoResult.score}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Neural Outcome</div>
+                        <div className={`text-xl font-black ${rtoResult.score <= 20 ? 'text-bloom' : rtoResult.score <= 50 ? 'text-ember' : 'text-danger'}`}>
+                          {rtoResult.decision}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-sm font-semibold text-text-bright mb-1">{log.Customer?.FirstName} {log.Customer?.LastName}</div>
-                    <div className="text-xs text-text-dim flex items-center gap-4">
-                      <span>Attempts: <b className="text-text-mid">{log.DeliveryAttempts}</b></span>
-                      <span>Reason: <b className="text-text-mid truncate">{log.FailureReason || 'N/A'}</b></span>
+                    <div className="px-3 py-1 bg-neo/10 border border-neo/30 rounded-lg flex items-center gap-2">
+                      <Zap size={12} className="text-neo" />
+                      <span className="text-[10px] font-black uppercase text-neo-bright">AI Score</span>
                     </div>
-                    <div className="mt-2 text-[10px] text-text-dim italic">{new Date(log.CreatedAt).toLocaleString()}</div>
                   </div>
-                ))}
+                  
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Recommended Action</div>
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+                      <ArrowRight size={16} className="text-neo flex-shrink-0" />
+                      <span className="text-xs font-medium text-text-mid leading-relaxed">
+                        {rtoResult.score > 50 
+                          ? "High risk detected. Recommend requesting prepayment or verifying shipping address via call." 
+                          : "Low risk profile. Proceed with automated fulfillment and priority processing."}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Triggered Factors</div>
+                    <div className="flex flex-wrap gap-2">
+                      {rtoResult.triggeredRules?.map((rule, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-danger/10 text-danger border border-danger/20 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                          {rule}
+                        </span>
+                      )) || <span className="text-xs text-text-dim italic">Baseline profile (no high-risk triggers)</span>}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 opacity-30 gap-3">
+                  <Shield size={40} className="text-text-dim" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest">Neural engine idle</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="card !p-0 flex flex-col border-white/5 bg-void/50">
+            <div className="p-5 border-b border-white/5 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <History size={16} className="text-text-mid" />
+                <span className="font-bold text-text-bright uppercase text-xs tracking-widest">Intelligence Audit Trail</span>
               </div>
+              <span className="text-[10px] text-text-dim font-black uppercase tracking-widest">Latest 10 Events</span>
+            </div>
+            <div className="flex-1 overflow-y-auto max-h-[500px] divide-y divide-white/5">
+              {rtoLogs.length === 0 ? (
+                <div className="p-12 text-center text-text-dim text-xs italic">No neural events logged in audit trail</div>
+              ) : rtoLogs.map(log => (
+                <div key={log.Id} className="p-5 hover:bg-white/5 transition-all group">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black font-mono text-neo uppercase mb-1">TRK-{log.Id.toString().padStart(6, '0')}</span>
+                      <span className="text-sm font-bold text-text-bright group-hover:text-neo transition-colors">{log.Customer?.FirstName} {log.Customer?.LastName}</span>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${log.Status === 'Returned' ? 'bg-danger/10 text-danger border border-danger/20' : 'bg-ember/10 text-ember border border-ember/20'}`}>
+                      {log.Status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-wider text-text-dim">
+                    <div className="flex flex-col gap-1">
+                      <span className="opacity-50">Delivery Attempts</span>
+                      <span className="text-text-mid">{log.DeliveryAttempts || 0}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="opacity-50">Log Reason</span>
+                      <span className="text-text-mid truncate">{log.FailureReason || 'Neural Log'}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-[9px] text-text-dim font-mono">{new Date(log.CreatedAt).toLocaleString()}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -426,40 +375,40 @@ export default function Returns() {
 
       {/* RTO Rules Tab */}
       {activeTab === 'rules' && (
-        <div className="card !p-0 overflow-hidden">
-          <div className="p-4 border-b border-border">
-            <div className="section-title">Risk Scoring Parameters</div>
-            <div className="section-subtitle mt-0.5">Control how the Shield system calculates fraud scores</div>
+        <div className="card !p-0 overflow-hidden border-white/5">
+          <div className="p-5 border-b border-white/5 bg-void/30">
+            <h3 className="text-xl font-bold text-text-bright tracking-tight">Neural Threshold Settings</h3>
+            <p className="text-xs text-text-dim">Configure baseline weights for risk calculations</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ background: 'var(--input-bg)', borderBottom: '1px solid var(--border-color)' }}>
-                  <th className="table-header text-left">Rule Context</th>
-                  <th className="table-header text-left">Rule Logic</th>
-                  <th className="table-header text-center">Weight/Value</th>
+                <tr className="bg-abyss border-b border-white/5">
+                  <th className="table-header text-left">Parameter</th>
+                  <th className="table-header text-left">Internal Logic Description</th>
+                  <th className="table-header text-center">Neural Weight</th>
                   <th className="table-header text-center">Baseline</th>
-                  <th className="table-header text-center">Action</th>
+                  <th className="table-header text-center">Mod</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-white/5">
                 {rules.map(rule => (
-                  <tr key={rule.Id} className="table-row">
-                    <td className="table-cell font-bold text-text-bright">{rule.RuleName}</td>
-                    <td className="table-cell text-text-dim text-xs leading-relaxed">{rule.Description}</td>
-                    <td className="table-cell text-center">
+                  <tr key={rule.Id} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-5 px-5 font-bold text-text-bright text-sm">{rule.RuleName}</td>
+                    <td className="py-5 px-5 text-text-mid text-xs leading-relaxed max-w-md">{rule.Description}</td>
+                    <td className="py-5 px-5 text-center">
                       {editingRule === rule.Id ? (
-                        <input className="input w-24 text-center text-sm font-bold" defaultValue={rule.CurrentValue}
+                        <input className="input w-24 text-center text-sm font-black text-neo" defaultValue={rule.CurrentValue}
                           onBlur={e => updateRule(rule.Id, e.target.value)} autoFocus />
                       ) : (
-                        <span className="badge-neo font-mono cursor-pointer hover:scale-105 transition-transform" onClick={() => setEditingRule(rule.Id)}>
+                        <span className="px-3 py-1.5 rounded-lg bg-neo/10 text-neo font-mono text-xs font-black cursor-pointer hover:bg-neo/20 transition-all" onClick={() => setEditingRule(rule.Id)}>
                           {rule.CurrentValue}
                         </span>
                       )}
                     </td>
-                    <td className="table-cell text-center font-mono text-xs text-text-dim">{rule.DefaultValue}</td>
-                    <td className="table-cell text-center">
-                      <button onClick={() => setEditingRule(rule.Id)} className="text-neo hover:text-neo-bright transition-colors">
+                    <td className="py-5 px-5 text-center font-mono text-xs text-text-dim">{rule.DefaultValue}</td>
+                    <td className="py-5 px-5 text-center">
+                      <button onClick={() => setEditingRule(rule.Id)} className="p-2 rounded-lg hover:bg-surface text-text-dim hover:text-neo transition-all">
                         <Plus size={16} />
                       </button>
                     </td>
@@ -473,4 +422,3 @@ export default function Returns() {
     </div>
   )
 }
-
