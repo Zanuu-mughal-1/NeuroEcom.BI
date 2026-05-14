@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NeuroEcom.BI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a0ee2c93c7d4ac6db053e5d358231e2576da7f8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79c3ef2f68a7d0d37329d77a752674c7c6320e85")]
 [assembly: System.Reflection.AssemblyProductAttribute("NeuroEcom.BI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NeuroEcom.BI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

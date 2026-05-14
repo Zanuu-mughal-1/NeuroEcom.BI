@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Filter, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, RefreshCw, Trash2, Edit2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, X, RefreshCw, Trash2, Edit2 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, X } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 import ProductDetail from './ProductDetail'
@@ -17,12 +15,19 @@ export default function Products() {
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+
+  const [newProduct, setNewProduct] = useState({
+    Name: '', SKU: '', Category: 'Electronics', Price: 0, Cost: 0, Stock: 0, ReorderLevel: 10
+  })
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await api.get('/products')
       setProducts(data)
+      // Update selected product if in detail view
+      setSelected(prev => prev ? (data.find(p => p.Id === prev.Id) || null) : null)
     } catch (err) {
       console.error('Failed to fetch products', err)
     } finally {
@@ -31,8 +36,10 @@ export default function Products() {
   }, [])
 
   useEffect(() => {
+    const health = searchParams.get('health')
+    if (health) setHealthFilter(health)
     fetchProducts()
-  }, [fetchProducts])
+  }, [searchParams, fetchProducts])
 
   const handleDelete = async (id, e) => {
     e.stopPropagation()
@@ -49,55 +56,6 @@ export default function Products() {
     e.stopPropagation()
     setEditingProduct(product)
     setIsModalOpen(true)
-  }
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-
-  const [newProduct, setNewProduct] = useState({
-    Name: '', SKU: '', Category: 'Electronics', Price: 0, Cost: 0, Stock: 0, ReorderLevel: 10
-  })
-
-  useEffect(() => {
-    const health = searchParams.get('health')
-    if (health) setHealthFilter(health)
-    fetchProducts()
-  }, [searchParams])
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true)
-      const res = await api.get('/products')
-      setProducts(res.data)
-      // If a product is currently selected (detail view open), update it with fresh data
-      setSelected(prev => prev ? (res.data.find(p => p.Id === prev.Id) || null) : null)
-    } catch (err) {
-      console.error('Failed to fetch products', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const filtered = products.filter(p =>
-    (!search || p.Name.toLowerCase().includes(search.toLowerCase()) || p.SKU.includes(search) || p.Id.toString() === search) &&
-    (!healthFilter ||
-      (healthFilter === 'Active' ? p.IsActive :
-        healthFilter === 'Discontinued' ? (!p.IsActive || p.IsDiscontinued) :
-          p.HealthStatus === healthFilter)
-    )
-  )
-
-  const handleExport = () => {
-    const headers = ['ID', 'Name', 'SKU', 'Category', 'Price', 'Cost', 'Stock', 'Health Status']
-    const csvData = filtered.map(p =>
-      [p.Id, `"${p.Name}"`, p.SKU, p.Category, p.Price, p.Cost, p.Stock, p.HealthStatus].join(',')
-    )
-    const csvContent = [headers.join(','), ...csvData].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'products_export.csv'
-    a.click()
-    window.URL.revokeObjectURL(url)
   }
 
   const handleAddSubmit = async (e) => {
@@ -117,24 +75,33 @@ export default function Products() {
       fetchProducts()
     } catch (err) {
       console.error('Failed to add product', err)
-      alert('Failed to add product. Check console for details.')
+      alert('Failed to add product.')
     }
   }
 
-  const handleUpdate = async () => {
-    try {
-      const res = await api.get('/products')
-      setProducts(res.data)
-      setSelected(prev => {
-        if (!prev) return null
-        return res.data.find(p => p.Id === prev.Id) || null
-      })
-    } catch (err) {
-      console.error('Failed to update products', err)
-    }
-  }
+  const filtered = products.filter(p =>
+    (!search || p.Name.toLowerCase().includes(search.toLowerCase()) || p.SKU.includes(search) || p.Id.toString() === search) &&
+    (!healthFilter ||
+      (healthFilter === 'Active' ? p.IsActive :
+        healthFilter === 'Discontinued' ? (!p.IsActive || p.IsDiscontinued) :
+          (p.HealthStatus === healthFilter))
+    )
+  )
 
-  if (selected) return <ProductDetail product={selected} onBack={() => setSelected(null)} onUpdate={handleUpdate} />
+  const handleExport = () => {
+    const headers = ['ID', 'Name', 'SKU', 'Category', 'Price', 'Cost', 'Stock', 'Health Status']
+    const csvData = filtered.map(p =>
+      [p.Id, `"${p.Name}"`, p.SKU, p.Category, p.Price, p.Cost, p.Stock, p.HealthStatus].join(',')
+    )
+    const csvContent = [headers.join(','), ...csvData].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'products_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
 
   const stockColor = (s, reorder) => {
     if (s === 0) return 'text-danger'
@@ -142,12 +109,14 @@ export default function Products() {
     return 'text-bloom'
   }
 
-  if (loading) {
-    return <div className="p-6 flex items-center justify-center h-full text-text-dim">Loading products...</div>
+  if (selected) return <ProductDetail product={selected} onBack={() => setSelected(null)} onUpdate={fetchProducts} />
+
+  if (loading && products.length === 0) {
+    return <div className="p-6 flex items-center justify-center h-full text-text-dim">Loading inventory intelligence...</div>
   }
 
   return (
-    <div className="p-6 space-y-5 animate-fade-up">
+    <div className="p-6 space-y-5 animate-fade-up relative">
       <ProductModal 
         isOpen={isModalOpen} 
         onClose={() => { setIsModalOpen(false); setEditingProduct(null); }} 
@@ -155,8 +124,6 @@ export default function Products() {
         product={editingProduct}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div className="p-6 space-y-5 animate-fade-up relative">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Products', value: products.length, icon: Package, bg: 'rgba(99,102,241,0.1)', color: '#6366f1', filter: '' },
@@ -167,30 +134,26 @@ export default function Products() {
         ].map(s => (
           <div key={s.label}
             className="card flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02]"
-            onClick={() => s.filter !== undefined ? setHealthFilter(s.filter) : null}
-            title={s.filter ? `Click to filter by ${s.label}` : ''}>
+            onClick={() => s.filter !== undefined ? setHealthFilter(s.filter) : null}>
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
               <s.icon size={18} style={{ color: s.color }} />
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{loading ? '...' : s.value}</div>
+              <div className="text-xl font-bold text-text-bright mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="card !p-0 overflow-hidden">
-        <div className="flex items-center gap-3 p-4 border-b border-border">
       <div className="card !p-0 overflow-hidden relative z-10">
-        <div className="flex items-center gap-3 p-4 border-b border-border/50">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border/50">
+          <div className="relative flex-1 max-w-sm min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-            <input className="input pl-9" placeholder="Search products or SKU or ID..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input pl-9 w-full" placeholder="Search products or SKU..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select
-            className="select"
-            style={{ width: '200px', background: '#1a1d2e', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}
+            className="select w-40"
             value={healthFilter}
             onChange={e => { setHealthFilter(e.target.value); setSearchParams({ health: e.target.value }) }}>
             <option value="">All Health</option>
@@ -201,7 +164,6 @@ export default function Products() {
             <option value="Discontinued">⚫ Discontinued</option>
           </select>
           <button onClick={fetchProducts} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center gap-2 ml-auto"><Plus size={14} /> Add Product</button>
           <button className="btn-ghost flex items-center gap-2 text-sm" onClick={handleExport}><Download size={14} /> Export</button>
           <button className="btn-primary flex items-center gap-2 ml-auto" onClick={() => setIsAddModalOpen(true)}><Plus size={14} /> Add Product</button>
         </div>
@@ -221,9 +183,9 @@ export default function Products() {
             </thead>
             <tbody>
               {loading && products.length === 0 ? (
-                <tr><td colSpan="7" className="py-10 text-center text-text-dim">Loading products...</td></tr>
+                <tr><td colSpan="8" className="py-10 text-center text-text-dim">Loading products...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="7" className="py-10 text-center text-text-dim">No products found</td></tr>
+                <tr><td colSpan="8" className="py-10 text-center text-text-dim">No products found matching filters</td></tr>
               ) : filtered.map(p => (
                 <tr key={p.Id} className="table-row cursor-pointer" onClick={() => setSelected(p)}>
                   <td className="table-cell font-mono text-text-dim">{p.Id}</td>
@@ -239,25 +201,22 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="table-cell"><span className="badge-dim">{p.Category}</span></td>
-                  <td className="table-cell text-right font-medium text-text-white">Rs {p.Price}</td>
+                  <td className="table-cell text-right font-medium text-text-bright">Rs {p.Price?.toLocaleString()}</td>
                   <td className="table-cell text-right">
                     <span className={p.Margin >= 50 ? 'text-bloom font-semibold' : p.Margin >= 30 ? 'text-ember' : 'text-danger'}>
-                      {p.Margin?.toFixed(1)}%
                       {p.Margin?.toFixed(1) || 0}%
                     </span>
                   </td>
                   <td className="table-cell text-right">
                     <span className={`font-mono font-bold ${stockColor(p.Stock, p.ReorderLevel)}`}>{p.Stock}</span>
                   </td>
-                  <td className="table-cell text-center"><HealthBadge status={!p.IsActive ? 'Inactive' : (p.IsDiscontinued ? 'Discontinued' : (p.HealthStatus || 'Warning'))} /></td>
                   <td className="table-cell text-center">
-                    <div className="flex items-center justify-center gap-2">
+                    <HealthBadge status={!p.IsActive ? 'Inactive' : (p.IsDiscontinued ? 'Discontinued' : (p.HealthStatus || 'Warning'))} />
+                  </td>
+                  <td className="table-cell text-center">
+                    <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
                       <button onClick={(e) => handleEdit(p, e)} className="btn-ghost !p-1.5 text-neo"><Edit2 size={14} /></button>
                       <button onClick={(e) => handleDelete(p.Id, e)} className="btn-ghost !p-1.5 text-danger"><Trash2 size={14} /></button>
-                      <div className="w-16 h-1.5 rounded-full overflow-hidden bg-abyss">
-                        <div className="h-full rounded-full" style={{ width: `${p.HealthScore || 0}%`, background: (p.HealthScore || 0) >= 80 ? '#10b981' : (p.HealthScore || 0) >= 50 ? '#f59e0b' : '#ef4444' }} />
-                      </div>
-                      <span className="text-xs font-mono text-text-dim">{p.HealthScore || 0}</span>
                     </div>
                   </td>
                 </tr>
@@ -271,7 +230,7 @@ export default function Products() {
       </div>
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="card w-full max-w-lg relative animate-fade-up">
             <button
               className="absolute top-4 right-4 text-text-dim hover:text-text-white transition-colors"

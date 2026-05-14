@@ -233,10 +233,6 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderDto input)
     {
-        order.OrderNumber = $"ORD-{DateTime.UtcNow.Ticks.ToString()[^8..]}";
-        order.OrderDate = DateTime.UtcNow;
-        order.CreatedAt = DateTime.UtcNow;
-        order.UpdatedAt = DateTime.UtcNow;
         // Resolve/create customer
         int customerId = input.CustomerId ?? 0;
         if (customerId <= 0)
@@ -862,68 +858,91 @@ public class DashboardController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] int days = 30)
     {
+        try {
         var now = DateTime.UtcNow;
         var startDate = now.AddDays(-days);
+
+        // Fetch aggregated values from database instead of loading full tables into memory
         var ordersPeriod = await _db.Orders.Where(o => o.OrderDate >= startDate).ToListAsync();
-        var customers = await _db.Customers.ToListAsync();
-        var products = await _db.Products.ToListAsync();
-        var returnsListPeriod = await _db.Returns.Where(r => r.RequestDate >= startDate).ToListAsync();
-        var returnsCount = returnsListPeriod.Count;
-        var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
+        var returnsCount = await _db.Returns.CountAsync(r => r.RequestDate >= startDate);
         var decisions = await _db.Decisions.OrderByDescending(d => d.CreatedAt).Take(5).ToListAsync();
         var rtoToday = await _db.RTOAssessments.Where(r => r.AssessedAt >= now.Date).ToListAsync();
+        var campaigns = await _db.AdCampaigns.Include(c => c.Performance).ToListAsync();
 
-        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend);
-        var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue);
+        var totalSpend = campaigns.SelectMany(c => c.Performance).Sum(p => p.Spend ?? 0);
+        var totalAdRevenue = campaigns.SelectMany(c => c.Performance).Sum(p => p.Revenue ?? 0);
 
-        var revenueTrend = orders30d
-            .Where(o => o.OrderDate.HasValue)
-            .GroupBy(o => o.OrderDate.Value.Date)
-            .OrderBy(g => g.Key)
-            .Select(g => new {
-                date = g.Key.ToString("MMM dd"),
-                revenue = g.Sum(o => o.TotalAmount)
-            })
-            .ToList();
+        // If we want actual Returns per day, we can do one grouped query:
+        var returnsGrouped = await _db.Returns
+            .Where(r => r.RequestDate >= startDate)
+            .GroupBy(r => r.RequestDate.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .ToListAsync();
 
-        return Ok(new {
-            Revenue = new { Today = orders30d.Where(o => o.OrderDate.HasValue && o.OrderDate.Value.Date >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = orders30d.Sum(o => o.TotalAmount),
-                            Trend = revenueTrend },
-            Orders = new { Total = orders30d.Count, Pending = orders30d.Count(o => o.FulfillmentStatus == "Pending") },
-            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= now.AddDays(-30)) },
-            ReturnRate = orders30d.Count > 0 ? Math.Round((double)returns30d / orders30d.Count * 100, 1) : 0,
-        var salesData = Enumerable.Range(0, days).Reverse().Select(i => {
+        var finalSalesData = Enumerable.Range(0, days).Reverse().Select(i => {
             var date = now.AddDays(-i).Date;
-            var dayOrders = ordersPeriod.Where(o => o.OrderDate.Date == date).ToList();
+            var dayOrders = ordersPeriod.Where(o => o.OrderDate.HasValue && o.OrderDate.Value.Date == date).ToList();
+            var dayReturns = returnsGrouped.FirstOrDefault(rg => rg.Date == date)?.Count ?? 0;
             return new {
                 Date = date.ToString("MMM d"),
                 Revenue = dayOrders.Sum(o => o.TotalAmount),
                 Orders = dayOrders.Count,
-                Returns = returnsListPeriod.Count(r => r.RequestDate.Date == date)
+                Returns = dayReturns
             };
         }).ToList();
 
+        var totalRevenue = await _db.Orders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+
+        // Fetch lightweight products for health evaluation (since HealthStatus is [NotMapped])
+        // Project to anonymous type first, since EF Core forbids projecting into entity types.
+        var dbProducts = await _db.Products
+            .Select(p => new {
+                p.Id,
+                p.Stock,
+                p.ReorderLevel,
+                p.IsDiscontinued,
+                p.IsActive,
+                p.Name
+            })
+            .ToListAsync();
+
+        var lightProducts = dbProducts.Select(p => new Product {
+            Id = p.Id,
+            Stock = p.Stock,
+            ReorderLevel = p.ReorderLevel,
+            IsDiscontinued = p.IsDiscontinued,
+            IsActive = p.IsActive,
+            Name = p.Name
+        }).ToList();
+
         return Ok(new {
-            Revenue = new { Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
-                            ThisMonth = ordersPeriod.Sum(o => o.TotalAmount),
-                            Total = await _db.Orders.SumAsync(o => o.TotalAmount) },
-            Orders = new { Total = ordersPeriod.Count, Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") },
-            Customers = new { Total = customers.Count, New30d = customers.Count(c => c.JoinedDate >= startDate) },
+            Revenue = new { 
+                Today = ordersPeriod.Where(o => o.OrderDate >= now.Date).Sum(o => o.TotalAmount),
+                ThisMonth = ordersPeriod.Sum(o => o.TotalAmount),
+                Total = totalRevenue 
+            },
+            Orders = new { 
+                Total = ordersPeriod.Count, 
+                Pending = ordersPeriod.Count(o => o.FulfillmentStatus == "Pending") 
+            },
+            Customers = new { 
+                Total = await _db.Customers.CountAsync(), 
+                New30d = await _db.Customers.CountAsync(c => c.JoinedDate >= startDate) 
+            },
             ReturnRate = ordersPeriod.Count > 0 ? Math.Round((double)returnsCount / ordersPeriod.Count * 100, 1) : 0,
             ROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0,
             ProductHealth = new {
-                Healthy = products.Count(p => p.HealthStatus == "Healthy"),
-                Warning = products.Count(p => p.HealthStatus == "Warning"),
-                Critical = products.Count(p => p.HealthStatus == "Critical"),
-                Discontinued = products.Count(p => p.IsDiscontinued == true)
+                Healthy = lightProducts.Count(p => p.HealthStatus == "Healthy"),
+                Warning = lightProducts.Count(p => p.HealthStatus == "Warning"),
+                Critical = lightProducts.Count(p => p.HealthStatus == "Critical"),
+                Discontinued = lightProducts.Count(p => p.IsDiscontinued == true)
             },
             CustomerLoyalty = new {
-                VIP = customers.Count(c => c.LoyaltyTier == "VIP"),
-                Gold = customers.Count(c => c.LoyaltyTier == "Gold"),
-                Silver = customers.Count(c => c.LoyaltyTier == "Silver"),
-                Bronze = customers.Count(c => c.LoyaltyTier == "Bronze"),
-                New = customers.Count(c => c.LoyaltyTier == "New")
+                VIP = await _db.Customers.CountAsync(c => c.LoyaltyTier == "VIP"),
+                Gold = await _db.Customers.CountAsync(c => c.LoyaltyTier == "Gold"),
+                Silver = await _db.Customers.CountAsync(c => c.LoyaltyTier == "Silver"),
+                Bronze = await _db.Customers.CountAsync(c => c.LoyaltyTier == "Bronze"),
+                New = await _db.Customers.CountAsync(c => c.LoyaltyTier == "New")
             },
             RTOToday = new {
                 AutoApproved = rtoToday.Count(r => r.Decision == "Auto-Approved"),
@@ -936,18 +955,25 @@ public class DashboardController : ControllerBase
                 AvgROI = totalSpend > 0 ? Math.Round((double)(totalAdRevenue - totalSpend) / (double)totalSpend * 100, 1) : 0
             },
             RecentDecisions = decisions,
-            Alerts = GetAlerts(products, ordersPeriod),
-            SalesData = salesData
+            Alerts = await GetAlertsAsync(),
+            SalesData = finalSalesData
         });
+        } catch (Exception ex) {
+            return StatusCode(500, new { message = ex.Message, stackTrace = ex.StackTrace, inner = ex.InnerException?.Message });
+        }
     }
 
-    private static List<object> GetAlerts(List<Product> products, List<Order> orders30d)
+    private async Task<List<object>> GetAlertsAsync()
     {
         var alerts = new List<object>();
-        foreach (var p in products.Where(p => p.Stock == 0 && p.IsActive == true))
+        var outOfStock = await _db.Products.Where(p => p.Stock == 0 && p.IsActive == true).Take(5).ToListAsync();
+        foreach (var p in outOfStock)
             alerts.Add(new { Level = "Critical", Message = $"'{p.Name}' is out of stock", Section = "Products" });
-        foreach (var p in products.Where(p => p.Stock > 0 && p.Stock < p.ReorderLevel))
+
+        var lowStock = await _db.Products.Where(p => p.Stock > 0 && p.Stock < p.ReorderLevel).Take(5).ToListAsync();
+        foreach (var p in lowStock)
             alerts.Add(new { Level = "Warning", Message = $"'{p.Name}' - only {p.Stock} left in stock", Section = "Products" });
-        return alerts.Take(10).ToList();
+
+        return alerts;
     }
 }

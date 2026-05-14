@@ -108,32 +108,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
+    background: var(--scroll-track, var(--bg-secondary));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: var(--scroll-thumb, var(--border-color));
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-dim);
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--scroll-track);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-bright);
+    background: var(--border-bright, var(--text-dim));
   }
 }
 
@@ -387,19 +371,6 @@
   }
 
   .stat-label {
-    @apply text-xs text-text-dim font-medium uppercase tracking-wider;
-  }
-
-  .stat-value {
-    @apply text-2xl font-bold text-text-white font-display;
-  }
-
-  .stat-change-up {
-    @apply text-xs text-bloom flex items-center gap-1;
-  }
-
-  .stat-change-down {
-    @apply text-xs text-danger flex items-center gap-1;
     @apply text-[10px] uppercase tracking-wider font-bold text-text-dim opacity-70;
   }
 
@@ -482,16 +453,6 @@
   }
 
   .metric-up {
-    color: var(--color-bloom);
-  }
-
-  .metric-down {
-    color: var(--color-danger);
-  }
-
-  .metric-neutral {
-    color: var(--text-dim);
-  }
     @apply text-bloom font-bold;
   }
 
@@ -536,39 +497,6 @@
   }
 }
 
-  .health-healthy {
-    color: var(--color-bloom);
-  }
-
-  .health-warning {
-    color: var(--color-ember);
-  }
-
-  .health-critical {
-    color: var(--color-danger);
-  }
-
-  .health-discontinued {
-    color: var(--text-dim);
-  }
-
-  .risk-low {
-    color: var(--color-bloom);
-  }
-
-  .risk-medium {
-    color: var(--color-ember);
-  }
-
-  .risk-high {
-    color: #f97316;
-  }
-
-  .risk-critical {
-    color: var(--color-danger);
-  }
-}
-
 /* Noise texture overlay */
 .noise-overlay::after {
   content: '';
@@ -603,5 +531,5 @@
     background-position: 200% 0;
   }
 }
-  opacity: 0.1;
-}
+
+

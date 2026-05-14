@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RefreshCw, XCircle, Truck, PackageCheck } from 'lucide-react'
-import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Download, ShoppingCart, DollarSign, Clock, CheckCircle, RotateCw } from 'lucide-react'
 import { OrderStatusBadge, RTORiskBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 
@@ -10,12 +8,6 @@ export default function Orders() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-import { fetchOrders } from '../../utils/api'
-
-export default function Orders() {
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '')
   const [selected, setSelected] = useState(null)
@@ -37,6 +29,11 @@ export default function Orders() {
     fetchOrders()
   }, [fetchOrders])
 
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status) setStatusFilter(status)
+  }, [searchParams])
+
   const handleAction = async (id, action) => {
     setActionLoading(id)
     try {
@@ -45,27 +42,6 @@ export default function Orders() {
       if (selected?.Id === id) {
         const { data } = await api.get(`/orders/${id}`)
         setSelected(data.order)
-    const status = searchParams.get('status')
-    if (status) setStatusFilter(status)
-    fetchOrders()
-  }, [searchParams, statusFilter])
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true)
-      const res = await api.get(`/orders?status=${statusFilter}`)
-      setOrders(res.data)
-    } catch (err) {
-      console.error('Failed to fetch orders', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false)
       }
     } catch (err) {
       console.error(`Failed to ${action} order`, err)
@@ -74,46 +50,37 @@ export default function Orders() {
     }
   }
 
-  useEffect(() => {
-    let mounted = true
-    setLoading(true)
-    setLoadError('')
-    fetchOrders()
-      .then(data => { if (mounted) setOrders(Array.isArray(data) ? data : []) })
-      .catch(() => { if (mounted) setLoadError('Failed to load orders from backend') })
-      .finally(() => { if (mounted) setLoading(false) })
-    return () => { mounted = false }
-  }, [])
-
   const filtered = orders.filter(o =>
-    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase()))
+    (!search || o.OrderNumber.includes(search) || `${o.Customer?.FirstName} ${o.Customer?.LastName}`.toLowerCase().includes(search.toLowerCase())) &&
+    (!statusFilter || o.FulfillmentStatus === statusFilter)
   )
 
   const totalRevenue = orders.reduce((s, o) => s + (o.TotalAmount || 0), 0)
   const avgValue = orders.length ? totalRevenue / orders.length : 0
 
+  const handleExport = () => {
+    const headers = ['Order #', 'Customer', 'Amount', 'Payment', 'Status', 'Risk Score', 'Date']
+    const csvData = filtered.map(o =>
+      [o.OrderNumber, `"${o.Customer?.FirstName} ${o.Customer?.LastName}"`, o.TotalAmount, o.PaymentMethod, o.FulfillmentStatus, o.RTORiskScore, o.OrderDate].join(',')
+    )
+    const csvContent = [headers.join(','), ...csvData].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'orders_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="p-6 space-y-5 animate-fade-up">
-
-      {loading && (
-        <div className="card">
-          <div className="text-sm text-text-dim">Loading orders…</div>
-        </div>
-      )}
-
-      {!loading && loadError && (
-        <div className="card">
-          <div className="text-sm text-red-400">{loadError}</div>
-          <div className="text-xs text-text-dim mt-1">Make sure backend is running on port 5000 and the `/api` proxy is enabled.</div>
-        </div>
-      )}
-
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Orders', value: orders.length, icon: ShoppingCart, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
           { label: 'Total Revenue', value: `Rs ${totalRevenue.toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-          { label: 'Avg Order Value', value: `Rs ${avgValue.toFixed(2)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+          { label: 'Avg Order Value', value: `Rs ${avgValue.toFixed(0)}`, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
           { label: 'Pending', value: orders.filter(o => o.FulfillmentStatus === 'Pending').length, icon: CheckCircle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
@@ -122,7 +89,7 @@ export default function Orders() {
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{loading ? '...' : s.value}</div>
+              <div className="text-xl font-bold text-text-bright mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
@@ -130,87 +97,25 @@ export default function Orders() {
 
       {/* Orders Table Card */}
       <div className="card !p-0 overflow-hidden">
-        <div className="flex items-center gap-3 p-4 border-b border-border">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border">
+          <div className="relative flex-1 max-w-sm min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-            <input className="input pl-9" placeholder="Order ID or customer..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input pl-9 w-full" placeholder="Order ID or customer..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="select w-36" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <select 
+            className="select w-40" 
+            value={statusFilter} 
+            onChange={e => { setStatusFilter(e.target.value); setSearchParams(e.target.value ? { status: e.target.value } : {}) }}>
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
             <option value="Cancelled">Cancelled</option>
           </select>
-          <button onClick={fetchOrders} className="btn-ghost !p-2 ml-auto"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
-          <button className="btn-ghost flex items-center gap-2 text-sm"><Download size={14} /> Export</button>
+          <button onClick={fetchOrders} className="btn-ghost !p-2 ml-auto hover:bg-surface"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
+          <button onClick={handleExport} className="btn-ghost flex items-center gap-2 text-sm"><Download size={14} /> Export</button>
         </div>
 
-          {/* Status Dropdown */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              className="input w-36 flex items-center justify-between gap-2"
-              onClick={() => setDropdownOpen(o => !o)}
-            >
-              <span>{statusLabels[statusFilter]}</span>
-              <svg
-                width="12" height="12"
-                viewBox="0 0 12 12"
-                style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}
-                fill="currentColor"
-              >
-                <path d="M6 8L1 3h10L6 8z" />
-              </svg>
-            </button>
-
-            {dropdownOpen && (
-              <div
-                className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}
-              >
-                {statusOptions.map(opt => (
-                  <div
-                    key={opt}
-                    className="px-3 py-2 text-sm cursor-pointer"
-                    style={{
-                      color: statusFilter === opt ? '#06b6d4' : 'var(--text-bright)',
-                      background: statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--abyss)'}
-                    onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
-                    onClick={() => { 
-                      setStatusFilter(opt); 
-                      setSearchParams(opt ? { status: opt } : {}); 
-                      setDropdownOpen(false) 
-                    }}
-                  >
-                    {statusLabels[opt]}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Export Button */}
-          <button
-            className="btn-ghost p-2 rounded-lg"
-            onClick={fetchOrders}
-            disabled={loading}
-          >
-            <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-
-          <button
-            className="btn-ghost flex items-center gap-2 text-sm ml-2"
-            onClick={handleExport}
-          >
-            <Download size={14} /> Export
-          </button>
-
-        </div>
-        {/* End Toolbar */}
-
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -220,7 +125,7 @@ export default function Orders() {
                 <th className="table-header text-right">Amount</th>
                 <th className="table-header text-center">Payment</th>
                 <th className="table-header text-center">Status</th>
-                <th className="table-header text-center">RTO Risk</th>
+                <th className="table-header text-center">Risk Score</th>
                 <th className="table-header text-right">Date</th>
               </tr>
             </thead>
@@ -228,9 +133,9 @@ export default function Orders() {
               {loading && orders.length === 0 ? (
                 <tr><td colSpan="7" className="py-10 text-center text-text-dim">Loading orders...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="7" className="py-10 text-center text-text-dim">No orders found</td></tr>
+                <tr><td colSpan="7" className="py-10 text-center text-text-dim">No orders found matching filters</td></tr>
               ) : filtered.map(o => (
-                <tr key={o.Id} className="table-row cursor-pointer" onClick={() => setSelected(o)}>
+                <tr key={o.Id} className="table-row cursor-pointer" onClick={() => setSelected(o === selected ? null : o)}>
                   <td className="table-cell">
                     <span className="font-mono text-neo-bright text-sm font-semibold">{o.OrderNumber}</span>
                   </td>
@@ -239,7 +144,7 @@ export default function Orders() {
                     <div className="text-xs text-text-dim">{o.Customer?.Email}</div>
                   </td>
                   <td className="table-cell text-right">
-                    <span className="font-bold text-text-white">Rs {o.TotalAmount.toLocaleString()}</span>
+                    <span className="font-bold text-text-bright">Rs {o.TotalAmount?.toLocaleString()}</span>
                   </td>
                   <td className="table-cell text-center">
                     <span className={`badge ${o.PaymentMethod === 'COD' ? 'badge-ember' : o.PaymentMethod === 'UPI' ? 'badge-pulse' : 'badge-neo'}`}>
@@ -259,7 +164,7 @@ export default function Orders() {
 
         {/* Order Detail Panel */}
         {selected && (
-          <div className="border-t border-border p-5 animate-fade-in" style={{ background: 'rgba(99,102,241,0.04)' }}>
+          <div className="border-t border-border p-5 animate-fade-in bg-neo/5">
             <div className="flex items-center justify-between mb-4">
               <div className="section-title">Order Details — {selected.OrderNumber}</div>
               <button onClick={() => setSelected(null)} className="btn-ghost text-xs">Close</button>
@@ -268,7 +173,7 @@ export default function Orders() {
               {[
                 { label: 'Status', value: selected.FulfillmentStatus },
                 { label: 'Payment', value: selected.PaymentMethod },
-                { label: 'Amount', value: `Rs ${selected.TotalAmount}` },
+                { label: 'Amount', value: `Rs ${selected.TotalAmount?.toLocaleString()}` },
                 { label: 'RTO Decision', value: selected.RTODecision || '—' },
               ].map(m => (
                 <div key={m.label}>
@@ -294,21 +199,18 @@ export default function Orders() {
                 </button>
               )}
               {['Pending', 'Confirmed'].includes(selected.FulfillmentStatus) && (
-                <button onClick={() => handleAction(selected.Id, 'Cancel')} disabled={actionLoading === selected.Id} className="btn-ghost text-danger flex items-center gap-2 text-xs border border-danger/20">
+                <button onClick={() => handleAction(selected.Id, 'Cancel')} disabled={actionLoading === selected.Id} className="btn-ghost text-danger flex items-center gap-2 text-xs border border-danger/20 hover:bg-danger/5">
                   <XCircle size={14} /> Cancel Order
                 </button>
               )}
-              <button className="btn-ghost text-xs border border-border">Print Invoice</button>
+              <button className="btn-ghost text-xs border border-border px-4 py-1.5 rounded-lg hover:bg-surface transition-colors">Print Invoice</button>
             </div>
           </div>
         )}
-        <div className="px-4 py-3 border-t border-border">
+        <div className="px-4 py-3 border-t border-border bg-void/30">
           <span className="text-xs text-text-dim">Showing {filtered.length} of {orders.length} orders</span>
         </div>
-
       </div>
-      {/* End Orders Table Card */}
-
     </div>
-    )
+  )
 }

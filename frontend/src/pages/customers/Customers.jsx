@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Search, Plus, Download, Users, UserCheck, TrendingUp, Flag, RefreshCw, Trash2, Edit2 } from 'lucide-react'
 import { LoyaltyBadge, FlagBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
