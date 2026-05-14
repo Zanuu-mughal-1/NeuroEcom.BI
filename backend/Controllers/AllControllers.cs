@@ -16,18 +16,22 @@ public class CustomersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? tier)
     {
-        var query = _db.Customers.Include(c => c.Flags).AsQueryable();
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(c => c.FirstName.Contains(search) || c.LastName.Contains(search) || c.Email.Contains(search));
-        if (!string.IsNullOrEmpty(tier))
-            query = query.Where(c => c.LoyaltyTier == tier);
-        var customers = await query.ToListAsync();
-        return Ok(customers.Select(c => new {
-            c.Id, c.FirstName, c.LastName, c.Email, c.Phone, c.City,
-            c.LoyaltyTier, c.LoyaltyPoints, c.TotalSpent, c.TotalOrders,
-            c.IsBlocked, c.JoinedDate, c.LastOrderDate,
-            Flags = c.Flags.Where(f => f.IsActive).Select(f => new { f.FlagType, f.Reason })
-        }));
+        try {
+            var query = _db.Customers.Include(c => c.Flags).AsQueryable();
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(c => c.FirstName.Contains(search) || c.LastName.Contains(search) || c.Email.Contains(search));
+            if (!string.IsNullOrEmpty(tier))
+                query = query.Where(c => c.LoyaltyTier == tier);
+            var customers = await query.ToListAsync();
+            return Ok(customers.Select(c => new {
+                c.Id, c.FirstName, c.LastName, c.Email, c.Phone, c.City,
+                c.LoyaltyTier, c.LoyaltyPoints, c.TotalSpent, c.TotalOrders,
+                c.IsBlocked, c.JoinedDate, c.LastOrderDate,
+                Flags = c.Flags.Where(f => f.IsActive).Select(f => new { f.FlagType, f.Reason })
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -119,15 +123,21 @@ public class CustomersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Customer update)
+    public async Task<IActionResult> Update(int id, [FromBody] Customer updated)
     {
         var customer = await _db.Customers.FindAsync(id);
         if (customer == null) return NotFound();
-        customer.FirstName = update.FirstName; customer.LastName = update.LastName;
-        customer.Email = update.Email; customer.Phone = update.Phone;
-        customer.City = update.City; customer.LoyaltyTier = update.LoyaltyTier;
+        customer.FirstName    = updated.FirstName ?? customer.FirstName;
+        customer.LastName     = updated.LastName  ?? customer.LastName;
+        customer.Email        = updated.Email     ?? customer.Email;
+        customer.Phone        = updated.Phone     ?? customer.Phone;
+        customer.City         = updated.City      ?? customer.City;
+        customer.LoyaltyTier  = updated.LoyaltyTier ?? customer.LoyaltyTier;
+        customer.IsBlocked    = updated.IsBlocked;
+        customer.BlockReason  = updated.BlockReason ?? customer.BlockReason;
         await _db.SaveChangesAsync();
-        return Ok(customer);
+        return Ok(new { message = "Customer updated", customer });
+    }
     }
 
     [HttpDelete("{id}")]
@@ -137,7 +147,7 @@ public class CustomersController : ControllerBase
         if (customer == null) return NotFound();
         _db.Customers.Remove(customer);
         await _db.SaveChangesAsync();
-        return NoContent();
+        return Ok(new { message = "Customer deleted" });
     }
 }
 
@@ -386,15 +396,19 @@ public class ReturnsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status)
     {
-        var query = _db.Returns.Include(r => r.Customer).Include(r => r.Product).Include(r => r.Order).AsQueryable();
-        if (!string.IsNullOrEmpty(status)) query = query.Where(r => r.Status == status);
-        var returns = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
-        return Ok(returns.Select(r => new {
-            r.Id, r.ReturnNumber, r.Status, r.ReturnReason, r.Quantity, r.RefundAmount, r.RequestDate,
-            Customer = r.Customer == null ? null : new { r.Customer.FirstName, r.Customer.LastName },
-            Product = r.Product == null ? null : new { r.Product.Name, r.Product.SKU },
-            OrderNumber = r.Order?.OrderNumber
-        }));
+        try {
+            var query = _db.Returns.Include(r => r.Customer).Include(r => r.Product).Include(r => r.Order).AsQueryable();
+            if (!string.IsNullOrEmpty(status)) query = query.Where(r => r.Status == status);
+            var returns = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
+            return Ok(returns.Select(r => new {
+                r.Id, r.ReturnNumber, r.Status, r.ReturnReason, r.Quantity, r.RefundAmount, r.RequestDate,
+                Customer = r.Customer == null ? null : new { r.Customer.FirstName, r.Customer.LastName },
+                Product = r.Product == null ? null : new { r.Product.Name, r.Product.SKU },
+                OrderNumber = r.Order?.OrderNumber
+            }));
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -671,9 +685,13 @@ public class DecisionsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? section)
     {
-        var query = _db.Decisions.AsQueryable();
-        if (!string.IsNullOrEmpty(section)) query = query.Where(d => d.Section == section);
-        return Ok(await query.OrderByDescending(d => d.CreatedAt).Take(100).ToListAsync());
+        try {
+            var query = _db.Decisions.AsQueryable();
+            if (!string.IsNullOrEmpty(section)) query = query.Where(d => d.Section == section);
+            return Ok(await query.OrderByDescending(d => d.CreatedAt).Take(100).ToListAsync());
+        } catch (Exception ex) {
+            return StatusCode(500, new { error = "Database Query Failed", details = ex.Message });
+        }
     }
 
     [HttpGet("rules")]

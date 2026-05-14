@@ -382,6 +382,14 @@
     background: var(--abyss);
   }
 
+  .table-row {
+    @apply border-b border-border transition-colors duration-150;
+  }
+
+  .table-row:hover {
+    background: var(--abyss);
+  }
+
   .table-cell {
     @apply px-4 py-4 text-sm text-text-bright;
   }

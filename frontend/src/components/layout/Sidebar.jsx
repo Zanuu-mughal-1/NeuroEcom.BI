@@ -44,7 +44,7 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
   const location = useLocation()
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  
+
   const sampleNotifications = [
     {
       type: 'info',
@@ -139,14 +139,14 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
           <div className="p-2 border-b border-border mb-1">
             <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider opacity-70">Quick Settings</div>
           </div>
-          <button 
+          <button
             onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors"
           >
             {isDark ? <Sun size={14} className="text-ember" /> : <Moon size={14} className="text-neo" />}
             <span className="flex-1 text-left">{isDark ? 'Light' : 'Dark'} Mode</span>
           </button>
-          <button 
+          <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-void text-sm text-text-bright transition-colors relative"
           >
@@ -163,7 +163,7 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
       {/* Notification Panel for Settings */}
       {showNotifications && (
         <div className="absolute bottom-48 left-4 right-4 z-50">
-          <NotificationPanel 
+          <NotificationPanel
             notifications={sampleNotifications}
             onClose={() => setShowNotifications(false)}
             position="sidebar"

@@ -25,6 +25,61 @@ export const fetchRules = (category) => api.get('/Decisions/rules', { params: { 
 export const updateRule = (id, newValue) => api.put(`/Decisions/rules/${id}`, { newValue }).then(res => res.data);
 export const performOrderAction = (id, action) => api.post(`/Orders/${id}/action`, action).then(res => res.data);
 
+// ===================== API SERVICES =====================
+export const customerApi = {
+  getAll:       (search, tier) => api.get('/customers', { params: { search, tier } }),
+  getById:      (id)           => api.get(`/customers/${id}`),
+  create:       (data)         => api.post('/customers', data),
+  update:       (id, data)     => api.put(`/customers/${id}`, data),
+  delete:       (id)           => api.delete(`/customers/${id}`),
+  takeAction:   (id, data)     => api.post(`/customers/${id}/action`, data),
+  getAnalytics: ()             => api.get('/customers/analytics')
+}
+
+export const orderApi = {
+  getAll:         (params)       => api.get('/orders', { params }),
+  getById:        (id)           => api.get(`/orders/${id}`),
+  create:         (data)         => api.post('/orders', data),
+  takeAction:     (id, data)     => api.post(`/orders/${id}/action`, data),
+  updateTracking: (id, tracking) => api.post(`/orders/${id}/action`, { action: 'Ship', trackingNumber: tracking }),
+  getAnalytics:  ()              => api.get('/orders/analytics')
+}
+
+export const productApi = {
+  getAll: (params) => api.get('/products', { params }),
+  getById: (id) => api.get(`/products/${id}`),
+  update: (id, data) => api.put(`/products/${id}`, data),
+  getAnalytics: () => api.get('/products/analytics')
+}
+
+export const adApi = {
+  getAll: () => api.get('/ads'),
+  getAnalytics: () => api.get('/ads/analytics'),
+  takeAction: (id, data) => api.post(`/ads/${id}/action`, data)
+}
+
+export const returnApi = {
+  getAll: () => api.get('/returns'),
+  takeAction: (id, data) => api.post(`/returns/${id}/action`, data)
+}
+
+export const rtoApi = {
+  testOrder: (data) => api.post('/rto/test', data),
+  getRules: () => api.get('/rto/rules'),
+  updateRule: (id, data) => api.put(`/rto/rules/${id}`, data)
+}
+
+export const decisionsApi = {
+  getAll: () => api.get('/decisions'),
+  getRules: (category) => api.get('/decisions/rules', { params: { category } }),
+  updateRule: (id, data) => api.put(`/decisions/rules/${id}`, data),
+  resetRule: (id) => api.post(`/decisions/rules/${id}/reset`)
+}
+
+export const dashboardApi = {
+  get: () => api.get('/dashboard')
+}
+
 // ===================== MOCK DATA =====================
 // (Keeping mock data below for fallback/reference if needed)
 export const mockDashboard = {
@@ -39,10 +94,10 @@ export const mockDashboard = {
   ActiveAds: { Count: 12, TotalSpend: 4500, AvgROI: 45 },
   RecentDecisions: [
     { Id: 1, Section: 'Products', DecisionType: 'PriceDecrease', ItemName: 'Wireless Mouse Pro', DecisionDetails: 'Price reduced from $34.99 to $29.99', CreatedAt: new Date().toISOString(), Status: 'Applied' },
-    { Id: 2, Section: 'Customers', DecisionType: 'Flag', ItemName: 'Robert Martinez', DecisionDetails: 'Flagged as Fraud Risk', CreatedAt: new Date(Date.now()-3600000).toISOString(), Status: 'Applied' },
-    { Id: 3, Section: 'Ads', DecisionType: 'Pause', ItemName: 'Back to School', DecisionDetails: 'Campaign paused - ROI below threshold', CreatedAt: new Date(Date.now()-7200000).toISOString(), Status: 'Applied' },
-    { Id: 4, Section: 'Products', DecisionType: 'IncreaseInventory', ItemName: 'Gaming Keyboard RGB', DecisionDetails: 'Stock increased by 150 units', CreatedAt: new Date(Date.now()-10800000).toISOString(), Status: 'Applied' },
-    { Id: 5, Section: 'Returns', DecisionType: 'Approve', ItemName: 'RTN-00234', DecisionDetails: 'Return approved, refund of $89.99', CreatedAt: new Date(Date.now()-14400000).toISOString(), Status: 'Applied' },
+    { Id: 2, Section: 'Customers', DecisionType: 'Flag', ItemName: 'Robert Martinez', DecisionDetails: 'Flagged as Fraud Risk', CreatedAt: new Date(Date.now() - 3600000).toISOString(), Status: 'Applied' },
+    { Id: 3, Section: 'Ads', DecisionType: 'Pause', ItemName: 'Back to School', DecisionDetails: 'Campaign paused - ROI below threshold', CreatedAt: new Date(Date.now() - 7200000).toISOString(), Status: 'Applied' },
+    { Id: 4, Section: 'Products', DecisionType: 'IncreaseInventory', ItemName: 'Gaming Keyboard RGB', DecisionDetails: 'Stock increased by 150 units', CreatedAt: new Date(Date.now() - 10800000).toISOString(), Status: 'Applied' },
+    { Id: 5, Section: 'Returns', DecisionType: 'Approve', ItemName: 'RTN-00234', DecisionDetails: 'Return approved, refund of $89.99', CreatedAt: new Date(Date.now() - 14400000).toISOString(), Status: 'Applied' },
   ],
   Alerts: [
     { Level: 'Critical', Message: '"Noise Canceling Headphones" is out of stock', Section: 'Products' },
@@ -78,16 +133,16 @@ export const mockCustomers = [
 
 export const mockOrders = [
   { Id: 1, OrderNumber: 'ORD-00234', OrderDate: new Date().toISOString(), TotalAmount: 129.98, PaymentMethod: 'UPI', PaymentStatus: 'Confirmed', FulfillmentStatus: 'Delivered', RTORiskScore: 15, RTODecision: 'Auto-Approved', Customer: { FirstName: 'James', LastName: 'Anderson', Email: 'james.anderson@email.com' }, ItemCount: 2 },
-  { Id: 2, OrderNumber: 'ORD-00235', OrderDate: new Date(Date.now()-86400000).toISOString(), TotalAmount: 79.99, PaymentMethod: 'COD', PaymentStatus: 'Pending', FulfillmentStatus: 'Shipped', RTORiskScore: 55, RTODecision: 'Manual Review', Customer: { FirstName: 'Sarah', LastName: 'Chen', Email: 'sarah.chen@email.com' }, ItemCount: 1 },
-  { Id: 3, OrderNumber: 'ORD-00236', OrderDate: new Date(Date.now()-172800000).toISOString(), TotalAmount: 649.97, PaymentMethod: 'CreditCard', PaymentStatus: 'Confirmed', FulfillmentStatus: 'Pending', RTORiskScore: 35, RTODecision: 'Manual Review', Customer: { FirstName: 'Emily', LastName: 'Watson', Email: 'emily.w@email.com' }, ItemCount: 3 },
-  { Id: 4, OrderNumber: 'ORD-00237', OrderDate: new Date(Date.now()-259200000).toISOString(), TotalAmount: 45.99, PaymentMethod: 'UPI', PaymentStatus: 'Confirmed', FulfillmentStatus: 'Delivered', RTORiskScore: 8, RTODecision: 'Auto-Approved', Customer: { FirstName: 'Michael', LastName: 'Rodriguez', Email: 'michael.r@email.com' }, ItemCount: 1 },
-  { Id: 5, OrderNumber: 'ORD-00238', OrderDate: new Date(Date.now()-345600000).toISOString(), TotalAmount: 299.99, PaymentMethod: 'COD', PaymentStatus: 'Refunded', FulfillmentStatus: 'Cancelled', RTORiskScore: 88, RTODecision: 'Auto-Rejected', Customer: { FirstName: 'Robert', LastName: 'Martinez', Email: 'r.martinez@tempmail.com' }, ItemCount: 2 },
+  { Id: 2, OrderNumber: 'ORD-00235', OrderDate: new Date(Date.now() - 86400000).toISOString(), TotalAmount: 79.99, PaymentMethod: 'COD', PaymentStatus: 'Pending', FulfillmentStatus: 'Shipped', RTORiskScore: 55, RTODecision: 'Manual Review', Customer: { FirstName: 'Sarah', LastName: 'Chen', Email: 'sarah.chen@email.com' }, ItemCount: 1 },
+  { Id: 3, OrderNumber: 'ORD-00236', OrderDate: new Date(Date.now() - 172800000).toISOString(), TotalAmount: 649.97, PaymentMethod: 'CreditCard', PaymentStatus: 'Confirmed', FulfillmentStatus: 'Pending', RTORiskScore: 35, RTODecision: 'Manual Review', Customer: { FirstName: 'Emily', LastName: 'Watson', Email: 'emily.w@email.com' }, ItemCount: 3 },
+  { Id: 4, OrderNumber: 'ORD-00237', OrderDate: new Date(Date.now() - 259200000).toISOString(), TotalAmount: 45.99, PaymentMethod: 'UPI', PaymentStatus: 'Confirmed', FulfillmentStatus: 'Delivered', RTORiskScore: 8, RTODecision: 'Auto-Approved', Customer: { FirstName: 'Michael', LastName: 'Rodriguez', Email: 'michael.r@email.com' }, ItemCount: 1 },
+  { Id: 5, OrderNumber: 'ORD-00238', OrderDate: new Date(Date.now() - 345600000).toISOString(), TotalAmount: 299.99, PaymentMethod: 'COD', PaymentStatus: 'Refunded', FulfillmentStatus: 'Cancelled', RTORiskScore: 88, RTODecision: 'Auto-Rejected', Customer: { FirstName: 'Robert', LastName: 'Martinez', Email: 'r.martinez@tempmail.com' }, ItemCount: 2 },
 ]
 
 export const mockReturns = [
   { Id: 1, ReturnNumber: 'RTN-00045', OrderNumber: 'ORD-00180', Status: 'Pending', ReturnReason: 'Defective', Quantity: 1, RefundAmount: 79.99, RequestDate: new Date().toISOString(), Customer: { FirstName: 'David', LastName: 'Kim' }, Product: { Name: 'Gaming Keyboard RGB', SKU: 'GK-001' } },
-  { Id: 2, ReturnNumber: 'RTN-00044', OrderNumber: 'ORD-00175', Status: 'Approved', ReturnReason: 'WrongSize', Quantity: 1, RefundAmount: 39.99, RequestDate: new Date(Date.now()-86400000).toISOString(), Customer: { FirstName: 'Lisa', LastName: 'Thompson' }, Product: { Name: 'Laptop Stand Adjustable', SKU: 'LS-001' } },
-  { Id: 3, ReturnNumber: 'RTN-00043', OrderNumber: 'ORD-00170', Status: 'Refunded', ReturnReason: 'NotDescribed', Quantity: 1, RefundAmount: 45.99, RequestDate: new Date(Date.now()-172800000).toISOString(), Customer: { FirstName: 'Sarah', LastName: 'Chen' }, Product: { Name: 'USB-C Hub 7-in-1', SKU: 'UH-001' } },
+  { Id: 2, ReturnNumber: 'RTN-00044', OrderNumber: 'ORD-00175', Status: 'Approved', ReturnReason: 'WrongSize', Quantity: 1, RefundAmount: 39.99, RequestDate: new Date(Date.now() - 86400000).toISOString(), Customer: { FirstName: 'Lisa', LastName: 'Thompson' }, Product: { Name: 'Laptop Stand Adjustable', SKU: 'LS-001' } },
+  { Id: 3, ReturnNumber: 'RTN-00043', OrderNumber: 'ORD-00170', Status: 'Refunded', ReturnReason: 'NotDescribed', Quantity: 1, RefundAmount: 45.99, RequestDate: new Date(Date.now() - 172800000).toISOString(), Customer: { FirstName: 'Sarah', LastName: 'Chen' }, Product: { Name: 'USB-C Hub 7-in-1', SKU: 'UH-001' } },
 ]
 
 export const mockCampaigns = [
