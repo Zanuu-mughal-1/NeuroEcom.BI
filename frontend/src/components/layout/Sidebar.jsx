@@ -174,7 +174,8 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
       {/* Bottom user panel */}
       <div className="p-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
-          style={{ background: 'var(--input-bg)' }}>
+          style={{ background: 'var(--input-bg)' }}
+          onClick={() => setShowSettings(!showSettings)}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
             style={{ background: 'linear-gradient(135deg, var(--color-neo), var(--color-royal))' }}>A</div>
           <div className="flex-1 min-w-0">

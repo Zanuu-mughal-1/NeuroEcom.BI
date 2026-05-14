@@ -1,5 +1,5 @@
 import React from 'react'
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts'
 
 const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => {
   if (!active || !payload?.length) return null
@@ -18,7 +18,7 @@ const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => 
 export function SalesAreaChart({ data, color = '#6366f1', dataKey = 'Revenue', prefix = '$' }) {
   const chartData = data?.map(item => ({
     ...item,
-    Date: item.Date || item.date,
+    Date: item.Date || item.date || '',
     Value: item[dataKey] || item[dataKey.toLowerCase()] || 0
   }))
 
@@ -88,7 +88,7 @@ export function SimpleBarChart({ data, dataKey = 'Value', color = '#6366f1', pre
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-          <XAxis dataKey="Name" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} width={40} />
           <Tooltip content={<CustomTooltip prefix={prefix} />} cursor={{ fill: 'rgba(255,255,255,0.05)', opacity: 0.4 }} />
           <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} animationDuration={1500} />
@@ -119,6 +119,7 @@ export function DonutChart({ data, colors }) {
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
+          <Legend formatter={(v) => <span style={{ color: 'var(--text-mid)', fontSize: '12px' }}>{v}</span>} />
         </PieChart>
       </ResponsiveContainer>
     </div>

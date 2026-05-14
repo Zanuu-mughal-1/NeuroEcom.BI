@@ -24,22 +24,6 @@ export default function Header({ toggleSidebar }) {
   const [showHeaderNotifications, setShowHeaderNotifications] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
-  useEffect(() => {
-    fetchAlerts()
-    
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        setIsSearchOpen(true)
-      }
-      if (e.key === 'Escape') {
-        setIsSearchOpen(false)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   const fetchAlerts = async () => {
     try {
       const res = await api.get('/dashboard')
@@ -58,6 +42,22 @@ export default function Header({ toggleSidebar }) {
     }
   }
 
+  useEffect(() => {
+    fetchAlerts()
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsSearchOpen(true)
+      }
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const handleRefresh = () => {
     setIsRefreshing(true)
     setTimeout(() => {
@@ -74,22 +74,20 @@ export default function Header({ toggleSidebar }) {
       <div className="flex items-center gap-3 md:gap-4">
         <button 
           onClick={toggleSidebar}
-          className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-all"
+          className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-all flex flex-col gap-1"
         >
-          <div className="w-5 h-0.5 bg-text-bright mb-1" />
-          <div className="w-5 h-0.5 bg-text-bright mb-1" />
+          <div className="w-5 h-0.5 bg-text-bright" />
+          <div className="w-5 h-0.5 bg-text-bright" />
           <div className="w-5 h-0.5 bg-text-bright" />
         </button>
-        <h1 className="page-title text-xl md:text-2xl truncate max-w-[150px] md:max-w-none">{title}</h1>
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-text-dim bg-surface border border-border">
+        <h1 className="page-title text-xl md:text-2xl truncate max-w-[150px] md:max-w-none text-text-bright">{title}</h1>
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold text-text-dim bg-surface border border-border">
           <Calendar size={11} />
           <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <ThemeToggle />
-
         <div 
           onClick={() => setIsSearchOpen(true)}
           className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
@@ -99,9 +97,12 @@ export default function Header({ toggleSidebar }) {
           <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
         </div>
+
+        <ThemeToggle />
+
         <button 
           onClick={handleRefresh}
-          className={`btn-ghost p-2 !px-2 transition-all ${isRefreshing ? 'text-neo-bright' : ''}`}
+          className={`p-2 rounded-lg hover:bg-white/5 transition-all ${isRefreshing ? 'text-neo' : 'text-text-dim'}`}
           title="Refresh Page"
         >
           <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
@@ -110,11 +111,11 @@ export default function Header({ toggleSidebar }) {
         <div className="relative">
           <button 
             onClick={() => setShowHeaderNotifications(!showHeaderNotifications)}
-            className="relative btn-ghost p-2 !px-2 transition-all hover:bg-white/10"
+            className="relative p-2 rounded-lg hover:bg-white/5 text-text-dim transition-all"
           >
             <Bell size={15} />
             {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
             )}
           </button>
           {showHeaderNotifications && (
@@ -125,7 +126,8 @@ export default function Header({ toggleSidebar }) {
             />
           )}
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-bloom bg-bloom/10 border border-bloom/20">
+
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-bloom bg-bloom/10 border border-bloom/20">
           <span className="w-1.5 h-1.5 rounded-full bg-bloom animate-pulse" />
           LIVE
         </div>

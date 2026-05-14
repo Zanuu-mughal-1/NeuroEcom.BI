@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Megaphone, TrendingUp, DollarSign, Target, Play, Pause, Search, RefreshCw, CheckCircle, XCircle, Trash2, Edit2 } from 'lucide-react'
 import { CampaignStatusBadge } from '../../components/ui/StatusBadge'
 import { SalesAreaChart, SimpleBarChart } from '../../components/charts/MiniChart'
-import api, { generateSalesData } from '../../utils/api'
+import api from '../../utils/api'
 import CampaignModal from '../../components/modals/CampaignModal'
 
 export default function Ads() {
@@ -33,6 +33,7 @@ export default function Ads() {
       setChartData(history)
     } catch (error) {
       console.error('Failed to fetch campaigns or history', error)
+      showToast('error', 'Failed to fetch live data from API')
     } finally {
       setLoading(false)
     }
@@ -81,7 +82,9 @@ export default function Ads() {
 
   const filtered = campaigns.filter(c => {
     const matchesStatus = !statusFilter || c.Status === statusFilter
-    const matchesSearch = !searchTerm || c.Name.toLowerCase().includes(searchTerm.toLowerCase()) || c.Platform.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = !searchTerm || 
+      c.Name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      c.Platform.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -90,7 +93,6 @@ export default function Ads() {
   const overallROI = totalSpend > 0 ? (((totalRevenue - totalSpend) / totalSpend) * 100).toFixed(1) : 0
   const overallROAS = totalSpend > 0 ? (totalRevenue / totalSpend).toFixed(2) : 0
 
-  // Dynamic platform data from campaigns
   const platformData = campaigns.reduce((acc, c) => {
     const existing = acc.find(p => p.name === c.Platform)
     if (existing) existing.value += (c.TotalRevenue || 0)
@@ -98,17 +100,13 @@ export default function Ads() {
     return acc
   }, []).filter(p => p.value > 0)
 
-  // Build 30-day spend/revenue trend from campaigns (approximated daily)
-  const trendData = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (29 - i))
-    return {
-      date: d.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
-      revenue: Math.round((totalRevenue / 30) * (0.7 + Math.random() * 0.6)),
-    }
-  })
-
-  if (loading && campaigns.length === 0) return <div className="p-6 text-text-dim">Loading Campaigns...</div>
+  if (loading && campaigns.length === 0) {
+    return (
+      <div className="p-6 text-text-dim flex items-center gap-3">
+        <RefreshCw className="animate-spin" size={20} /> Loading campaigns...
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
@@ -131,12 +129,27 @@ export default function Ads() {
           </span>
         </div>
       )}
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+        <div>
+          <h1 className="page-title text-text-bright">ADVERTISING MANAGER</h1>
+          <p className="text-xs text-text-dim">Monitor ROI and optimize platform spend in real-time</p>
+        </div>
+        <button 
+          onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} 
+          className="btn-primary flex items-center justify-center gap-2"
+        >
+          <Megaphone size={16} /> Create Campaign
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Active Campaigns', value: campaigns.filter(c => c.Status === 'Active').length, icon: Megaphone, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
-          { label: 'Total Spend', value: `$${totalSpend.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, icon: DollarSign, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-          { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, icon: TrendingUp, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
+          { label: 'Total Spend', value: `$${totalSpend.toLocaleString()}`, icon: DollarSign, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
+          { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
           { label: 'Overall ROI', value: `${overallROI}%`, icon: Target, bg: 'rgba(99,102,241,0.1)', color: '#6366f1' },
           { label: 'ROAS', value: `${overallROAS}x`, icon: TrendingUp, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
         ].map(s => (
@@ -146,8 +159,8 @@ export default function Ads() {
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-lg font-bold text-text-white mt-0.5">
-                {s.value}
+              <div className="text-lg font-bold text-text-bright mt-0.5">
+                {loading ? <span className="text-sm text-text-dim animate-pulse">...</span> : s.value}
               </div>
             </div>
           </div>
@@ -157,20 +170,20 @@ export default function Ads() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="card lg:col-span-2">
-          <div className="section-title mb-1">Revenue vs Spend</div>
-          <div className="section-subtitle mb-4">Last 30 days — live from campaigns</div>
-          <div className="h-48">
-            <SalesAreaChart data={trendData} color="#10b981" dataKey="revenue" prefix="$" />
+          <div className="section-title mb-1">Performance Trend</div>
+          <div className="section-subtitle mb-4">Last 30 days revenue vs spend history</div>
+          <div className="h-56">
+            <SalesAreaChart data={chartData} color="#10b981" dataKey="revenue" prefix="$" />
           </div>
         </div>
         <div className="card">
-          <div className="section-title mb-1">Revenue by Platform</div>
-          <div className="section-subtitle mb-4">Performance comparison</div>
-          <div className="h-48">
+          <div className="section-title mb-1">Platform Distribution</div>
+          <div className="section-subtitle mb-4">Revenue breakdown by channel</div>
+          <div className="h-56">
             {platformData.length > 0 ? (
               <SimpleBarChart data={platformData} dataKey="value" color="#6366f1" />
             ) : (
-              <div className="h-full flex items-center justify-center text-text-dim">No data available</div>
+              <div className="h-full flex items-center justify-center text-text-dim text-sm italic">No attribution data available</div>
             )}
           </div>
         </div>
@@ -188,16 +201,15 @@ export default function Ads() {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <select className="select w-32" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <select className="select w-40" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">All Status</option>
             <option value="Active">Active</option>
             <option value="Paused">Paused</option>
             <option value="Ended">Ended</option>
             <option value="Draft">Draft</option>
           </select>
-          <button onClick={fetchCampaigns} className="btn-ghost !px-2"><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
-          <button onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} className="btn-primary ml-auto flex items-center gap-2">
-            <Megaphone size={14} /> New Campaign
+          <button onClick={fetchCampaigns} className="btn-ghost !px-3 hover:bg-surface">
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
 
@@ -205,13 +217,12 @@ export default function Ads() {
           <table className="w-full">
             <thead>
               <tr style={{ background: 'var(--input-bg)', borderBottom: '1px solid var(--border-color)' }}>
-                <th className="table-header text-left">Campaign</th>
+                <th className="table-header text-left">Campaign Name</th>
                 <th className="table-header text-left">Platform</th>
                 <th className="table-header text-right">Budget</th>
                 <th className="table-header text-right">Spend</th>
                 <th className="table-header text-right">Revenue</th>
                 <th className="table-header text-right">ROI</th>
-                <th className="table-header text-right">Clicks</th>
                 <th className="table-header text-center">Status</th>
                 <th className="table-header text-center">Actions</th>
               </tr>
@@ -219,7 +230,9 @@ export default function Ads() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center py-8 text-text-dim">No campaigns found.</td>
+                  <td colSpan={8} className="text-center py-12 text-text-dim">
+                    {loading ? 'Fetching campaign data...' : 'No campaigns matching your filters found.'}
+                  </td>
                 </tr>
               ) : (
                 filtered.map(c => {
@@ -227,10 +240,10 @@ export default function Ads() {
                   const rev = c.TotalRevenue || 0;
                   const roi = spend > 0 ? (((rev - spend) / spend) * 100).toFixed(1) : 0
                   return (
-                    <tr key={c.Id} className="table-row cursor-pointer" onClick={() => setSelected(c === selected ? null : c)}>
+                    <tr key={c.Id} className="table-row">
                       <td className="table-cell">
                         <div className="font-semibold text-text-bright text-sm">{c.Name}</div>
-                        <div className="text-xs text-text-dim">{c.Product?.Name || 'No Product Linked'}</div>
+                        <div className="text-xs text-text-dim">{c.Product?.Name || 'All Inventory'}</div>
                       </td>
                       <td className="table-cell">
                         <span className={`badge ${c.Platform === 'Facebook' ? 'badge-neo' : c.Platform === 'Google' ? 'badge-danger' : c.Platform === 'Instagram' ? 'badge-ember' : 'badge-royal'}`}>
@@ -245,24 +258,22 @@ export default function Ads() {
                           {roi}%
                         </span>
                       </td>
-                      <td className="table-cell text-right text-text-mid font-mono">{(c.Clicks || 0).toLocaleString()}</td>
                       <td className="table-cell text-center"><CampaignStatusBadge status={c.Status} /></td>
                       <td className="table-cell text-center">
-                        <div className="flex gap-1 justify-center" onClick={e => e.stopPropagation()}>
-                          {actionLoading === c.Id
-                            ? <span className="text-xs text-text-dim animate-pulse px-2">...</span>
-                            : (
-                              <>
-                                {c.Status === 'Active'
-                                  ? <button onClick={() => handleAction(c.Id, 'Pause')} className="btn-ghost text-xs !py-1 !px-2 flex items-center gap-1"><Pause size={11} /> Pause</button>
-                                  : c.Status !== 'Ended'
-                                    ? <button onClick={() => handleAction(c.Id, 'Start')} className="btn-success text-xs !py-1 !px-2 flex items-center gap-1"><Play size={11} /> Start</button>
-                                    : <span className="text-xs text-text-dim">Ended</span>
-                                }
-                                <button onClick={(e) => handleDelete(c.Id, e)} className="btn-ghost text-danger !py-1 !px-2 hover:bg-danger/10"><Trash2 size={11} /></button>
-                              </>
-                            )
-                          }
+                        <div className="flex gap-2 justify-center">
+                          {actionLoading === c.Id ? (
+                            <RefreshCw size={14} className="animate-spin text-text-dim" />
+                          ) : (
+                            <>
+                              {c.Status === 'Active' ? (
+                                <button onClick={() => handleAction(c.Id, 'Pause')} title="Pause" className="p-1.5 hover:bg-surface rounded-lg text-text-mid"><Pause size={14} /></button>
+                              ) : (
+                                c.Status !== 'Ended' && <button onClick={() => handleAction(c.Id, 'Start')} title="Start" className="p-1.5 hover:bg-bloom/10 rounded-lg text-bloom"><Play size={14} /></button>
+                              )}
+                              <button onClick={(e) => handleEdit(c, e)} title="Edit" className="p-1.5 hover:bg-surface rounded-lg text-text-mid"><Edit2 size={14} /></button>
+                              <button onClick={(e) => handleDelete(c.Id, e)} title="Delete" className="p-1.5 hover:bg-danger/10 rounded-lg text-danger"><Trash2 size={14} /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

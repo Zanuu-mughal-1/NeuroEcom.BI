@@ -1,5 +1,16 @@
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Package, StopCircle, PlayCircle, PlusCircle, MinusCircle, TrendingUp, TrendingDown, Trash2, DollarSign } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowLeft,
+  DollarSign,
+  MinusCircle,
+  Package,
+  PlayCircle,
+  PlusCircle,
+  StopCircle,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
 import api from '../../utils/api'
@@ -9,37 +20,55 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
   const [qty, setQty] = useState(0)
   const [newPrice, setNewPrice] = useState(product.Price)
   const [salesData, setSalesData] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
   const [isActive, setIsActive] = useState(product.IsActive)
 
   useEffect(() => {
-    api.get(`/products/${product.Id}/history?days=30`)
-      .then(res => {
-        const mapped = res.data.map(d => ({
+    setIsActive(product.IsActive)
+    setNewPrice(product.Price)
+    setQty(0)
+    setActiveAction(null)
+  }, [product.Id, product.IsActive, product.Price])
+
+  useEffect(() => {
+    let mounted = true
+    setHistoryLoading(true)
+    api
+      .get(`/products/${product.Id}/history?days=30`)
+      .then((res) => {
+        if (!mounted) return
+        const mapped = (res.data || []).map((d) => ({
           date: new Date(d.SaleDate).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
           orders: d.UnitsSold,
           revenue: d.Revenue,
-          returns: d.Returns
+          returns: d.Returns,
         }))
         setSalesData(mapped)
-        setLoading(false)
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to load history', err)
-        setLoading(false)
+        if (mounted) setSalesData([])
       })
+      .finally(() => {
+        if (mounted) setHistoryLoading(false)
+      })
+    return () => {
+      mounted = false
+    }
   }, [product.Id])
 
   const handleAction = async (actionId) => {
     const payload = { Action: actionId }
-    if (actionId === 'IncreaseInventory' || actionId === 'DecreaseInventory') payload.Quantity = parseInt(qty)
+    if (actionId === 'IncreaseInventory' || actionId === 'DecreaseInventory') payload.Quantity = parseInt(qty, 10)
     if (actionId === 'IncreasePrice' || actionId === 'DecreasePrice') payload.NewPrice = parseFloat(newPrice)
 
+    setActionLoading(true)
     try {
       if (actionId === 'Delete') {
         const res = await api.delete(`/products/${product.Id}`)
-        alert(res.data.message || 'Product removed')
-        if (onUpdate) onUpdate()
+        alert(res.data?.message || 'Product removed')
+        if (onUpdate) await onUpdate()
         onBack()
         return
       }
@@ -48,23 +77,28 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
       if (actionId === 'StopSelling') setIsActive(false)
       if (actionId === 'ResumeSelling') setIsActive(true)
       setActiveAction(null)
-      if (onUpdate) onUpdate()
+      if (onUpdate) await onUpdate()
     } catch (e) {
       console.error(e)
       alert('Action failed: ' + (e.response?.data?.message || e.message))
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const actions = [
-    isActive
-      ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
-      : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
-    { id: 'IncreaseInventory', icon: PlusCircle, label: 'Increase Stock', color: 'bloom' },
-    { id: 'DecreaseInventory', icon: MinusCircle, label: 'Decrease Stock', color: 'ember' },
-    { id: 'IncreasePrice', icon: TrendingUp, label: 'Increase Price', color: 'bloom' },
-    { id: 'DecreasePrice', icon: TrendingDown, label: 'Decrease Price', color: 'danger' },
-    { id: 'Delete', icon: Trash2, label: 'Delete Product', color: 'danger' },
-  ]
+  const actions = useMemo(
+    () => [
+      isActive
+        ? { id: 'StopSelling', icon: StopCircle, label: 'Stop Selling', color: 'danger' }
+        : { id: 'ResumeSelling', icon: PlayCircle, label: 'Resume Selling', color: 'bloom' },
+      { id: 'IncreaseInventory', icon: PlusCircle, label: 'Increase Stock', color: 'bloom' },
+      { id: 'DecreaseInventory', icon: MinusCircle, label: 'Decrease Stock', color: 'ember' },
+      { id: 'IncreasePrice', icon: TrendingUp, label: 'Increase Price', color: 'bloom' },
+      { id: 'DecreasePrice', icon: TrendingDown, label: 'Decrease Price', color: 'danger' },
+      { id: 'Delete', icon: Trash2, label: 'Delete Product', color: 'danger' },
+    ],
+    [isActive]
+  )
 
   const colorMap = {
     neo: { bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.2)', text: '#818cf8' },
@@ -80,9 +114,8 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
 
   return (
     <div className="p-6 space-y-5 animate-fade-up">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="btn-ghost flex items-center gap-2 text-sm">
+        <button type="button" onClick={onBack} className="btn-ghost flex items-center gap-2 text-sm">
           <ArrowLeft size={15} /> Back
         </button>
         <div className="flex-1">
@@ -104,9 +137,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left: Metrics + Actions */}
         <div className="space-y-4">
-          {/* Financial Metrics */}
           <div className="card">
             <div className="section-title mb-4 flex items-center gap-2">
               <DollarSign size={15} className="text-neo" /> Financial Metrics
@@ -126,7 +157,6 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
             </div>
           </div>
 
-          {/* Inventory */}
           <div className="card">
             <div className="section-title mb-4 flex items-center gap-2">
               <Package size={15} className="text-pulse" /> Inventory
@@ -147,13 +177,12 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
               <div className="flex justify-between text-xs text-text-dim">
                 <span>Reorder level: {product.ReorderLevel}</span>
                 <span className={product.Stock < product.ReorderLevel ? 'text-ember font-medium' : 'text-text-dim'}>
-                  {product.Stock < product.ReorderLevel ? '⚠️ Restock needed' : '✓ OK'}
+                  {product.Stock < product.ReorderLevel ? 'Restock needed' : 'OK'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Health Score */}
           <div className="card">
             <div className="section-title mb-4">Health Score</div>
             <div className="flex items-center gap-4">
@@ -178,14 +207,13 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
           </div>
         </div>
 
-        {/* Middle: Chart */}
         <div className="space-y-4">
           <div className="card">
             <div className="section-title mb-1">Sales Trend</div>
             <div className="section-subtitle mb-4">Last 30 days</div>
             <div className="h-52">
-              {!loading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
-              {loading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
+              {!historyLoading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
+              {historyLoading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
             </div>
           </div>
           <div className="card">
@@ -195,7 +223,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                 { label: 'Units Sold (30d)', value: salesData.reduce((s, d) => s + d.orders, 0), color: '#818cf8' },
                 { label: 'Revenue (30d)', value: `Rs ${salesData.reduce((s, d) => s + d.revenue, 0).toLocaleString()}`, color: '#34d399' },
                 { label: 'Return Rate', value: salesData.reduce((s, d) => s + d.orders, 0) > 0 ? `${(salesData.reduce((s, d) => s + d.returns, 0) / salesData.reduce((s, d) => s + d.orders, 0) * 100).toFixed(1)}%` : '0%', color: '#fbbf24' },
-                { label: 'Rating', value: '4.6 ⭐', color: '#f97316' },
+                { label: 'Rating', value: '4.6', color: '#f97316' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg text-center bg-abyss border border-border">
                   <div className="stat-label">{m.label}</div>
@@ -206,7 +234,6 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
           </div>
         </div>
 
-        {/* Right: Actions */}
         <div className="card">
           <div className="section-title mb-4">Product Actions</div>
           <div className="space-y-2">
@@ -215,7 +242,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
               const isExpanded = activeAction === action.id
               return (
                 <div key={action.id}>
-                  <button onClick={() => setActiveAction(isExpanded ? null : action.id)}
+                  <button type="button" onClick={() => setActiveAction(isExpanded ? null : action.id)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all"
                     style={{
                       background: isExpanded ? c.bg : 'var(--abyss)',
@@ -238,11 +265,13 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                           <input type="number" className="input mt-1" value={newPrice} onChange={e => setNewPrice(e.target.value)} step="0.01" />
                         </div>
                       )}
-                      <button 
+                      <button
+                        type="button"
                         onClick={() => handleAction(action.id)}
-                        className="btn-primary w-full text-xs" 
+                        disabled={actionLoading}
+                        className="btn-primary w-full text-xs"
                         style={{ background: `linear-gradient(135deg, ${c.text}66, ${c.text}44)`, border: `1px solid ${c.border}` }}>
-                        Confirm {action.label}
+                        {actionLoading ? 'Processing...' : `Confirm ${action.label}`}
                       </button>
                     </div>
                   )}

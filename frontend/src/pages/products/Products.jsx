@@ -1,10 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, X, RefreshCw, Trash2, Edit2 } from 'lucide-react'
+import { Search, Plus, Download, Package, AlertTriangle, TrendingUp, DollarSign, RefreshCw, Trash2, Edit2 } from 'lucide-react'
 import { HealthBadge } from '../../components/ui/StatusBadge'
 import api from '../../utils/api'
 import ProductDetail from './ProductDetail'
 import ProductModal from '../../components/modals/ProductModal'
+
+function matchesHealthFilter(p, healthFilter) {
+  if (!healthFilter) return true
+  if (healthFilter === 'Active') return !!p.IsActive && !p.IsDiscontinued
+  if (healthFilter === 'Discontinued') return !p.IsActive || !!p.IsDiscontinued
+  if (healthFilter === 'Inactive') return !p.IsActive && !p.IsDiscontinued
+  return (p.HealthStatus || '') === healthFilter
+}
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -21,7 +29,7 @@ export default function Products() {
     try {
       const { data } = await api.get('/products')
       setProducts(data)
-      setSelected(prev => prev ? (data.find(p => p.Id === prev.Id) || null) : null)
+      setSelected(prev => (prev ? data.find(p => p.Id === prev.Id) || null : null))
     } catch (err) {
       console.error('Failed to fetch products', err)
     } finally {
@@ -52,14 +60,15 @@ export default function Products() {
     setIsModalOpen(true)
   }
 
-  const filtered = products.filter(p =>
-    (!search || p.Name.toLowerCase().includes(search.toLowerCase()) || p.SKU.includes(search) || p.Id.toString() === search) &&
-    (!healthFilter ||
-      (healthFilter === 'Active' ? p.IsActive :
-        healthFilter === 'Discontinued' ? (!p.IsActive || p.IsDiscontinued) :
-          p.HealthStatus === healthFilter)
-    )
-  )
+  const filtered = products.filter(p => {
+    const q = search.toLowerCase()
+    const matchesSearch =
+      !search ||
+      (p.Name && p.Name.toLowerCase().includes(q)) ||
+      ((p.SKU || '').toLowerCase().includes(q)) ||
+      (p.Id != null && p.Id.toString() === search)
+    return matchesSearch && matchesHealthFilter(p, healthFilter)
+  })
 
   const handleExport = () => {
     const headers = ['ID', 'Name', 'SKU', 'Category', 'Price', 'Cost', 'Stock', 'Health Status']
@@ -89,7 +98,19 @@ export default function Products() {
     }
   }
 
-  if (selected) return <ProductDetail product={selected} onBack={() => setSelected(null)} onUpdate={handleUpdate} />
+  const setFilterAndUrl = (f) => {
+    setHealthFilter(f)
+    if (f) setSearchParams({ health: f })
+    else setSearchParams({})
+  }
+
+  if (selected) {
+    return <ProductDetail product={selected} onBack={() => setSelected(null)} onUpdate={handleUpdate} />
+  }
+
+  if (loading && products.length === 0) {
+    return <div className="p-6 flex items-center justify-center h-full text-text-dim">Loading products...</div>
+  }
 
   const stockColor = (s, reorder) => {
     if (s === 0) return 'text-danger'
@@ -97,16 +118,12 @@ export default function Products() {
     return 'text-bloom'
   }
 
-  if (loading && products.length === 0) {
-    return <div className="p-6 flex items-center justify-center h-full text-text-dim">Loading products...</div>
-  }
-
   return (
     <div className="p-6 space-y-5 animate-fade-up relative">
-      <ProductModal 
-        isOpen={isModalOpen} 
-        onClose={() => { setIsModalOpen(false); setEditingProduct(null); }} 
-        onSuccess={fetchProducts} 
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingProduct(null); }}
+        onSuccess={fetchProducts}
         product={editingProduct}
       />
 
@@ -120,14 +137,14 @@ export default function Products() {
         ].map(s => (
           <div key={s.label}
             className="card flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02]"
-            onClick={() => s.filter !== undefined ? setHealthFilter(s.filter) : null}
+            onClick={() => (s.filter !== undefined && s.filter !== '') ? setFilterAndUrl(s.filter) : null}
             title={s.filter ? `Click to filter by ${s.label}` : ''}>
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
               <s.icon size={18} style={{ color: s.color }} />
             </div>
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="text-xl font-bold text-text-white mt-0.5">{s.value}</div>
+              <div className="text-xl font-bold text-text-bright mt-0.5">{loading ? '...' : s.value}</div>
             </div>
           </div>
         ))}
@@ -140,20 +157,24 @@ export default function Products() {
             <input className="input pl-9 w-full" placeholder="Search products or SKU or ID..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select
-            className="select"
-            style={{ width: '200px', background: '#1a1d2e', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}
+            className="select w-40"
             value={healthFilter}
-            onChange={e => { setHealthFilter(e.target.value); setSearchParams({ health: e.target.value }) }}>
+            onChange={e => {
+              const v = e.target.value
+              setHealthFilter(v)
+              if (v) setSearchParams({ health: v })
+              else setSearchParams({})
+            }}>
             <option value="">All Health</option>
-            <option value="Healthy">🟢 Healthy</option>
-            <option value="Warning">🟡 Warning</option>
-            <option value="Critical">🔴 Critical</option>
-            <option value="Inactive">⚪ Inactive</option>
-            <option value="Discontinued">⚫ Discontinued</option>
+            <option value="Healthy">Healthy</option>
+            <option value="Warning">Warning</option>
+            <option value="Critical">Critical</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Discontinued">Discontinued</option>
           </select>
-          <button onClick={fetchProducts} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
-          <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2 ml-auto"><Plus size={14} /> Add Product</button>
-          <button className="btn-ghost flex items-center gap-2 text-sm" onClick={handleExport}><Download size={14} /> Export</button>
+          <button type="button" onClick={fetchProducts} className="btn-ghost !p-2"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
+          <button type="button" onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2 ml-auto"><Plus size={14} /> Add Product</button>
+          <button type="button" className="btn-ghost flex items-center gap-2 text-sm" onClick={handleExport}><Download size={14} /> Export</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -170,8 +191,10 @@ export default function Products() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan="8" className="py-10 text-center text-text-dim">No products found</td></tr>
+              {loading && products.length === 0 ? (
+                <tr><td colSpan={8} className="py-10 text-center text-text-dim">Loading products...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={8} className="py-10 text-center text-text-dim">No products found matching filters</td></tr>
               ) : filtered.map(p => (
                 <tr key={p.Id} className="table-row cursor-pointer" onClick={() => setSelected(p)}>
                   <td className="table-cell font-mono text-text-dim">{p.Id}</td>
@@ -187,7 +210,7 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="table-cell"><span className="badge-dim">{p.Category}</span></td>
-                  <td className="table-cell text-right font-medium text-text-white">Rs {p.Price}</td>
+                  <td className="table-cell text-right font-medium text-text-bright">Rs {p.Price?.toLocaleString?.() ?? p.Price}</td>
                   <td className="table-cell text-right">
                     <span className={p.Margin >= 50 ? 'text-bloom font-semibold' : p.Margin >= 30 ? 'text-ember' : 'text-danger'}>
                       {p.Margin?.toFixed(1) || 0}%
@@ -196,11 +219,13 @@ export default function Products() {
                   <td className="table-cell text-right">
                     <span className={`font-mono font-bold ${stockColor(p.Stock, p.ReorderLevel)}`}>{p.Stock}</span>
                   </td>
-                  <td className="table-cell text-center"><HealthBadge status={!p.IsActive ? 'Inactive' : (p.IsDiscontinued ? 'Discontinued' : (p.HealthStatus || 'Warning'))} /></td>
                   <td className="table-cell text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button onClick={(e) => handleEdit(p, e)} className="btn-ghost !p-1.5 text-neo"><Edit2 size={14} /></button>
-                      <button onClick={(e) => handleDelete(p.Id, e)} className="btn-ghost !p-1.5 text-danger"><Trash2 size={14} /></button>
+                    <HealthBadge status={!p.IsActive ? 'Inactive' : (p.IsDiscontinued ? 'Discontinued' : (p.HealthStatus || 'Warning'))} />
+                  </td>
+                  <td className="table-cell text-center">
+                    <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={(e) => handleEdit(p, e)} className="btn-ghost !p-1.5 text-neo"><Edit2 size={14} /></button>
+                      <button type="button" onClick={(e) => handleDelete(p.Id, e)} className="btn-ghost !p-1.5 text-danger"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>

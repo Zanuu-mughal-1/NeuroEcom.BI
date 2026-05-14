@@ -12,6 +12,7 @@ import Decisions from './pages/decisions/Decisions'
 import Predictions from './pages/predictions/Predictions'
 import Logistics from './pages/logistics/Logistics'
 import CompetitorIntel from './pages/competitors/CompetitorIntel'
+import ErrorBoundary from './components/ErrorBoundary'
 
 export default function App() {
   const [isDark, setIsDark] = useState(() => {
@@ -64,18 +65,20 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
         <Header toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/returns" element={<Returns />} />
-            <Route path="/ads" element={<Ads />} />
-            <Route path="/decisions" element={<Decisions />} />
-            <Route path="/predictions" element={<Predictions />} />
-            <Route path="/logistics" element={<Logistics />} />
-            <Route path="/competitors" element={<CompetitorIntel />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/returns" element={<Returns />} />
+              <Route path="/ads" element={<Ads />} />
+              <Route path="/decisions" element={<Decisions />} />
+              <Route path="/predictions" element={<Predictions />} />
+              <Route path="/logistics" element={<Logistics />} />
+              <Route path="/competitors" element={<CompetitorIntel />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

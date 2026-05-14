@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
   DollarSign, ShoppingCart, Users, RotateCcw, TrendingUp,
   AlertTriangle, CheckCircle, Clock, XCircle, Package,
   Plus, FlaskConical, Megaphone, Activity, Zap, Download,
-  ChevronRight, ArrowUpRight, ArrowDownRight, Target
+  ChevronRight, ArrowUpRight, ArrowDownRight, Target, RefreshCw
 } from 'lucide-react'
 import { SalesAreaChart, DonutChart } from '../../components/charts/MiniChart'
 import api from '../../utils/api'
@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [revenueGoal, setRevenueGoal] = useState(1000000)
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
 
-  const fetchDashboard = async (isRefresh = false) => {
+  const fetchDashboard = useCallback(async (isRefresh = false) => {
     try {
       setError(null)
       if (!isRefresh) setLoading(true)
@@ -35,11 +35,11 @@ export default function Dashboard() {
       const days = timeRange === '7D' ? 7 : timeRange === '90D' ? 90 : 30
       const [dashRes, rulesRes] = await Promise.all([
         api.get(`/dashboard?days=${days}`),
-        api.get('/decisions/rules?category=Dashboard')
+        api.get('/decisions/rules?category=Dashboard').catch(() => ({ data: [] }))
       ])
 
       setData(dashRes.data)
-      const goalRule = rulesRes.data.find(r => r.RuleName === 'Monthly Revenue Goal')
+      const goalRule = rulesRes.data?.find(r => r.RuleName === 'Monthly Revenue Goal')
       if (goalRule) setRevenueGoal(parseFloat(goalRule.CurrentValue))
     } catch (err) {
       console.error('Failed to fetch dashboard', err)
@@ -48,36 +48,11 @@ export default function Dashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [timeRange])
 
   useEffect(() => {
     fetchDashboard()
-  }, [timeRange])
-
-  if (loading || !data) return (
-    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
-      <div className="w-12 h-12 border-4 border-neo/20 border-t-neo rounded-full animate-spin" />
-      <div className="text-sm font-medium text-text-dim animate-pulse">Initializing Neural Intelligence...</div>
-    </div>
-  )
-
-  if (error) return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
-      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
-        <h3 className="font-bold mb-1">Database Connection Error</h3>
-        <p className="text-sm opacity-80">{error}</p>
-      </div>
-      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
-    </div>
-  )
-
-  const healthData = [
-    { name: 'Healthy', value: data.ProductHealth.Healthy },
-    { name: 'Warning', value: data.ProductHealth.Warning },
-    { name: 'Critical', value: data.ProductHealth.Critical },
-    { name: 'Discontinued', value: data.ProductHealth.Discontinued },
-  ]
-  const healthColors = ['#10b981', '#f59e0b', '#ef4444', '#6b7280']
+  }, [fetchDashboard])
 
   const handleExport = () => {
     if (!data) return
@@ -97,6 +72,31 @@ export default function Dashboard() {
     a.download = `NeuroEcom_Report_${new Date().toISOString().split('T')[0]}.csv`
     a.click()
   }
+
+  if (error) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger text-center max-w-md">
+        <h3 className="font-bold mb-1">Database Connection Error</h3>
+        <p className="text-sm opacity-80">{error}</p>
+      </div>
+      <button onClick={() => fetchDashboard()} className="btn-primary">Retry Connection</button>
+    </div>
+  )
+
+  if (loading || !data) return (
+    <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
+      <div className="w-12 h-12 border-4 border-neo/20 border-t-neo rounded-full animate-spin" />
+      <div className="text-sm font-medium text-text-dim animate-pulse">Initializing Neural Intelligence...</div>
+    </div>
+  )
+
+  const healthData = [
+    { name: 'Healthy', value: data.ProductHealth.Healthy },
+    { name: 'Warning', value: data.ProductHealth.Warning },
+    { name: 'Critical', value: data.ProductHealth.Critical },
+    { name: 'Discontinued', value: data.ProductHealth.Discontinued },
+  ]
+  const healthColors = ['#10b981', '#f59e0b', '#ef4444', '#6b7280']
 
   return (
     <div className="w-full mx-auto p-4 md:p-8 space-y-8 animate-fade-up">
@@ -255,7 +255,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Goal Tracking (4 cols) */}
+        {/* Goal Tracking & Insights (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="card border-neo/20 bg-neo/5 flex-1 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 transition-transform group-hover:rotate-45">
@@ -326,8 +326,7 @@ export default function Dashboard() {
             <div className="w-40 h-40">
               <DonutChart data={healthData} colors={healthColors} />
             </div>
-            
-            {/* Horizontal Legend */}
+
             <div className="flex justify-center gap-4 w-full">
               {healthData.map((item, i) => (
                 <div key={item.name} className="flex items-center gap-1.5">
@@ -337,7 +336,6 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Bottom Grid Stats */}
             <div className="w-full grid grid-cols-2 gap-x-12 gap-y-3 pt-6 border-t border-white/5">
               {healthData.map((item, i) => (
                 <div key={item.name} className="flex items-center justify-between">
