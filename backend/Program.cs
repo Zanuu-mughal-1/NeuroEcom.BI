@@ -49,6 +49,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "NeuroEcom.BI v1"));
 }
+app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 
 // Health check endpoint — now verifies DB connectivity

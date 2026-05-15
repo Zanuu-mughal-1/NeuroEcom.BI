@@ -29,6 +29,7 @@ public class ProductsController : ControllerBase
         return Ok(products.Select(p => new {
             p.Id, p.Name, p.SKU, p.Category, p.Price, p.Cost,
             p.Stock, p.ReorderLevel, p.IsActive, p.IsDiscontinued,
+            p.ImageUrl, p.Description,
             Margin = Math.Round(p.Margin, 2),
             HealthStatus = p.HealthStatus,
             HealthScore = p.HealthScore,

@@ -202,12 +202,11 @@ export default function Products() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface border border-border/50 flex-shrink-0">
                         {p.ImageUrl ? (
-                          <img src={p.ImageUrl} alt={p.Name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image'; e.target.onerror = null; }} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-abyss">
-                            <Package size={14} className="text-neo" />
-                          </div>
-                        )}
+                          <img src={p.ImageUrl.startsWith('/') ? `http://localhost:5000${p.ImageUrl}` : p.ImageUrl} alt={p.Name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }} />
+                        ) : null}
+                        <div className={`w-full h-full items-center justify-center bg-abyss ${p.ImageUrl ? 'hidden' : 'flex'}`}>
+                          <Package size={14} className="text-neo" />
+                        </div>
                       </div>
                       <div>
                         <div className="font-semibold text-text-bright text-sm">{p.Name}</div>
