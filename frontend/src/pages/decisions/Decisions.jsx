@@ -1,38 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Activity, Settings, BarChart2, Package, Users, ShoppingCart, Megaphone, RotateCcw, Edit3, Save, X, RefreshCw } from 'lucide-react'
-import { mockDashboard, mockRules } from '../../utils/api'
-
-const allRules = [
-  { Id: 1, Category: 'Product', RuleName: 'Low Stock Trigger', Condition: 'Inventory < {v} units', Action: 'Alert Reorder', CurrentValue: '15', DefaultValue: '15' },
-  { Id: 2, Category: 'Product', RuleName: 'Price Elasticity', Condition: 'Sales Drop > {v}%', Action: 'Suggest Price Cut', CurrentValue: '20', DefaultValue: '20' },
-  { Id: 9, Category: 'Product', RuleName: 'Dynamic Pricing', Condition: 'Profit Margin > {v}%', Action: 'Enable Aggressive Sale', CurrentValue: '45', DefaultValue: '40' },
-  { Id: 10, Category: 'Product', RuleName: 'Overstock Alert', Condition: 'Stock > {v} units', Action: 'Bundle with Bestseller', CurrentValue: '300', DefaultValue: '500' },
-
-  { Id: 3, Category: 'Customer', RuleName: 'VIP Progression', Condition: 'Spend > Rs {v}', Action: 'Upgrade to Gold', CurrentValue: '2500', DefaultValue: '2000' },
-  { Id: 4, Category: 'Customer', RuleName: 'Churn Prevention', Condition: 'Inactive > {v} days', Action: 'Send "Miss You" Email', CurrentValue: '60', DefaultValue: '90' },
-  { Id: 11, Category: 'Customer', RuleName: 'Loyalty Referral', Condition: 'Total Orders > {v}', Action: 'Invite to Affiliate', CurrentValue: '25', DefaultValue: '20' },
-  { Id: 12, Category: 'Customer', RuleName: 'High-Return Risk', Condition: 'Return Rate > {v}%', Action: 'Audit Purchases', CurrentValue: '20', DefaultValue: '25' },
-
-  { Id: 5, Category: 'Ads', RuleName: 'Budget Kill-Switch', Condition: 'ROI < {v}%', Action: 'Pause Campaign', CurrentValue: '5', DefaultValue: '10' },
-  { Id: 6, Category: 'Ads', RuleName: 'High Performance', Condition: 'ROAS > {v}x', Action: 'Boost Budget 20%', CurrentValue: '4.5', DefaultValue: '3.0' },
-  { Id: 13, Category: 'Ads', RuleName: 'CPC Efficiency', Condition: 'CPC < Rs {v}', Action: 'Scale Daily Spend', CurrentValue: '15', DefaultValue: '20' },
-  { Id: 14, Category: 'Ads', RuleName: 'Creative Fatigue', Condition: 'CTR Drop > {v}%', Action: 'Rotate Creatives', CurrentValue: '35', DefaultValue: '30' },
-
-  { Id: 7, Category: 'RTO', RuleName: 'Fraud Shield', Condition: 'RTO Score > {v}', Action: 'Force Prepaid Only', CurrentValue: '75', DefaultValue: '80' },
-  { Id: 8, Category: 'RTO', RuleName: 'Address Risk', Condition: 'Incomplete Match', Action: 'Flag for Call', CurrentValue: 'Yes', DefaultValue: 'Yes' },
-  { Id: 15, Category: 'RTO', RuleName: 'High Value Check', Condition: 'Order Value > Rs {v}', Action: 'Admin Review Required', CurrentValue: '1500', DefaultValue: '2000' },
-  { Id: 16, Category: 'RTO', RuleName: 'Shipment Delay', Condition: 'Unshipped > {v} hrs', Action: 'Notify Customer', CurrentValue: '48', DefaultValue: '48' },
-]
+import api from '../../utils/api'
 
 export default function Decisions() {
   const [activeTab, setActiveTab] = useState('decisions')
-  const [rules, setRules] = useState(allRules)
+  const [rules, setRules] = useState([])
+  const [decisions, setDecisions] = useState([])
+  const [loading, setLoading] = useState(true)
   const [categoryFilter, setCategoryFilter] = useState('')
   const [decisionFilter, setDecisionFilter] = useState('All')
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
 
-  const decisions = mockDashboard.RecentDecisions
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const [decRes, rulesRes] = await Promise.all([
+        api.get('/decisions'),
+        api.get('/decisions/rules')
+      ])
+      setDecisions(decRes.data)
+      setRules(rulesRes.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
   const filteredRules = rules.filter(r => !categoryFilter || r.Category === categoryFilter)
 
   const categories = ['Product', 'Customer', 'RTO', 'Ads']
@@ -41,12 +40,22 @@ export default function Decisions() {
   const sectionColors = { Products: '#818cf8', Customers: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#a78bfa' }
 
   const startEdit = (rule) => { setEditingId(rule.Id); setEditValue(rule.CurrentValue) }
-  const saveEdit = (id) => {
-    setRules(prev => prev.map(r => r.Id === id ? { ...r, CurrentValue: editValue } : r))
-    setEditingId(null)
+  const saveEdit = async (id) => {
+    try {
+      await api.put(`/decisions/rules/${id}`, { newValue: editValue })
+      setRules(prev => prev.map(r => r.Id === id ? { ...r, CurrentValue: editValue } : r))
+      setEditingId(null)
+    } catch (err) {
+      console.error(err)
+    }
   }
-  const resetRule = (id) => {
-    setRules(prev => prev.map(r => r.Id === id ? { ...r, CurrentValue: r.DefaultValue } : r))
+  const resetRule = async (id) => {
+    try {
+      await api.post(`/decisions/rules/${id}/reset`)
+      fetchData()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const tabs = [
@@ -75,10 +84,10 @@ export default function Decisions() {
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Decisions', value: '1,284', color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-          { label: 'This Week', value: '47', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-          { label: 'Active Rules', value: rules.length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-          { label: 'Success Rate', value: '91%', color: '#22d3ee', bg: 'rgba(6,182,212,0.1)' },
+          { label: 'Total Decisions', value: loading ? '...' : decisions.length.toLocaleString(), color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+          { label: 'This Week', value: loading ? '...' : decisions.filter(d => new Date(d.CreatedAt) > new Date(Date.now() - 7*24*60*60*1000)).length, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+          { label: 'Active Rules', value: loading ? '...' : rules.length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'Success Rate', value: loading ? '...' : '91%', color: '#22d3ee', bg: 'rgba(6,182,212,0.1)' },
         ].map(s => (
           <div key={s.label} className="card">
             <div className="stat-label">{s.label}</div>
@@ -106,16 +115,13 @@ export default function Decisions() {
           </div>
           <div className="divide-y divide-border/30">
             {(() => {
-              const baseDecisions = [
-                ...decisions,
-                { Id: 6, Section: 'Products', DecisionType: 'StopSelling', ItemName: 'Noise Canceling Headphones', DecisionDetails: 'Product stopped — out of stock 14 days', CreatedAt: new Date(Date.now() - 18000000).toISOString(), Status: 'Applied' },
-                { Id: 7, Section: 'Customers', DecisionType: 'ChangeTier', ItemName: 'James Anderson', DecisionDetails: 'Tier upgraded to VIP (spent > Rs 5000)', CreatedAt: new Date(Date.now() - 25200000).toISOString(), Status: 'Applied' },
-                { Id: 8, Section: 'Orders', DecisionType: 'RTOReject', ItemName: 'ORD-00238', DecisionDetails: 'Auto-rejected — RTO score 88/100', CreatedAt: new Date(Date.now() - 32400000).toISOString(), Status: 'Applied' },
-              ];
-
+              if (loading) return <div className="py-12 text-center text-text-dim"><RefreshCw className="animate-spin inline-block mr-2" size={16}/> Loading decisions...</div>
+              
               const filteredDecisions = decisionFilter === 'All'
-                ? baseDecisions
-                : baseDecisions.filter(d => d.Section === decisionFilter);
+                ? decisions
+                : decisions.filter(d => d.Section === decisionFilter);
+
+              if (filteredDecisions.length === 0) return <div className="py-12 text-center text-text-dim">No decisions logged.</div>
 
               return filteredDecisions.map(d => {
                 const Icon = sectionIcons[d.Section] || Activity
@@ -191,8 +197,8 @@ export default function Decisions() {
                   <thead>
                     <tr className="bg-abyss border-b border-border">
                       <th className="table-header text-left">Rule Name</th>
-                      <th className="table-header text-left">If This Happens (Condition)</th>
-                      <th className="table-header text-left">Then AI Does This (Action)</th>
+                      <th className="table-header text-left">Rule Description</th>
+                      <th className="table-header text-left">Active Threshold</th>
                       <th className="table-header text-center">Default</th>
                       <th className="table-header text-center">Status</th>
                       <th className="table-header text-center">Edit Logic</th>
@@ -206,32 +212,22 @@ export default function Decisions() {
                         <tr key={rule.Id} className="table-row">
                           <td className="table-cell font-medium text-text-bright">{rule.RuleName}</td>
                           <td className="table-cell">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] uppercase font-bold text-neo-bright bg-neo/10 px-1.5 py-0.5 rounded">IF</span>
-                              <span className="text-xs text-text-mid italic">
-                                {rule.Condition.split('{v}')[0]}
-                                {isEditing ? (
-                                  <input
-                                    className="input w-16 text-center text-xs !py-0.5 inline-block border-neo/40 focus:border-neo bg-neo/5"
-                                    value={editValue}
-                                    onChange={e => setEditValue(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && saveEdit(rule.Id)}
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <span className={`font-bold px-1 rounded ${isChanged ? 'text-ember bg-ember/10' : 'text-neo-bright bg-neo/10'}`}>
-                                    {rule.CurrentValue}
-                                  </span>
-                                )}
-                                {rule.Condition.split('{v}')[1]}
-                              </span>
-                            </div>
+                            <span className="text-xs text-text-mid italic">{rule.Description}</span>
                           </td>
                           <td className="table-cell">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] uppercase font-bold text-bloom bg-bloom/10 px-1.5 py-0.5 rounded">THEN</span>
-                              <span className="text-xs font-semibold text-text-bright">{rule.Action}</span>
-                            </div>
+                            {isEditing ? (
+                              <input
+                                className="input w-24 text-center text-xs !py-1 inline-block border-neo/40 focus:border-neo bg-neo/5"
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && saveEdit(rule.Id)}
+                                autoFocus
+                              />
+                            ) : (
+                              <span className={`font-bold px-2 py-1 rounded ${isChanged ? 'text-ember bg-ember/10' : 'text-neo-bright bg-neo/10'}`}>
+                                {rule.CurrentValue}
+                              </span>
+                            )}
                           </td>
                           <td className="table-cell text-center text-[10px] text-text-dim font-mono">{rule.DefaultValue}</td>
                           <td className="table-cell text-center">
