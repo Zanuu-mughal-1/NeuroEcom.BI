@@ -108,5 +108,31 @@ FROM AdCampaigns C
 CROSS JOIN (SELECT TOP 30 (ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1) as n FROM sys.objects) D;
 GO
 
-PRINT '✅ Analysis data (Customers, Orders, History, Returns, Ads) seeded successfully with set-based logic.';
+-- 7. Seed RTOs and RTOAssessments
+INSERT INTO RTOs (OrderId, CustomerId, DeliveryAttempts, FailureReason, RiskScore, Status, CreatedAt, UpdatedAt)
+SELECT TOP 5 
+    O.Id, O.CustomerId, 
+    ABS(CHECKSUM(NEWID())) % 3 + 1, 
+    CASE WHEN ABS(CHECKSUM(NEWID())) % 2 = 0 THEN 'Customer not available' ELSE 'Address not found' END,
+    ISNULL(O.RTORiskScore, 0), 
+    'Returned', 
+    DATEADD(DAY, 2, O.OrderDate), 
+    DATEADD(DAY, 3, O.OrderDate)
+FROM Orders O
+WHERE O.FulfillmentStatus = 'Shipped'
+ORDER BY NEWID();
+GO
+
+INSERT INTO RTOAssessments (OrderId, RiskScore, Decision, TriggeredRules, AssessedAt)
+SELECT O.Id, ISNULL(O.RTORiskScore, 0), 
+    CASE WHEN ISNULL(O.RTORiskScore, 0) <= 20 THEN 'Auto-Approved'
+         WHEN ISNULL(O.RTORiskScore, 0) <= 50 THEN 'Manual Review'
+         ELSE 'Auto-Rejected' END,
+    'High Value Penalty (+20 pts)',
+    O.OrderDate
+FROM Orders O
+WHERE O.RTORiskScore IS NOT NULL;
+GO
+
+PRINT '✅ Analysis data (Customers, Orders, History, Returns, Ads, RTOs) seeded successfully with set-based logic.';
 GO
