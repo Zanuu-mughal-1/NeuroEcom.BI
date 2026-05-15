@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=DESKTOP-OSBH8T2\\SQLEXPRESS;Database=NeuroEcomBI;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Server=YOUR_SERVER_HERE;Database=NeuroEcomBI;Trusted_Connection=True;TrustServerCertificate=True;"
   },
   "Logging": {
     "LogLevel": {

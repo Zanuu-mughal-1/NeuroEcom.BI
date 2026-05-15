@@ -263,7 +263,7 @@ export default function Orders() {
                     <div className="text-xs text-text-dim">{o.Customer?.Email}</div>
                   </td>
                   <td className="table-cell text-right">
-                    <span className="font-bold text-text-white">${(o.TotalAmount || 0).toLocaleString()}</span>
+                    <span className="font-bold text-text-white">Rs {(o.TotalAmount || 0).toLocaleString()}</span>
                   </td>
                   <td className="table-cell text-center">
                     <span className={`badge ${o.PaymentMethod === 'COD' ? 'badge-ember' : o.PaymentMethod === 'UPI' ? 'badge-pulse' : 'badge-neo'}`}>

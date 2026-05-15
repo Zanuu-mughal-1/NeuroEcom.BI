@@ -37,6 +37,8 @@ obj/
 .vs/
 .idea/
 .vscode/
+backend/appsettings.json
+backend/appsettings.Development.json
 
 # Ignore frontend build output in backend if applicable
 backend/wwwroot/dist/

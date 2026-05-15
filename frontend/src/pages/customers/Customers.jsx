@@ -152,7 +152,7 @@ export default function Customers() {
           { label: 'Total Customers', value: customers.length, icon: Users, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
           { label: 'VIP Customers', value: customers.filter(c => c.LoyaltyTier === 'VIP').length, icon: TrendingUp, bg: 'rgba(99,102,241,0.1)', color: '#6366f1' },
           { label: 'Flagged', value: customers.filter(c => c.Flags?.length > 0).length, icon: Flag, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
-          { label: 'Total LTV', value: `$${customers.reduce((s, c) => s + (c.TotalSpent || 0), 0).toLocaleString()}`, icon: UserCheck, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+          { label: 'Total LTV', value: `Rs ${customers.reduce((s, c) => s + (c.TotalSpent || 0), 0).toLocaleString()}`, icon: UserCheck, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>
@@ -254,7 +254,7 @@ export default function Customers() {
                   </td>
                   <td className="table-cell text-text-dim">{c.City}</td>
                   <td className="table-cell text-center"><LoyaltyBadge tier={c.LoyaltyTier} /></td>
-                  <td className="table-cell text-right font-semibold text-text-white">${(c.TotalSpent || 0).toLocaleString()}</td>
+                  <td className="table-cell text-right font-semibold text-text-white">Rs {(c.TotalSpent || 0).toLocaleString()}</td>
                   <td className="table-cell text-right text-text-mid">{c.TotalOrders || 0}</td>
                   <td className="table-cell text-right">
                     <span className="text-xs font-mono text-neo-bright">{(c.LoyaltyPoints || 0).toLocaleString()}</span>

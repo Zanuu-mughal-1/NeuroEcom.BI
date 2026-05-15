@@ -88,9 +88,9 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
         </div>
         <div>
           <div className="text-text-white font-bold text-base leading-none" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px', fontSize: '20px', color: 'var(--text-white)' }}>
-            NeuroEcom
+            Zanoo's
           </div>
-          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>.BI v1.0</div>
+          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>.Electric v1.0</div>
         </div>
       </div>
 

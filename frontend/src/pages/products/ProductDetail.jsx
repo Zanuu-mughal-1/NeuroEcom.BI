@@ -120,8 +120,14 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}>
-              <Package size={18} className="text-neo-bright" />
+            <div className="w-16 h-16 rounded-xl overflow-hidden border border-border/50 bg-surface shadow-lg flex-shrink-0">
+              {product.ImageUrl ? (
+                <img src={product.ImageUrl} alt={product.Name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image'; e.target.onerror = null; }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-abyss">
+                  <Package size={24} className="text-neo-bright" />
+                </div>
+              )}
             </div>
             <div>
               <h2 className="text-xl font-bold text-text-white">{product.Name}</h2>

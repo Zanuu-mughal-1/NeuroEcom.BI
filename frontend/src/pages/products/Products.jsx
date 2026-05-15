@@ -200,8 +200,14 @@ export default function Products() {
                   <td className="table-cell font-mono text-text-dim">{p.Id}</td>
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.1)' }}>
-                        <Package size={14} className="text-neo" />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface border border-border/50 flex-shrink-0">
+                        {p.ImageUrl ? (
+                          <img src={p.ImageUrl} alt={p.Name} className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image'; e.target.onerror = null; }} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-abyss">
+                            <Package size={14} className="text-neo" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <div className="font-semibold text-text-bright text-sm">{p.Name}</div>
