@@ -56,6 +56,48 @@ public class ProductSalesHistory
     public int Returns { get; set; }
 }
 
+// ===================== COMPETITOR INTELLIGENCE =====================
+public class Competitor
+{
+    public int Id { get; set; }
+    [Required, MaxLength(120)] public string Name { get; set; } = "";
+    [Required, MaxLength(300)] public string WebsiteUrl { get; set; } = "";
+    [MaxLength(50)] public string Status { get; set; } = "Tracking";
+    [Column(TypeName = "decimal(5,2)")] public decimal MatchRate { get; set; } = 0;
+    public DateTime? LastScannedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<CompetitorProductMatch> ProductMatches { get; set; } = [];
+}
+
+public class CompetitorProductMatch
+{
+    public int Id { get; set; }
+    public int CompetitorId { get; set; }
+    public Competitor? Competitor { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+    [MaxLength(300)] public string CompetitorProductName { get; set; } = "";
+    [MaxLength(500)] public string? CompetitorProductUrl { get; set; }
+    [Column(TypeName = "decimal(5,2)")] public decimal Confidence { get; set; } = 90;
+    [MaxLength(50)] public string Status { get; set; } = "Matched";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<CompetitorPriceSnapshot> PriceSnapshots { get; set; } = [];
+}
+
+public class CompetitorPriceSnapshot
+{
+    public int Id { get; set; }
+    public int CompetitorProductMatchId { get; set; }
+    public CompetitorProductMatch? CompetitorProductMatch { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Price { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal ShippingCost { get; set; }
+    public bool InStock { get; set; } = true;
+    [MaxLength(100)] public string? PromoText { get; set; }
+    public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
+}
+
 // ===================== CUSTOMER =====================
 public class Customer
 {

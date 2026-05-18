@@ -1,16 +1,18 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useLayoutEffect } from 'react'
 
 const ThemeContext = createContext()
+const THEME_STORAGE_KEY = 'theme'
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme')
-    return saved || 'dark'
+    const saved = localStorage.getItem(THEME_STORAGE_KEY)
+    return saved === 'light' || saved === 'dark' ? saved : 'dark'
   })
 
-  useEffect(() => {
-    localStorage.setItem('theme', theme)
+  useLayoutEffect(() => {
+    localStorage.setItem(THEME_STORAGE_KEY, theme)
     document.documentElement.setAttribute('data-theme', theme)
+    document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
   const toggleTheme = () => {
@@ -18,7 +20,7 @@ export function ThemeProvider({ children }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDark: theme === 'dark', toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   )

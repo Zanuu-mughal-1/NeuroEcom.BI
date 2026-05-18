@@ -231,6 +231,37 @@ CREATE TABLE ProductSalesHistory (
     Revenue DECIMAL(18,2) NOT NULL,
     Returns INT DEFAULT 0
 );
+
+CREATE TABLE Competitors (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(120) NOT NULL,
+    WebsiteUrl NVARCHAR(300) NOT NULL,
+    Status NVARCHAR(50) NOT NULL DEFAULT 'Tracking',
+    MatchRate DECIMAL(5,2) NOT NULL DEFAULT 0,
+    LastScannedAt DATETIME2,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+CREATE TABLE CompetitorProductMatches (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CompetitorId INT NOT NULL REFERENCES Competitors(Id),
+    ProductId INT NOT NULL REFERENCES Products(Id),
+    CompetitorProductName NVARCHAR(300) NOT NULL,
+    CompetitorProductUrl NVARCHAR(500),
+    Confidence DECIMAL(5,2) NOT NULL DEFAULT 90,
+    Status NVARCHAR(50) NOT NULL DEFAULT 'Matched',
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+CREATE TABLE CompetitorPriceSnapshots (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CompetitorProductMatchId INT NOT NULL REFERENCES CompetitorProductMatches(Id),
+    Price DECIMAL(18,2) NOT NULL,
+    ShippingCost DECIMAL(18,2) NOT NULL DEFAULT 0,
+    InStock BIT NOT NULL DEFAULT 1,
+    PromoText NVARCHAR(100),
+    CapturedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
 GO
 
 -- ===================== PERFORMANCE INDEXES =====================
@@ -241,6 +272,8 @@ CREATE NONCLUSTERED INDEX IX_Returns_CustomerId ON Returns(CustomerId);
 CREATE NONCLUSTERED INDEX IX_Returns_OrderId ON Returns(OrderId);
 CREATE NONCLUSTERED INDEX IX_CustomerFlags_CustomerId ON CustomerFlags(CustomerId);
 CREATE NONCLUSTERED INDEX IX_AdPerformance_CampaignId ON AdPerformance(CampaignId);
+CREATE NONCLUSTERED INDEX IX_CompetitorProductMatches_ProductId ON CompetitorProductMatches(ProductId);
+CREATE NONCLUSTERED INDEX IX_CompetitorPriceSnapshots_MatchId_CapturedAt ON CompetitorPriceSnapshots(CompetitorProductMatchId, CapturedAt DESC);
 GO
 
 -- ===================== DATA SEEDING =====================

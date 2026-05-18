@@ -68,7 +68,12 @@ export default function Header({ toggleSidebar }) {
   const title = pageTitles[location.pathname] || pageTitles[Object.keys(pageTitles).find(k => location.pathname.startsWith(k) && k !== '/') || '/']
 
   return (
-    <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-border bg-abyss/80 backdrop-blur-xl sticky top-0 z-40">
+    <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b backdrop-blur-xl sticky top-0 z-40"
+      style={{
+        background: 'rgba(4, 17, 31, 0.78)',
+        borderColor: 'rgba(56, 189, 248, 0.22)',
+        boxShadow: '0 10px 35px rgba(0,0,0,0.22), 0 0 24px rgba(34,211,238,0.08)'
+      }}>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       <div className="flex items-center gap-3 md:gap-4">
@@ -91,11 +96,11 @@ export default function Header({ toggleSidebar }) {
         <div 
           onClick={() => setIsSearchOpen(true)}
           className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', minWidth: '240px' }}>
+          style={{ background: 'rgba(8,20,35,0.72)', border: '1px solid rgba(56,189,248,0.24)', minWidth: '240px' }}>
           <Search size={14} />
           <span className="text-xs">Quick search...</span>
           <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd>
+            style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.18)' }}>Ctrl+K</kbd>
         </div>
 
         <ThemeToggle />

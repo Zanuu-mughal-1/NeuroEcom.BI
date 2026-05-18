@@ -36,9 +36,9 @@ export default {
         'mono': ['"JetBrains Mono"', 'monospace'],
       },
       backgroundImage: {
-        'grid-pattern': 'linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)',
-        'glow-neo': 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)',
-        'glow-pulse': 'radial-gradient(ellipse at 50% 0%, rgba(6,182,212,0.1) 0%, transparent 60%)',
+        'grid-pattern': 'linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px)',
+        'glow-neo': 'radial-gradient(ellipse at 50% 0%, rgba(0,234,255,0.16) 0%, transparent 60%)',
+        'glow-pulse': 'radial-gradient(ellipse at 50% 0%, rgba(56,189,248,0.12) 0%, transparent 60%)',
       },
       backgroundSize: {
         'grid': '40px 40px',
@@ -54,14 +54,14 @@ export default {
       keyframes: {
         float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-8px)' } },
         shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
-        glowPulse: { '0%, 100%': { boxShadow: '0 0 20px rgba(99,102,241,0.3)' }, '50%': { boxShadow: '0 0 40px rgba(99,102,241,0.6)' } },
+        glowPulse: { '0%, 100%': { boxShadow: '0 0 20px rgba(34,211,238,0.3)' }, '50%': { boxShadow: '0 0 40px rgba(34,211,238,0.6)' } },
         slideIn: { '0%': { transform: 'translateX(-20px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
         fadeUp: { '0%': { transform: 'translateY(16px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
       },
       boxShadow: {
-        'neo': '0 0 30px rgba(99,102,241,0.2)',
-        'neo-strong': '0 0 60px rgba(99,102,241,0.4)',
-        'pulse': '0 0 30px rgba(6,182,212,0.2)',
+        'neo': '0 0 30px rgba(34,211,238,0.22)',
+        'neo-strong': '0 0 60px rgba(34,211,238,0.38)',
+        'pulse': '0 0 30px rgba(56,189,248,0.24)',
         'panel': '0 4px 24px rgba(0,0,0,0.4)',
         'card': '0 2px 12px rgba(0,0,0,0.3)',
         'inner-glow': 'inset 0 1px 0 rgba(255,255,255,0.05)',

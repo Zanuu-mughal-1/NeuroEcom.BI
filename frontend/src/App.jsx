@@ -1,51 +1,40 @@
-import { useState, useEffect } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
-import Dashboard from './pages/dashboard/Dashboard'
-import Products from './pages/products/Products'
-import Customers from './pages/customers/Customers'
-import Orders from './pages/orders/Orders'
-import Returns from './pages/returns/Returns'
-import Ads from './pages/ads/Ads'
-import Decisions from './pages/decisions/Decisions'
-import Predictions from './pages/predictions/Predictions'
-import Logistics from './pages/logistics/Logistics'
-import CompetitorIntel from './pages/competitors/CompetitorIntel'
 import ErrorBoundary from './components/ErrorBoundary'
+import { useTheme } from './context/ThemeContext'
+
+const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'))
+const Products = lazy(() => import('./pages/products/Products'))
+const Customers = lazy(() => import('./pages/customers/Customers'))
+const Orders = lazy(() => import('./pages/orders/Orders'))
+const Returns = lazy(() => import('./pages/returns/Returns'))
+const Ads = lazy(() => import('./pages/ads/Ads'))
+const Decisions = lazy(() => import('./pages/decisions/Decisions'))
+const Predictions = lazy(() => import('./pages/predictions/Predictions'))
+const Logistics = lazy(() => import('./pages/logistics/Logistics'))
+const CompetitorIntel = lazy(() => import('./pages/competitors/CompetitorIntel'))
 
 export default function App() {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme')
-    return saved ? saved === 'dark' : true
-  })
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-  useEffect(() => {
-    localStorage.setItem('theme', isDark ? 'dark' : 'light')
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDark])
-
-  const toggleTheme = () => setIsDark(!isDark)
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
+  const { isDark, toggleTheme } = useTheme()
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev)
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none z-0 transition-colors duration-500"
-           style={{ background: 'var(--void)' }}>
+           style={{ background: 'linear-gradient(135deg, #020814 0%, #04111f 48%, #071827 100%)' }}>
         {/* Grid */}
-        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.02] dark:opacity-[0.08]" />
+        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.03] dark:opacity-[0.09]" />
         {/* Top glows */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full opacity-10 dark:opacity-20 transition-opacity duration-700"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)', filter: 'blur(80px)' }} />
-        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-10 dark:opacity-15 transition-opacity duration-700"
-          style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)', filter: 'blur(80px)' }} />
+        <div className="absolute -top-24 left-1/5 w-[560px] h-[560px] rounded-full opacity-20 dark:opacity-35 transition-opacity duration-700"
+          style={{ background: 'radial-gradient(circle, rgba(0,234,255,0.34), transparent 68%)', filter: 'blur(86px)' }} />
+        <div className="absolute top-12 right-0 w-[520px] h-[520px] rounded-full opacity-20 dark:opacity-30 transition-opacity duration-700"
+          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.28), transparent 70%)', filter: 'blur(92px)' }} />
+        <div className="absolute bottom-[-18%] left-1/3 w-[640px] h-[340px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(ellipse, rgba(34,211,238,0.16), transparent 70%)', filter: 'blur(80px)' }} />
       </div>
 
       {/* Sidebar - Mobile Overlay */}
@@ -66,18 +55,20 @@ export default function App() {
         <Header toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto">
           <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/returns" element={<Returns />} />
-              <Route path="/ads" element={<Ads />} />
-              <Route path="/decisions" element={<Decisions />} />
-              <Route path="/predictions" element={<Predictions />} />
-              <Route path="/logistics" element={<Logistics />} />
-              <Route path="/competitors" element={<CompetitorIntel />} />
-            </Routes>
+            <Suspense fallback={<div className="p-6 text-sm text-text-dim">Loading workspace...</div>}>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/returns" element={<Returns />} />
+                <Route path="/ads" element={<Ads />} />
+                <Route path="/decisions" element={<Decisions />} />
+                <Route path="/predictions" element={<Predictions />} />
+                <Route path="/logistics" element={<Logistics />} />
+                <Route path="/competitors" element={<CompetitorIntel />} />
+              </Routes>
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>

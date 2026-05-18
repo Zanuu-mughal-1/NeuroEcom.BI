@@ -74,13 +74,17 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
 
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col h-screen overflow-y-auto"
-      style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
+      style={{
+        background: 'linear-gradient(180deg, rgba(4,17,31,0.96), rgba(2,8,20,0.98))',
+        borderRight: '1px solid rgba(56,189,248,0.24)',
+        boxShadow: '18px 0 42px rgba(0,0,0,0.28), 0 0 28px rgba(34,211,238,0.08)'
+      }}>
       
       {/* Logo */}
       <div className="px-5 py-6 flex items-center gap-3">
         <div className="relative">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, var(--color-neo), #4f46e5)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
+            style={{ background: 'linear-gradient(135deg, #00eaff, #38bdf8)', boxShadow: '0 0 26px rgba(34,211,238,0.38)' }}>
             <Zap size={18} className="text-white" />
           </div>
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
@@ -88,15 +92,15 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
         </div>
         <div>
           <div className="text-text-white font-bold text-base leading-none" style={{ fontFamily: 'Bebas Neue', letterSpacing: '1px', fontSize: '20px', color: 'var(--text-white)' }}>
-            Zanoo's
+            NeuroEcom.BI
           </div>
-          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>.Electric v1.0</div>
+          <div className="text-text-dim text-xs leading-none mt-0.5" style={{ fontFamily: 'JetBrains Mono' }}>Intelligence v1.0</div>
         </div>
       </div>
 
       {/* Status indicator */}
       <div className="mx-4 mb-5 px-3 py-2 rounded-lg flex items-center gap-2"
-        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(34,211,238,0.18)' }}>
         <div className="glow-dot" style={{ background: 'var(--color-bloom)', color: 'var(--color-bloom)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--color-bloom)' }}>All Systems Operational</span>
       </div>

@@ -317,7 +317,7 @@ const Logistics = () => {
                       </div>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
-                          <div className={`h-full bg-neo shadow-[0_0_8px_rgba(99,102,241,0.5)] ${order.FulfillmentStatus === 'Delivered' ? 'w-full' : 'w-2/3'}`} />
+                          <div className={`h-full bg-neo shadow-[0_0_8px_rgba(0,234,255,0.5)] ${order.FulfillmentStatus === 'Delivered' ? 'w-full' : 'w-2/3'}`} />
                         </div>
                         <span className="text-[10px] font-bold text-text-dim">
                           {order.FulfillmentStatus === 'Delivered' ? 'Delivered' : 'ETA: Tomorrow'}
@@ -408,7 +408,7 @@ const Logistics = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="section-title">Carrier On-Time Comparison</h3>
                   <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#6366f1]" /> BlueDart</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#00eaff]" /> BlueDart</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#10b981]" /> Delhivery</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f59e0b]" /> XpressBees</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#06b6d4]" /> Shadowfax</div>
@@ -419,7 +419,7 @@ const Logistics = () => {
                     <AreaChart data={performanceData}>
                       <defs>
                         {['BlueDart', 'Delhivery', 'XpressBees', 'Shadowfax'].map((id, i) => {
-                          const colors = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4'];
+                          const colors = ['#00eaff', '#10b981', '#f59e0b', '#06b6d4'];
                           return (
                             <linearGradient key={id} id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor={colors[i]} stopOpacity={0.2}/>
@@ -435,7 +435,7 @@ const Logistics = () => {
                         contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
                         itemStyle={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 0' }}
                       />
-                      <Area type="monotone" dataKey="BlueDart" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#grad-BlueDart)" />
+                      <Area type="monotone" dataKey="BlueDart" stroke="#00eaff" strokeWidth={3} fillOpacity={1} fill="url(#grad-BlueDart)" />
                       <Area type="monotone" dataKey="Delhivery" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#grad-Delhivery)" />
                       <Area type="monotone" dataKey="XpressBees" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#grad-XpressBees)" />
                       <Area type="monotone" dataKey="Shadowfax" stroke="#06b6d4" strokeWidth={1.5} fillOpacity={1} fill="url(#grad-Shadowfax)" />
@@ -460,9 +460,9 @@ const Logistics = () => {
                       <YAxis type="number" dataKey="avgCost" name="Cost" unit="Rs" axisLine={false} tickLine={false} tick={{fill: 'var(--text-dim)', fontSize: 10}} label={{ value: 'Cost', angle: -90, position: 'insideLeft', fill: 'var(--text-dim)', fontSize: 10 }} />
                       <ZAxis type="number" dataKey="fasr" range={[100, 1000]} name="FASR" unit="%" />
                       <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px' }} />
-                      <Scatter name="Carriers" data={carriers} fill="#6366f1">
+                      <Scatter name="Carriers" data={carriers} fill="#00eaff">
                         {carriers.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#6366f1', '#10b981', '#f59e0b', '#06b6d4'][index % 4]} />
+                          <Cell key={`cell-${index}`} fill={['#00eaff', '#10b981', '#f59e0b', '#06b6d4'][index % 4]} />
                         ))}
                       </Scatter>
                     </ScatterChart>
@@ -490,7 +490,7 @@ const Logistics = () => {
                           <Cell key={`cell-${index}`} fill={entry.rto > 12 ? '#ef4444' : entry.rto > 8 ? '#f59e0b' : '#10b981'} />
                         ))}
                       </Bar>
-                      <Line type="monotone" dataKey="delivery" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="delivery" stroke="#00eaff" strokeWidth={2} dot={{ r: 4 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -518,7 +518,7 @@ const Logistics = () => {
                       />
                       <Bar dataKey="avgCost" radius={[6, 6, 0, 0]} barSize={45}>
                         {carriers.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#06b6d4'} />
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#00eaff' : '#06b6d4'} />
                         ))}
                       </Bar>
                     </BarChart>

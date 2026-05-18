@@ -54,6 +54,20 @@ export default function Dashboard() {
     fetchDashboard()
   }, [fetchDashboard])
 
+  useEffect(() => {
+    const refreshVisibleDashboard = () => {
+      if (!document.hidden) fetchDashboard(true)
+    }
+
+    window.addEventListener('focus', refreshVisibleDashboard)
+    const intervalId = window.setInterval(refreshVisibleDashboard, 30000)
+
+    return () => {
+      window.removeEventListener('focus', refreshVisibleDashboard)
+      window.clearInterval(intervalId)
+    }
+  }, [fetchDashboard])
+
   const handleExport = () => {
     if (!data) return
     const sections = [
@@ -156,18 +170,21 @@ export default function Dashboard() {
       )}
 
       {/* --- HEADER --- */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
+      <header className="card blue-glow-panel !p-6 md:!p-8">
+        <div className="blue-wave" />
+        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-5">
+        <div className="max-w-2xl">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-bloom animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Live Analysis Active</span>
+            <div className="w-2 h-2 rounded-full bg-bloom animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.75)]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-dim">Live Analysis Active</span>
           </div>
-          <h1 className="text-4xl font-black text-text-bright tracking-tight leading-none uppercase" style={{ fontFamily: 'Bebas Neue' }}>
+          <h1 className="text-4xl md:text-5xl font-black text-text-bright tracking-tight leading-none uppercase" style={{ fontFamily: 'Bebas Neue' }}>
             Executive <span className="text-neo">Intelligence</span>
           </h1>
+          <p className="mt-3 text-sm text-text-mid leading-relaxed">A live command center for revenue, customer momentum, operational health, and AI-backed commerce decisions.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden lg:flex items-center gap-6 px-6 py-3 bg-surface/50 border border-white/5 rounded-2xl">
+          <div className="hidden lg:flex items-center gap-6 px-6 py-3 glass rounded-2xl">
             <div>
               <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider mb-0.5">ROI Status</div>
               <div className="flex items-center gap-1.5 font-bold text-bloom">
@@ -192,6 +209,7 @@ export default function Dashboard() {
             <span className="text-xs font-bold uppercase tracking-wider">Export Report</span>
           </button>
         </div>
+        </div>
       </header>
 
       {/* --- HERO KPI GRID --- */}
@@ -203,8 +221,8 @@ export default function Dashboard() {
           { label: 'Active Customers', value: (data?.Customers?.Total || 0).toLocaleString(), icon: Users, color: 'bloom', change: '+142', detail: 'this month', to: '/customers' },
           { label: 'Pending Orders', value: (data?.Orders?.Pending || 0).toLocaleString(), icon: ShoppingCart, color: 'ember', change: 'Needs Action', detail: 'pending fulfillment', to: '/orders?status=Pending' },
         ].map((kpi) => (
-          <Link to={kpi.to} key={kpi.label} className="group relative overflow-hidden card p-0 border-white/5 hover:border-neo/30 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] transition-all">
-            <div className={`absolute top-0 left-0 w-1 h-full bg-${kpi.color}`} />
+          <Link to={kpi.to} key={kpi.label} className="group relative overflow-hidden card p-0 transition-all">
+            <div className={`absolute top-0 left-0 w-1 h-full bg-${kpi.color} shadow-[0_0_18px_currentColor]`} />
             <div className="p-5 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-2.5 rounded-xl bg-${kpi.color}/10 text-${kpi.color}`}>
@@ -251,13 +269,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="h-72">
-            <SalesAreaChart data={data.SalesData} color="#6366f1" dataKey="Revenue" prefix="Rs" />
+            <SalesAreaChart data={data.SalesData} color="#00eaff" dataKey="Revenue" prefix="Rs" />
           </div>
         </div>
 
         {/* Goal Tracking & Insights (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="card border-neo/20 bg-neo/5 flex-1 relative overflow-hidden group">
+          <div className="card blue-glow-panel border-neo/30 bg-neo/5 flex-1 relative overflow-hidden group">
+            <div className="blue-wave opacity-60" />
             <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 transition-transform group-hover:rotate-45">
               <Target size={80} className="text-neo" />
             </div>
@@ -273,19 +292,19 @@ export default function Dashboard() {
                     <span>On Track</span>
                   </div>
                 </div>
-                <div className="h-3 bg-void rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div className="h-3 bg-void rounded-full overflow-hidden p-0.5 border border-neo/20">
                   <div 
-                    className="h-full rounded-full bg-gradient-to-r from-neo to-pulse shadow-[0_0_12px_rgba(99,102,241,0.5)] transition-all duration-1000"
+                    className="h-full rounded-full bg-gradient-to-r from-neo to-pulse shadow-[0_0_16px_rgba(34,211,238,0.55)] transition-all duration-1000"
                     style={{ width: `${Math.min(100, (data.Revenue.ThisMonth / revenueGoal) * 100)}%` }}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div className="p-4 rounded-2xl bg-white/5 border border-neo/15">
                   <div className="text-[10px] text-text-dim uppercase font-bold tracking-widest mb-1">Reached</div>
                   <div className="text-sm font-black text-text-bright">Rs {data.Revenue.ThisMonth.toLocaleString()}</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div className="p-4 rounded-2xl bg-white/5 border border-neo/15">
                   <div className="text-[10px] text-text-dim uppercase font-bold tracking-widest mb-1">Remaining</div>
                   <div className="text-sm font-black text-text-bright">Rs {Math.max(0, revenueGoal - data.Revenue.ThisMonth).toLocaleString()}</div>
                 </div>
@@ -293,9 +312,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card bg-bloom/5 border-bloom/20 group hover:border-bloom/40 transition-all">
+          <div className="card blue-glow-panel bg-pulse/5 border-pulse/25 group hover:border-pulse/50 transition-all">
+            <div className="blue-wave opacity-50" />
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-bloom/10 text-bloom">
+              <div className="p-2 rounded-xl bg-pulse/10 text-pulse">
                 <Zap size={18} />
               </div>
               <h3 className="text-sm font-bold text-text-bright uppercase tracking-widest">Neural Insight</h3>
@@ -303,7 +323,7 @@ export default function Dashboard() {
             <p className="text-xs text-text-dim leading-relaxed mb-4">
               Revenue is <span className="text-bloom font-bold">trending up 12%</span> compared to previous period. High-velocity items in <span className="text-text-bright font-bold">Electronics</span> are driving growth.
             </p>
-            <Link to="/predictions" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-bloom hover:gap-3 transition-all">
+            <Link to="/predictions" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neo hover:gap-3 transition-all">
               Full Prediction Report <ChevronRight size={14} />
             </Link>
           </div>

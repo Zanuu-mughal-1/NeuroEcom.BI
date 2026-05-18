@@ -62,7 +62,12 @@ export default function Returns() {
         OrderValue: parseFloat(rtoInput.orderValue),
         PaymentMethod: rtoInput.paymentMethod
       })
-      setRtoResult(data)
+      setRtoResult({
+        score: data.Score ?? data.score ?? 0,
+        decision: data.Decision ?? data.decision ?? 'Manual Review',
+        triggeredRules: data.TriggeredRules ?? data.triggeredRules ?? [],
+        recommendation: data.Recommendation ?? data.recommendation
+      })
       fetchData()
     } catch (err) {
       console.error('RTO assessment failed', err)
@@ -113,7 +118,7 @@ export default function Returns() {
     Pending: { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)', color: '#fbbf24' },
     Approved: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', color: '#34d399' },
     Rejected: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', color: '#f87171' },
-    Refunded: { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.2)', color: '#a78bfa' },
+    Refunded: { bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.2)', color: '#93c5fd' },
   }
 
   if (loading && returns.length === 0) {
@@ -145,7 +150,7 @@ export default function Returns() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Returns', value: metrics?.totalReturns ?? returns.length, icon: RotateCcw, bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
+          { label: 'Total Returns', value: metrics?.totalReturns ?? returns.length, icon: RotateCcw, bg: 'rgba(56,189,248,0.1)', color: '#38bdf8' },
           { label: 'Return Rate', value: `${metrics?.returnRate ?? 0}%`, icon: AlertTriangle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
           { label: 'Pending Review', value: returns.filter(r => r.Status === 'Pending').length, icon: Clock, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
           { label: 'Refund Amount', value: `Rs ${(metrics?.totalRefundAmount != null ? Number(metrics.totalRefundAmount) : returns.reduce((s, r) => s + (r.RefundAmount || 0), 0)).toLocaleString()}`, icon: DollarSign, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },

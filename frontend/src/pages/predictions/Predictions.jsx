@@ -231,7 +231,7 @@ export default function Predictions() {
                 { label: 'Price', value: `Rs ${selectedProduct?.Price}`, color: 'var(--text-bright)' },
                 { label: 'Cost', value: `Rs ${selectedProduct?.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${((selectedProduct?.Price - selectedProduct?.Cost) / (selectedProduct?.Price || 1) * 100).toFixed(1)}%`, color: '#34d399' },
-                { label: 'Stock', value: selectedProduct?.Stock, color: (selectedProduct?.Stock || 0) < 10 ? '#f87171' : '#818cf8' },
+                { label: 'Stock', value: selectedProduct?.Stock, color: (selectedProduct?.Stock || 0) < 10 ? '#f87171' : '#67f4ff' },
                 { label: 'Sales (est)', value: '450 units', color: '#22d3ee' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg text-center bg-void border border-border">
@@ -403,7 +403,7 @@ export default function Predictions() {
             <div className="section-title mb-1">30-Day Sales Forecast</div>
             <div className="section-subtitle mb-4">Projected performance with current settings</div>
             <div className="h-52">
-              <SalesAreaChart data={forecastData} color="#8b5cf6" dataKey="revenue" prefix="Rs " />
+              <SalesAreaChart data={forecastData} color="#38bdf8" dataKey="revenue" prefix="Rs " />
             </div>
           </div>
         </div>
@@ -448,7 +448,7 @@ export default function Predictions() {
                 { label: 'Budget', value: `Rs ${selectedCampaign?.Budget?.toLocaleString()}`, color: 'var(--text-bright)' },
                 { label: 'Total Spend', value: `Rs ${selectedCampaign?.TotalSpend?.toLocaleString()}`, color: '#f87171' },
                 { label: 'Revenue', value: `Rs ${selectedCampaign?.TotalRevenue?.toLocaleString()}`, color: '#34d399' },
-                { label: 'ROI', value: `${selectedCampaign?.ROI}%`, color: '#818cf8' },
+                { label: 'ROI', value: `${selectedCampaign?.ROI}%`, color: '#67f4ff' },
                 { label: 'Clicks', value: selectedCampaign?.Clicks?.toLocaleString(), color: '#22d3ee' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg text-center bg-void border border-border">
@@ -538,7 +538,7 @@ export default function Predictions() {
                   const predictedRevenue = Math.round((selectedCampaign?.TotalRevenue || 5000) * 1.15);
 
                   const recommendations = [
-                    { label: 'Optimal Daily Budget', value: `Rs ${optimalBudget}`, confidence: 89, icon: Target, color: '#818cf8' },
+                    { label: 'Optimal Daily Budget', value: `Rs ${optimalBudget}`, confidence: 89, icon: Target, color: '#67f4ff' },
                     { label: 'Expected ROI at optimal', value: `${Math.round((selectedCampaign?.ROI || 150) * 1.1)}%`, confidence: 84, icon: TrendingUp, color: '#34d399' },
                     { label: 'Best Performing Platform', value: selectedCampaign?.Platform || 'Meta', confidence: 76, icon: Megaphone, color: '#22d3ee' },
                     { label: 'Next 30 Day Revenue', value: `Rs ${predictedRevenue.toLocaleString()}`, confidence: 78, icon: ChevronRight, color: '#fbbf24' },
@@ -562,7 +562,7 @@ export default function Predictions() {
                   ));
                 })()}
 
-                <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <div className="p-3 rounded-xl" style={{ background: 'rgba(0,234,255,0.08)', border: '1px solid rgba(0,234,255,0.2)' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles size={13} className="text-neo-bright" />
                     <span className="text-xs font-semibold text-neo-bright">Platform Allocation for {selectedCampaign?.Name}</span>
@@ -571,7 +571,7 @@ export default function Predictions() {
                     {(() => {
                       const primary = selectedCampaign?.Platform || 'Meta';
                       const platforms = [
-                        { name: primary, pct: 60, color: '#818cf8' },
+                        { name: primary, pct: 60, color: '#67f4ff' },
                         { name: primary === 'Google' ? 'Facebook' : 'Google', pct: 25, color: '#ef4444' },
                         { name: 'Instagram', pct: 15, color: '#ec4899' }
                       ];
@@ -597,7 +597,7 @@ export default function Predictions() {
             <div className="section-title mb-1">30-Day Sales Forecast</div>
             <div className="section-subtitle mb-4">Projected performance with current settings</div>
             <div className="h-52">
-              <SalesAreaChart data={forecastData} color="#8b5cf6" dataKey="revenue" prefix="Rs " />
+              <SalesAreaChart data={forecastData} color="#38bdf8" dataKey="revenue" prefix="Rs " />
             </div>
           </div>
         </div>
@@ -673,7 +673,7 @@ export default function Predictions() {
               <div className="space-y-3">
                 {[
                   { label: 'Projected Lifetime Value', value: `Rs ${(selectedCustomer?.TotalSpent * 1.4 || 0).toLocaleString()}`, icon: TrendingUp, color: '#34d399' },
-                  { label: 'Next Purchase Probability', value: `${Math.min(95, 65 + (simLoyaltyPoints / 100)).toFixed(0)}%`, icon: Target, color: '#818cf8' },
+                  { label: 'Next Purchase Probability', value: `${Math.min(95, 65 + (simLoyaltyPoints / 100)).toFixed(0)}%`, icon: Target, color: '#67f4ff' },
                   { label: 'Predicted Next Purchase', value: 'Within 12 days', icon: Zap, color: '#22d3ee' },
                   { label: 'Suggested Segment', value: simLoyaltyPoints > 5000 ? 'VIP Elite' : simLoyaltyPoints > 2000 ? 'Gold Star' : 'Loyal Silver', icon: Brain, color: '#fbbf24' },
                 ].map(item => (
@@ -866,7 +866,7 @@ export default function Predictions() {
                 {(() => {
                   const reasons = [
                     { label: 'Defective/Damaged', pct: 45 - (simQualityLevel / 3), color: '#ef4444' },
-                    { label: 'Wrong Size/Item', pct: 25, color: '#818cf8' },
+                    { label: 'Wrong Size/Item', pct: 25, color: '#67f4ff' },
                     { label: 'Changed Mind', pct: 30, color: '#9ca3af' }
                   ];
                   return reasons.map(r => (

@@ -2,12 +2,12 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 export default function KPICard({ label, value, change, changeLabel, icon: Icon, color = 'neo', prefix = '', suffix = '', subtitle, onClick }) {
   const colorMap = {
-    neo: { bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)', glow: 'rgba(99,102,241,0.15)', text: '#818cf8', icon: '#6366f1' },
-    pulse: { bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', glow: 'rgba(6,182,212,0.15)', text: '#22d3ee', icon: '#06b6d4' },
-    bloom: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', glow: 'rgba(16,185,129,0.15)', text: '#34d399', icon: '#10b981' },
+    neo: { bg: 'rgba(0,234,255,0.10)', border: 'rgba(34,211,238,0.42)', glow: 'rgba(34,211,238,0.22)', text: '#67f4ff', icon: '#00eaff' },
+    pulse: { bg: 'rgba(34,211,238,0.10)', border: 'rgba(34,211,238,0.36)', glow: 'rgba(34,211,238,0.18)', text: '#7dd3fc', icon: '#22d3ee' },
+    bloom: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.24)', glow: 'rgba(16,185,129,0.14)', text: '#34d399', icon: '#10b981' },
     ember: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', glow: 'rgba(245,158,11,0.15)', text: '#fbbf24', icon: '#f59e0b' },
     danger: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', glow: 'rgba(239,68,68,0.15)', text: '#f87171', icon: '#ef4444' },
-    royal: { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', glow: 'rgba(139,92,246,0.15)', text: '#a78bfa', icon: '#8b5cf6' },
+    royal: { bg: 'rgba(56,189,248,0.10)', border: 'rgba(56,189,248,0.34)', glow: 'rgba(56,189,248,0.17)', text: '#93c5fd', icon: '#38bdf8' },
   }
   const c = colorMap[color] || colorMap.neo
   const isPositive = change > 0

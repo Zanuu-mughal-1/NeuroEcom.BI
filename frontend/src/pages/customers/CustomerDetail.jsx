@@ -24,14 +24,20 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
   ]
 
   const colorMap = {
-    neo: { bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.2)', text: '#818cf8' },
+    neo: { bg: 'rgba(0,234,255,0.1)', border: 'rgba(0,234,255,0.2)', text: '#67f4ff' },
     bloom: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', text: '#34d399' },
     danger: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#f87171' },
     ember: { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)', text: '#fbbf24' },
     pulse: { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)', text: '#22d3ee' },
   }
 
-  const ltv = localCustomer.TotalSpent
+  const totalSpent = Number(localCustomer.TotalSpent ?? 0)
+  const totalOrders = Number(localCustomer.TotalOrders ?? 0)
+  const loyaltyPoints = Number(localCustomer.LoyaltyPoints ?? 0)
+  const customerIdSeed = Number(localCustomer.Id ?? 1)
+  const firstInitial = localCustomer.FirstName?.[0] ?? '?'
+  const lastInitial = localCustomer.LastName?.[0] ?? ''
+  const ltv = totalSpent
   const nextTierSpend = localCustomer.LoyaltyTier === 'Bronze' ? 500 : localCustomer.LoyaltyTier === 'Silver' ? 2000 : localCustomer.LoyaltyTier === 'Gold' ? 5000 : null
   const tierProgress = nextTierSpend ? Math.min(100, (ltv / nextTierSpend) * 100) : 100
 
@@ -89,8 +95,8 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
         <div className="space-y-4">
           <div className="card text-center">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4"
-              style={{ background: `linear-gradient(135deg, hsl(${localCustomer.Id * 47}deg 70% 50%), hsl(${localCustomer.Id * 47 + 40}deg 60% 40%))` }}>
-              {localCustomer.FirstName[0]}{localCustomer.LastName[0]}
+              style={{ background: `linear-gradient(135deg, hsl(${customerIdSeed * 47}deg 70% 50%), hsl(${customerIdSeed * 47 + 40}deg 60% 40%))` }}>
+              {firstInitial}{lastInitial}
             </div>
             <h3 className="text-xl font-bold text-text-white">{localCustomer.FirstName} {localCustomer.LastName}</h3>
             <p className="text-sm text-text-dim mt-0.5">{localCustomer.Email}</p>
@@ -122,9 +128,9 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
             <div className="section-title mb-4 flex items-center gap-2"><Users size={14} className="text-pulse" /> Summary</div>
             <div className="space-y-3">
               {[
-                { label: 'Total Spent', value: `$${localCustomer.TotalSpent.toLocaleString()}`, color: '#34d399' },
-                { label: 'Total Orders', value: localCustomer.TotalOrders, color: '#818cf8' },
-                { label: 'Loyalty Points', value: localCustomer.LoyaltyPoints.toLocaleString(), color: '#fbbf24' },
+                { label: 'Total Spent', value: `Rs ${totalSpent.toLocaleString()}`, color: '#34d399' },
+                { label: 'Total Orders', value: totalOrders.toLocaleString(), color: '#67f4ff' },
+                { label: 'Loyalty Points', value: loyaltyPoints.toLocaleString(), color: '#fbbf24' },
                 { label: 'City', value: localCustomer.City || '—', color: '#9ca3af' },
                 { label: 'Member Since', value: new Date(localCustomer.JoinedDate || Date.now()).toLocaleDateString(), color: '#9ca3af' },
               ].map(m => (

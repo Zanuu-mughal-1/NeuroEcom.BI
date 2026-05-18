@@ -150,7 +150,7 @@ export default function Ads() {
           { label: 'Active Campaigns', value: campaigns.filter(c => c.Status === 'Active').length, icon: Megaphone, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
           { label: 'Total Spend', value: `$${totalSpend.toLocaleString()}`, icon: DollarSign, bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
           { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, bg: 'rgba(6,182,212,0.1)', color: '#06b6d4' },
-          { label: 'Overall ROI', value: `${overallROI}%`, icon: Target, bg: 'rgba(99,102,241,0.1)', color: '#6366f1' },
+          { label: 'Overall ROI', value: `${overallROI}%`, icon: Target, bg: 'rgba(0,234,255,0.1)', color: '#00eaff' },
           { label: 'ROAS', value: `${overallROAS}x`, icon: TrendingUp, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-3">
@@ -181,7 +181,7 @@ export default function Ads() {
           <div className="section-subtitle mb-4">Revenue breakdown by channel</div>
           <div className="h-56">
             {platformData.length > 0 ? (
-              <SimpleBarChart data={platformData} dataKey="value" color="#6366f1" />
+              <SimpleBarChart data={platformData} dataKey="value" color="#00eaff" />
             ) : (
               <div className="h-full flex items-center justify-center text-text-dim text-sm italic">No attribution data available</div>
             )}

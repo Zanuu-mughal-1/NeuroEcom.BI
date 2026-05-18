@@ -5,8 +5,8 @@ import {
 } from 'recharts'
 
 const COLORS = {
-  neo: '#6366f1', pulse: '#06b6d4', bloom: '#10b981',
-  ember: '#f59e0b', danger: '#ef4444', royal: '#8b5cf6'
+  neo: '#00eaff', pulse: '#22d3ee', bloom: '#10b981',
+  ember: '#f59e0b', danger: '#ef4444', royal: '#38bdf8'
 }
 
 const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => {
@@ -31,19 +31,19 @@ export function SalesAreaChart({ data, height = 200 }) {
       <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+            <stop offset="5%" stopColor="#00eaff" stopOpacity={0.34} />
+            <stop offset="95%" stopColor="#00eaff" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.24} />
+            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
         <XAxis dataKey="date" tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
         <YAxis tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip prefix="Rs " />} />
-        <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />
+        <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#00eaff" fill="url(#revenueGrad)" strokeWidth={2.5} dot={false} />
       </AreaChart>
     </ResponsiveContainer>
   )
@@ -57,7 +57,7 @@ export function DualLineChart({ data, height = 200 }) {
         <XAxis dataKey="date" tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
         <YAxis tick={{ fill: 'var(--text-dim)', fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip />} />
-        <Line type="monotone" dataKey="orders" name="Orders" stroke="#06b6d4" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="orders" name="Orders" stroke="#22d3ee" strokeWidth={2.5} dot={false} />
         <Line type="monotone" dataKey="returns" name="Returns" stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="4 4" />
       </LineChart>
     </ResponsiveContainer>

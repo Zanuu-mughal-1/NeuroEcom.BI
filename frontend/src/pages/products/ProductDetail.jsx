@@ -101,11 +101,11 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
   )
 
   const colorMap = {
-    neo: { bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.2)', text: '#818cf8' },
+    neo: { bg: 'rgba(0,234,255,0.1)', border: 'rgba(0,234,255,0.2)', text: '#67f4ff' },
     bloom: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', text: '#34d399' },
     danger: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#f87171' },
     ember: { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)', text: '#fbbf24' },
-    royal: { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.2)', text: '#a78bfa' },
+    royal: { bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.2)', text: '#93c5fd' },
     pulse: { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)', text: '#22d3ee' },
   }
 
@@ -153,7 +153,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
                 { label: 'Price', value: `Rs ${product.Price}`, color: 'var(--text-bright)' },
                 { label: 'Cost', value: `Rs ${product.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${margin}%`, color: '#34d399' },
-                { label: 'Profit/Unit', value: `Rs ${profit}`, color: '#818cf8' },
+                { label: 'Profit/Unit', value: `Rs ${profit}`, color: '#67f4ff' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg bg-abyss border border-border">
                   <div className="stat-label">{m.label}</div>
@@ -218,7 +218,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
             <div className="section-title mb-1">Sales Trend</div>
             <div className="section-subtitle mb-4">Last 30 days</div>
             <div className="h-52">
-              {!historyLoading && <SalesAreaChart data={salesData} color="#6366f1" dataKey="orders" prefix="" />}
+              {!historyLoading && <SalesAreaChart data={salesData} color="#00eaff" dataKey="orders" prefix="" />}
               {historyLoading && <div className="h-full flex items-center justify-center text-text-dim text-sm">Loading chart...</div>}
             </div>
           </div>
@@ -226,7 +226,7 @@ export default function ProductDetail({ product, onBack, onUpdate }) {
             <div className="section-title mb-4">Performance Metrics</div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Units Sold (30d)', value: salesData.reduce((s, d) => s + d.orders, 0), color: '#818cf8' },
+                { label: 'Units Sold (30d)', value: salesData.reduce((s, d) => s + d.orders, 0), color: '#67f4ff' },
                 { label: 'Revenue (30d)', value: `Rs ${salesData.reduce((s, d) => s + d.revenue, 0).toLocaleString()}`, color: '#34d399' },
                 { label: 'Return Rate', value: salesData.reduce((s, d) => s + d.orders, 0) > 0 ? `${(salesData.reduce((s, d) => s + d.returns, 0) / salesData.reduce((s, d) => s + d.orders, 0) * 100).toFixed(1)}%` : '0%', color: '#fbbf24' },
                 { label: 'Rating', value: '4.6', color: '#f97316' },

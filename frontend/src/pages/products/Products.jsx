@@ -129,7 +129,7 @@ export default function Products() {
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Total Products', value: products.length, icon: Package, bg: 'rgba(99,102,241,0.1)', color: '#6366f1', filter: '' },
+          { label: 'Total Products', value: products.length, icon: Package, bg: 'rgba(0,234,255,0.1)', color: '#00eaff', filter: '' },
           { label: 'Active SKUs', value: products.filter(p => p.IsActive).length, icon: TrendingUp, bg: 'rgba(16,185,129,0.1)', color: '#10b981', filter: 'Active' },
           { label: 'Out of Stock', value: products.filter(p => p.Stock === 0).length, icon: AlertTriangle, bg: 'rgba(239,68,68,0.1)', color: '#ef4444', filter: 'Critical' },
           { label: 'Inactive / Disc.', value: products.filter(p => !p.IsActive || p.IsDiscontinued).length, icon: X, bg: 'rgba(107,114,128,0.15)', color: '#9ca3af', filter: 'Discontinued' },

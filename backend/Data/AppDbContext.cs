@@ -23,6 +23,9 @@ public class AppDbContext : DbContext
     public DbSet<SystemRule> SystemRules => Set<SystemRule>();
     public DbSet<RTOAssessment> RTOAssessments => Set<RTOAssessment>();
     public DbSet<CustomerDiscount> CustomerDiscounts => Set<CustomerDiscount>();
+    public DbSet<Competitor> Competitors => Set<Competitor>();
+    public DbSet<CompetitorProductMatch> CompetitorProductMatches => Set<CompetitorProductMatch>();
+    public DbSet<CompetitorPriceSnapshot> CompetitorPriceSnapshots => Set<CompetitorPriceSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +45,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SystemRule>().ToTable("SystemRules");
         modelBuilder.Entity<RTOAssessment>().ToTable("RTOAssessments");
         modelBuilder.Entity<CustomerDiscount>().ToTable("CustomerDiscounts");
+        modelBuilder.Entity<Competitor>().ToTable("Competitors");
+        modelBuilder.Entity<CompetitorProductMatch>().ToTable("CompetitorProductMatches");
+        modelBuilder.Entity<CompetitorPriceSnapshot>().ToTable("CompetitorPriceSnapshots");
 
         modelBuilder.Entity<Customer>()
             .HasMany(c => c.Flags)
@@ -62,5 +68,20 @@ public class AppDbContext : DbContext
             .HasMany(c => c.Performance)
             .WithOne(p => p.Campaign)
             .HasForeignKey(p => p.CampaignId);
+
+        modelBuilder.Entity<Competitor>()
+            .HasMany(c => c.ProductMatches)
+            .WithOne(m => m.Competitor)
+            .HasForeignKey(m => m.CompetitorId);
+
+        modelBuilder.Entity<Product>()
+            .HasMany<CompetitorProductMatch>()
+            .WithOne(m => m.Product)
+            .HasForeignKey(m => m.ProductId);
+
+        modelBuilder.Entity<CompetitorProductMatch>()
+            .HasMany(m => m.PriceSnapshots)
+            .WithOne(s => s.CompetitorProductMatch)
+            .HasForeignKey(s => s.CompetitorProductMatchId);
     }
 }

@@ -35,9 +35,9 @@ export default function Decisions() {
   const filteredRules = rules.filter(r => !categoryFilter || r.Category === categoryFilter)
 
   const categories = ['Product', 'Customer', 'RTO', 'Ads']
-  const catColors = { Product: { bg: 'rgba(99,102,241,0.1)', text: '#818cf8', border: 'rgba(99,102,241,0.2)' }, Customer: { bg: 'rgba(6,182,212,0.1)', text: '#22d3ee', border: 'rgba(6,182,212,0.2)' }, RTO: { bg: 'rgba(139,92,246,0.1)', text: '#a78bfa', border: 'rgba(139,92,246,0.2)' }, Ads: { bg: 'rgba(16,185,129,0.1)', text: '#34d399', border: 'rgba(16,185,129,0.2)' } }
+  const catColors = { Product: { bg: 'rgba(0,234,255,0.1)', text: '#67f4ff', border: 'rgba(0,234,255,0.2)' }, Customer: { bg: 'rgba(6,182,212,0.1)', text: '#22d3ee', border: 'rgba(6,182,212,0.2)' }, RTO: { bg: 'rgba(56,189,248,0.1)', text: '#93c5fd', border: 'rgba(56,189,248,0.2)' }, Ads: { bg: 'rgba(16,185,129,0.1)', text: '#34d399', border: 'rgba(16,185,129,0.2)' } }
   const sectionIcons = { Products: Package, Customers: Users, Orders: ShoppingCart, Ads: Megaphone, Returns: RotateCcw }
-  const sectionColors = { Products: '#818cf8', Customers: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#a78bfa' }
+  const sectionColors = { Products: '#67f4ff', Customers: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#93c5fd' }
 
   const startEdit = (rule) => { setEditingId(rule.Id); setEditValue(rule.CurrentValue) }
   const saveEdit = async (id) => {
@@ -84,7 +84,7 @@ export default function Decisions() {
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Decisions', value: loading ? '...' : decisions.length.toLocaleString(), color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+          { label: 'Total Decisions', value: loading ? '...' : decisions.length.toLocaleString(), color: '#00eaff', bg: 'rgba(0,234,255,0.1)' },
           { label: 'This Week', value: loading ? '...' : decisions.filter(d => new Date(d.CreatedAt) > new Date(Date.now() - 7*24*60*60*1000)).length, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
           { label: 'Active Rules', value: loading ? '...' : rules.length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
           { label: 'Success Rate', value: loading ? '...' : '91%', color: '#22d3ee', bg: 'rgba(6,182,212,0.1)' },
@@ -273,7 +273,7 @@ export default function Decisions() {
               <div className="section-title mb-4">Volume by Section</div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { section: 'Products', count: 487, color: '#818cf8' },
+                  { section: 'Products', count: 487, color: '#67f4ff' },
                   { section: 'Customers', count: 312, color: '#22d3ee' },
                   { section: 'Orders', count: 289, color: '#fbbf24' },
                   { section: 'Ads', count: 196, color: '#34d399' },
@@ -292,8 +292,8 @@ export default function Decisions() {
                 {[
                   { rule: 'Low Stock Alert', triggers: 342, color: '#f59e0b' },
                   { rule: 'High Return Flag', triggers: 218, color: '#ef4444' },
-                  { rule: 'COD Penalty (RTO)', triggers: 189, color: '#a78bfa' },
-                  { rule: 'VIP Tier Upgrade', triggers: 134, color: '#818cf8' },
+                  { rule: 'COD Penalty (RTO)', triggers: 189, color: '#93c5fd' },
+                  { rule: 'VIP Tier Upgrade', triggers: 134, color: '#67f4ff' },
                   { rule: 'Pause Ad ROI', triggers: 97, color: '#10b981' },
                   { rule: 'Price Drop Rule', triggers: 84, color: '#34d399' },
                 ].map(r => (
