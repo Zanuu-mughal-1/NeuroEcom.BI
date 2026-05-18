@@ -36,8 +36,56 @@ export default function Decisions() {
 
   const categories = ['Product', 'Customer', 'RTO', 'Ads']
   const catColors = { Product: { bg: 'rgba(0,234,255,0.1)', text: '#67f4ff', border: 'rgba(0,234,255,0.2)' }, Customer: { bg: 'rgba(6,182,212,0.1)', text: '#22d3ee', border: 'rgba(6,182,212,0.2)' }, RTO: { bg: 'rgba(56,189,248,0.1)', text: '#93c5fd', border: 'rgba(56,189,248,0.2)' }, Ads: { bg: 'rgba(16,185,129,0.1)', text: '#34d399', border: 'rgba(16,185,129,0.2)' } }
-  const sectionIcons = { Products: Package, Customers: Users, Orders: ShoppingCart, Ads: Megaphone, Returns: RotateCcw }
-  const sectionColors = { Products: '#67f4ff', Customers: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#93c5fd' }
+  const sectionIcons = { Products: Package, Product: Package, Customers: Users, Customer: Users, Orders: ShoppingCart, Ads: Megaphone, Returns: RotateCcw }
+  const sectionColors = { Products: '#67f4ff', Product: '#67f4ff', Customers: '#22d3ee', Customer: '#22d3ee', Orders: '#fbbf24', Ads: '#34d399', Returns: '#93c5fd' }
+  const decisionSections = ['All', ...Array.from(new Set(decisions.map(d => d.Section).filter(Boolean)))]
+  const filteredAnalyticsDecisions = decisionFilter === 'All' ? decisions : decisions.filter(d => d.Section === decisionFilter)
+  const appliedStatuses = new Set(['Applied', 'Executed', 'Completed', 'Confirmed', 'Approved'])
+  const appliedDecisionCount = decisions.filter(d => appliedStatuses.has(d.Status || 'Applied')).length
+  const appliedRate = decisions.length ? Math.round((appliedDecisionCount / decisions.length) * 100) : 0
+  const thisWeekCount = decisions.filter(d => new Date(d.CreatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length
+  const latestDecision = decisions
+    .filter(d => d.CreatedAt)
+    .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))[0]
+  const optimizedRulesCount = rules.filter(r => r.CurrentValue !== r.DefaultValue).length
+  const volumeBySection = Object.entries(
+    decisions.reduce((acc, d) => {
+      const section = d.Section || 'Uncategorized'
+      acc[section] = (acc[section] || 0) + 1
+      return acc
+    }, {})
+  ).map(([section, count]) => ({ section, count, color: sectionColors[section] || '#9ca3af' }))
+  const decisionTypeVolume = Object.entries(
+    filteredAnalyticsDecisions.reduce((acc, d) => {
+      const type = d.DecisionType || 'Unknown'
+      acc[type] = (acc[type] || 0) + 1
+      return acc
+    }, {})
+  )
+    .map(([rule, triggers]) => ({ rule, triggers }))
+    .sort((a, b) => b.triggers - a.triggers)
+    .slice(0, 6)
+  const successByType = Object.values(
+    filteredAnalyticsDecisions.reduce((acc, d) => {
+      const type = d.DecisionType || 'Unknown'
+      if (!acc[type]) acc[type] = { type, section: d.Section || 'General', success: 0, total: 0, color: sectionColors[d.Section] || '#10b981' }
+      acc[type].total += 1
+      if (appliedStatuses.has(d.Status || 'Applied')) acc[type].success += 1
+      return acc
+    }, {})
+  ).sort((a, b) => b.total - a.total)
+  const liveImpactData = filteredAnalyticsDecisions.slice(0, 8).map(d => {
+    const score = appliedStatuses.has(d.Status || 'Applied') ? 100 : 65
+    return {
+      id: d.Id,
+      section: d.Section || 'General',
+      decision: d.ItemName ? `${d.DecisionType}: ${d.ItemName}` : d.DecisionType || 'Decision',
+      impact: d.Status || 'Applied',
+      metric: d.AppliedBy ? `By ${d.AppliedBy}` : 'Live DB',
+      score,
+      status: appliedStatuses.has(d.Status || 'Applied') ? 'positive' : 'neutral'
+    }
+  })
 
   const startEdit = (rule) => { setEditingId(rule.Id); setEditValue(rule.CurrentValue) }
   const saveEdit = async (id) => {
@@ -83,11 +131,11 @@ export default function Decisions() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
+        {[ 
           { label: 'Total Decisions', value: loading ? '...' : decisions.length.toLocaleString(), color: '#00eaff', bg: 'rgba(0,234,255,0.1)' },
-          { label: 'This Week', value: loading ? '...' : decisions.filter(d => new Date(d.CreatedAt) > new Date(Date.now() - 7*24*60*60*1000)).length, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+          { label: 'This Week', value: loading ? '...' : thisWeekCount.toLocaleString(), color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
           { label: 'Active Rules', value: loading ? '...' : rules.length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-          { label: 'Success Rate', value: loading ? '...' : '91%', color: '#22d3ee', bg: 'rgba(6,182,212,0.1)' },
+          { label: 'Applied Rate', value: loading ? '...' : `${appliedRate}%`, color: '#22d3ee', bg: 'rgba(6,182,212,0.1)' },
         ].map(s => (
           <div key={s.label} className="card">
             <div className="stat-label">{s.label}</div>
@@ -102,7 +150,7 @@ export default function Decisions() {
           <div className="p-4 border-b border-border flex items-center justify-between">
             <div className="section-title">All Decisions</div>
             <div className="flex gap-2">
-              {['All', 'Products', 'Customers', 'Orders', 'Ads'].map(f => (
+              {decisionSections.map(f => (
                 <button
                   key={f}
                   onClick={() => setDecisionFilter(f)}

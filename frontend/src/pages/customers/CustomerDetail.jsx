@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { ArrowLeft, Flag, Gift, Mail, Phone, Lock, Unlock, Star, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, Flag, Gift, Mail, Phone, Lock, Unlock, Star, Users, RefreshCw, ShoppingBag } from 'lucide-react'
 import { LoyaltyBadge, FlagBadge } from '../../components/ui/StatusBadge'
 import { customerApi } from '../../utils/api'
 
 export default function CustomerDetail({ customer, onBack, onUpdate }) {
   const [activeAction, setActiveAction] = useState(null)
   const [localCustomer, setlocalCustomer] = useState(customer)
+  const [loadingDetails, setLoadingDetails] = useState(false)
   const [discountValue, setDiscountValue] = useState('')
   const [discountReason, setDiscountReason] = useState('')
   const [selectedFlag, setSelectedFlag] = useState('HighReturn')
@@ -31,6 +32,29 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
     pulse: { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)', text: '#22d3ee' },
   }
 
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchCustomerDetails = async () => {
+      if (!customer?.Id) return
+
+      setLoadingDetails(true)
+      try {
+        const res = await customerApi.getById(customer.Id)
+        if (isMounted && res.data) {
+          setlocalCustomer(prev => ({ ...prev, ...res.data }))
+        }
+      } catch (err) {
+        console.warn('Failed to load customer purchase history', err)
+      } finally {
+        if (isMounted) setLoadingDetails(false)
+      }
+    }
+
+    fetchCustomerDetails()
+    return () => { isMounted = false }
+  }, [customer?.Id])
+
   const totalSpent = Number(localCustomer.TotalSpent ?? 0)
   const totalOrders = Number(localCustomer.TotalOrders ?? 0)
   const loyaltyPoints = Number(localCustomer.LoyaltyPoints ?? 0)
@@ -40,6 +64,7 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
   const ltv = totalSpent
   const nextTierSpend = localCustomer.LoyaltyTier === 'Bronze' ? 500 : localCustomer.LoyaltyTier === 'Silver' ? 2000 : localCustomer.LoyaltyTier === 'Gold' ? 5000 : null
   const tierProgress = nextTierSpend ? Math.min(100, (ltv / nextTierSpend) * 100) : 100
+  const recentOrders = Array.isArray(localCustomer.RecentOrders) ? localCustomer.RecentOrders : []
 
   const handleConfirm = async (actionId) => {
     let updated = { ...localCustomer }
@@ -145,26 +170,30 @@ export default function CustomerDetail({ customer, onBack, onUpdate }) {
 
         {/* Purchase History */}
         <div className="card">
-          <div className="section-title mb-4">Purchase History</div>
+          <div className="section-title mb-4 flex items-center gap-2">
+            Purchase History
+            {loadingDetails && <RefreshCw size={13} className="animate-spin text-neo" />}
+          </div>
           <div className="space-y-2">
-            {[
-              { id: 'ORD-00234', date: '2024-04-20', amount: 129.98, status: 'Delivered' },
-              { id: 'ORD-00220', date: '2024-04-10', amount: 79.99, status: 'Delivered' },
-              { id: 'ORD-00198', date: '2024-03-28', amount: 45.99, status: 'Returned' },
-              { id: 'ORD-00185', date: '2024-03-15', amount: 299.97, status: 'Delivered' },
-              { id: 'ORD-00170', date: '2024-03-01', amount: 55.99, status: 'Delivered' },
-            ].map(o => (
-              <div key={o.id} className="flex items-center justify-between p-2.5 rounded-lg bg-abyss border border-border">
+            {recentOrders.map(o => (
+              <div key={o.Id} className="flex items-center justify-between p-2.5 rounded-lg bg-abyss border border-border">
                 <div>
-                  <div className="text-xs font-mono text-neo-bright">{o.id}</div>
-                  <div className="text-xs text-text-dim">{o.date}</div>
+                  <div className="text-xs font-mono text-neo-bright">{o.OrderNumber}</div>
+                  <div className="text-xs text-text-dim">{new Date(o.OrderDate || Date.now()).toLocaleDateString()}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-text-white">${o.amount}</div>
-                  <span className={`text-xs ${o.status === 'Returned' ? 'text-danger' : 'text-bloom'}`}>{o.status}</span>
+                  <div className="text-sm font-semibold text-text-white">Rs {Number(o.TotalAmount ?? 0).toLocaleString()}</div>
+                  <span className={`text-xs ${o.FulfillmentStatus === 'Cancelled' ? 'text-danger' : 'text-bloom'}`}>{o.FulfillmentStatus || 'Pending'}</span>
                 </div>
               </div>
             ))}
+            {!loadingDetails && recentOrders.length === 0 && (
+              <div className="flex flex-col items-center justify-center text-center py-14 px-6 rounded-2xl bg-abyss border border-border">
+                <ShoppingBag size={26} className="text-text-dim mb-3" />
+                <div className="text-sm font-semibold text-text-bright">No purchase history yet</div>
+                <div className="text-xs text-text-dim mt-1">Orders from the ecommerce website will appear here after checkout.</div>
+              </div>
+            )}
           </div>
         </div>
 
