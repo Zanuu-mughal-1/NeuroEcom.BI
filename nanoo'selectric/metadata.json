@@ -1,0 +1,8 @@
+{
+  "name": "Zanoo'sElectric",
+  "description": "Premium, energetic ecommerce platform for Zanoo'Electric drinks. Bold hydration for the modern world.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
+
