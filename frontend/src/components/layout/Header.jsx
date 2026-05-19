@@ -68,18 +68,20 @@ export default function Header({ toggleSidebar }) {
   const title = pageTitles[location.pathname] || pageTitles[Object.keys(pageTitles).find(k => location.pathname.startsWith(k) && k !== '/') || '/']
 
   return (
-    <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b backdrop-blur-xl sticky top-0 z-40"
+    <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b backdrop-blur-xl sticky top-0 z-40 transition-all duration-500"
       style={{
-        background: 'rgba(4, 17, 31, 0.78)',
-        borderColor: 'rgba(56, 189, 248, 0.22)',
-        boxShadow: '0 10px 35px rgba(0,0,0,0.22), 0 0 24px rgba(34,211,238,0.08)'
+        background: 'var(--header-bg)',
+        borderColor: 'var(--header-border)',
+        boxShadow: 'var(--header-shadow)'
       }}>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       <div className="flex items-center gap-3 md:gap-4">
         <button 
           onClick={toggleSidebar}
-          className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-all flex flex-col gap-1"
+          className="lg:hidden p-2 rounded-lg transition-all flex flex-col gap-1"
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
           <div className="w-5 h-0.5 bg-text-bright" />
           <div className="w-5 h-0.5 bg-text-bright" />
@@ -95,19 +97,23 @@ export default function Header({ toggleSidebar }) {
       <div className="flex items-center gap-3">
         <div 
           onClick={() => setIsSearchOpen(true)}
-          className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer hover:bg-white/5 transition-all"
-          style={{ background: 'rgba(8,20,35,0.72)', border: '1px solid rgba(56,189,248,0.24)', minWidth: '240px' }}>
+          className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-dim cursor-pointer transition-all"
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          style={{ background: 'var(--input-bg)', border: '1px solid var(--border-color)', minWidth: '240px' }}>
           <Search size={14} />
           <span className="text-xs">Quick search...</span>
           <kbd className="ml-auto px-1.5 py-0.5 rounded text-xs font-mono"
-            style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.18)' }}>Ctrl+K</kbd>
+            style={{ background: 'var(--overlay-bg)', border: '1px solid var(--border-color)' }}>Ctrl+K</kbd>
         </div>
 
         <ThemeToggle />
 
         <button 
           onClick={handleRefresh}
-          className={`p-2 rounded-lg hover:bg-white/5 transition-all ${isRefreshing ? 'text-neo' : 'text-text-dim'}`}
+          className={`p-2 rounded-lg transition-all ${isRefreshing ? 'text-neo' : 'text-text-dim'}`}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           title="Refresh Page"
         >
           <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
@@ -116,7 +122,9 @@ export default function Header({ toggleSidebar }) {
         <div className="relative">
           <button 
             onClick={() => setShowHeaderNotifications(!showHeaderNotifications)}
-            className="relative p-2 rounded-lg hover:bg-white/5 text-text-dim transition-all"
+            className="relative p-2 rounded-lg text-text-dim transition-all"
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
             <Bell size={15} />
             {notifications.length > 0 && (

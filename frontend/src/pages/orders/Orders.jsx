@@ -187,7 +187,7 @@ export default function Orders() {
       <div className="card !p-0 overflow-hidden">
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 p-4 border-b border-border/50">
+        <div className="relative z-20 flex items-center gap-3 p-4 border-b border-border/50">
           <div className="relative flex-1 max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
             <input
@@ -209,13 +209,10 @@ export default function Orders() {
               </svg>
             </button>
             {dropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: '#0f1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+              <div className="dropdown-menu absolute z-[100] mt-2 min-w-44 rounded-xl overflow-hidden">
                 {statusOptions.map(opt => (
-                  <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
-                    style={{ color: statusFilter === opt ? '#06b6d4' : '#e2e8f0', background: statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                    onMouseLeave={e => e.currentTarget.style.background = statusFilter === opt ? 'rgba(6,182,212,0.1)' : 'transparent'}
+                  <div key={opt}
+                    className={`dropdown-option px-3 py-2 text-sm font-semibold cursor-pointer transition-colors ${statusFilter === opt ? 'dropdown-option-active' : ''}`}
                     onClick={() => handleStatusChange(opt)}>
                     {statusLabels[opt]}
                   </div>
@@ -230,7 +227,7 @@ export default function Orders() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="relative z-10 overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-abyss border-b border-border">
@@ -253,7 +250,9 @@ export default function Orders() {
               )}
               {filtered.map(o => (
                 <tr key={o.Id}
-                  className={`table-row cursor-pointer transition-colors ${selected?.Id === o.Id ? 'bg-neo/5' : 'hover:bg-white/[0.02]'}`}
+                  className={`table-row cursor-pointer transition-colors ${selected?.Id === o.Id ? 'bg-neo/5' : ''}`}
+                  onMouseEnter={e => { if (selected?.Id !== o.Id) e.currentTarget.style.background = 'var(--subtle-hover)' }}
+                  onMouseLeave={e => { if (selected?.Id !== o.Id) e.currentTarget.style.background = 'transparent' }}
                   onClick={() => setSelected(o.Id === selected?.Id ? null : o)}>
                   <td className="table-cell">
                     <span className="font-mono text-neo-bright text-sm font-semibold">{o.OrderNumber}</span>
@@ -364,7 +363,7 @@ export default function Orders() {
         )}
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-border/50 bg-black/20 flex justify-between items-center">
+        <div className="px-4 py-3 border-t border-border/50 flex justify-between items-center" style={{ background: 'var(--footer-bg)' }}>
           <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
             {filtered.length} of {orders.length} orders
           </span>

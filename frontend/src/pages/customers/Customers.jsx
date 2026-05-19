@@ -169,7 +169,7 @@ export default function Customers() {
       {/* Table Card */}
       <div className="card !p-0 overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 p-4 border-b border-border/50">
+        <div className="relative z-20 flex items-center gap-3 p-4 border-b border-border/50">
           <div className="relative flex-1 max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
             <input
@@ -192,13 +192,10 @@ export default function Customers() {
               </svg>
             </button>
             {tierDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full rounded-lg overflow-hidden"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--card-shadow)' }}>
+              <div className="dropdown-menu absolute z-[100] mt-2 min-w-44 rounded-xl overflow-hidden">
                 {tierOptions.map(opt => (
-                  <div key={opt} className="px-3 py-2 text-sm cursor-pointer"
-                    style={{ color: tierFilter === opt && opt !== '' ? '#06b6d4' : '#e2e8f0', background: tierFilter === opt && opt !== '' ? 'rgba(6,182,212,0.1)' : 'transparent' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                    onMouseLeave={e => e.currentTarget.style.background = tierFilter === opt && opt !== '' ? 'rgba(6,182,212,0.1)' : 'transparent'}
+                  <div key={opt}
+                    className={`dropdown-option px-3 py-2 text-sm font-semibold cursor-pointer transition-colors ${tierFilter === opt ? 'dropdown-option-active' : ''}`}
                     onClick={() => { setTierFilter(opt); setTierDropdownOpen(false) }}>
                     {tierLabels[opt]}
                   </div>
@@ -216,7 +213,7 @@ export default function Customers() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="relative z-10 overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-abyss border-b border-border">
@@ -239,7 +236,7 @@ export default function Customers() {
                 </tr>
               )}
               {filtered.map(c => (
-                <tr key={c.Id} className="table-row cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setSelected(c)}>
+                <tr key={c.Id} className="table-row cursor-pointer transition-colors" onClick={() => setSelected(c)} onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
@@ -299,7 +296,7 @@ export default function Customers() {
 
             <div>
               <label className="text-xs text-text-dim mb-1 block">Loyalty Tier</label>
-              <select className="select w-full" style={{ background: '#1a1f2e', color: '#e2e8f0' }}
+              <select className="select w-full"
                 value={newCustomer.LoyaltyTier}
                 onChange={e => setNewCustomer(p => ({ ...p, LoyaltyTier: e.target.value }))}>
                 <option value="New">🆕 New</option>

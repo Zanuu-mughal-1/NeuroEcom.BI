@@ -22,20 +22,20 @@ export default function App() {
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev)
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      {/* Background effects */}
-      <div className="fixed inset-0 pointer-events-none z-0 transition-colors duration-500"
-           style={{ background: 'linear-gradient(135deg, #020814 0%, #04111f 48%, #071827 100%)' }}>
-        {/* Grid */}
-        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.03] dark:opacity-[0.09]" />
-        {/* Top glows */}
-        <div className="absolute -top-24 left-1/5 w-[560px] h-[560px] rounded-full opacity-20 dark:opacity-35 transition-opacity duration-700"
-          style={{ background: 'radial-gradient(circle, rgba(0,234,255,0.34), transparent 68%)', filter: 'blur(86px)' }} />
-        <div className="absolute top-12 right-0 w-[520px] h-[520px] rounded-full opacity-20 dark:opacity-30 transition-opacity duration-700"
-          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.28), transparent 70%)', filter: 'blur(92px)' }} />
-        <div className="absolute bottom-[-18%] left-1/3 w-[640px] h-[340px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(ellipse, rgba(34,211,238,0.16), transparent 70%)', filter: 'blur(80px)' }} />
-      </div>
+    <div className="flex h-screen overflow-hidden transition-colors duration-500" style={{ background: 'var(--bg-primary)' }}>
+      {/* Background effects — only visible in dark mode */}
+      {isDark && (
+        <div className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-700"
+             style={{ background: 'var(--body-bg)' }}>
+          <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.09]" />
+          <div className="absolute -top-24 left-1/5 w-[560px] h-[560px] rounded-full opacity-[0.35]"
+            style={{ background: 'radial-gradient(circle, rgba(0,234,255,0.34), transparent 68%)', filter: 'blur(86px)' }} />
+          <div className="absolute top-12 right-0 w-[520px] h-[520px] rounded-full opacity-[0.30]"
+            style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.28), transparent 70%)', filter: 'blur(92px)' }} />
+          <div className="absolute bottom-[-18%] left-1/3 w-[640px] h-[340px] rounded-full opacity-20"
+            style={{ background: 'radial-gradient(ellipse, rgba(34,211,238,0.16), transparent 70%)', filter: 'blur(80px)' }} />
+        </div>
+      )}
 
       {/* Sidebar - Mobile Overlay */}
       {isSidebarOpen && (

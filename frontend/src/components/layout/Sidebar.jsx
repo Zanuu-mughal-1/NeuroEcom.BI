@@ -73,11 +73,11 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
   ]
 
   return (
-    <aside className="w-60 flex-shrink-0 flex flex-col h-screen overflow-y-auto"
+    <aside className="w-60 flex-shrink-0 flex flex-col h-screen overflow-y-auto transition-all duration-500"
       style={{
-        background: 'linear-gradient(180deg, rgba(4,17,31,0.96), rgba(2,8,20,0.98))',
-        borderRight: '1px solid rgba(56,189,248,0.24)',
-        boxShadow: '18px 0 42px rgba(0,0,0,0.28), 0 0 28px rgba(34,211,238,0.08)'
+        background: 'var(--sidebar-bg)',
+        borderRight: '1px solid var(--sidebar-border)',
+        boxShadow: 'var(--sidebar-shadow)'
       }}>
       
       {/* Logo */}
@@ -100,7 +100,7 @@ export default function Sidebar({ toggleTheme, isDark, onClose }) {
 
       {/* Status indicator */}
       <div className="mx-4 mb-5 px-3 py-2 rounded-lg flex items-center gap-2"
-        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(34,211,238,0.18)' }}>
+        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid var(--border-color)' }}>
         <div className="glow-dot" style={{ background: 'var(--color-bloom)', color: 'var(--color-bloom)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--color-bloom)' }}>All Systems Operational</span>
       </div>

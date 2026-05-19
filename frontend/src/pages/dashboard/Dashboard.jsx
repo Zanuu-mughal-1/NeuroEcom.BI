@@ -117,8 +117,8 @@ export default function Dashboard() {
       {/* Alerts Modal */}
       {isAlertsModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-void/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-2xl bg-surface border border-white/10 rounded-3xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-abyss/50">
+          <div className="w-full max-w-2xl border rounded-3xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col" style={{ background: 'var(--surface)', borderColor: 'var(--subtle-border)' }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--subtle-border)', background: 'var(--glass-bg)' }}>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-danger/10 text-danger">
                   <AlertTriangle size={20} />
@@ -128,7 +128,7 @@ export default function Dashboard() {
                   <p className="text-xs text-text-dim">{data.Alerts.length} issues requiring attention</p>
                 </div>
               </div>
-              <button onClick={() => setIsAlertsModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <button onClick={() => setIsAlertsModalOpen(false)} className="p-2 rounded-full transition-colors" style={{ ':hover': { background: 'var(--subtle-hover)' } }}  onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <XCircle size={24} className="text-text-dim" />
               </button>
             </div>
@@ -140,7 +140,8 @@ export default function Dashboard() {
                     key={i} 
                     to={target} 
                     onClick={() => setIsAlertsModalOpen(false)}
-                    className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-neo/30 hover:bg-neo/5 transition-all group"
+                    className="flex items-start gap-4 p-4 rounded-2xl border transition-all group hover:border-neo/30 hover:bg-neo/5"
+                    style={{ background: 'var(--subtle-overlay)', borderColor: 'var(--subtle-border)' }}
                   >
                     <div className={`p-2 rounded-lg ${alert.Level === 'Critical' ? 'bg-danger/10 text-danger' : 'bg-ember/10 text-ember'}`}>
                       <AlertTriangle size={16} />
@@ -192,7 +193,7 @@ export default function Dashboard() {
                 <span>{data.ROI}%</span>
               </div>
             </div>
-            <div className="w-px h-8 bg-white/5" />
+            <div className="w-px h-8" style={{ background: 'var(--subtle-overlay)' }} />
             <div>
               <div className="text-[10px] font-bold text-text-dim uppercase tracking-wider mb-0.5">Return Rate</div>
               <div className="flex items-center gap-1.5 font-bold text-ember">
@@ -201,7 +202,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <button onClick={() => fetchDashboard(true)} className="p-3 rounded-xl bg-surface/50 border border-white/5 hover:bg-neo/10 hover:border-neo/30 transition-all active:scale-95 group">
+          <button onClick={() => fetchDashboard(true)} className="p-3 rounded-xl border transition-all active:scale-95 group hover:bg-neo/10 hover:border-neo/30" style={{ background: 'var(--glass-bg)', borderColor: 'var(--subtle-border)' }}>
             <RotateCcw size={18} className={`text-text-dim group-hover:text-neo ${refreshing ? 'animate-spin' : ''}`} />
           </button>
           <button onClick={handleExport} className="btn-primary flex items-center gap-2 px-6 py-3">
@@ -250,13 +251,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Main Revenue Trend Chart (8 cols) */}
-        <div className="lg:col-span-8 card border-white/5">
+        <div className="lg:col-span-8 card" style={{ borderColor: 'var(--subtle-border)' }}>
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-xl font-bold text-text-bright tracking-tight">Revenue Dynamics</h3>
               <p className="text-xs text-text-dim">Neural forecast and historical performance analysis</p>
             </div>
-            <div className="flex p-1 bg-void/50 rounded-xl border border-white/5">
+            <div className="flex p-1 rounded-xl border" style={{ background: 'var(--glass-bg)', borderColor: 'var(--subtle-border)' }}>
               {['7D', '30D', '90D'].map((d) => (
                 <button
                   key={d}
@@ -300,11 +301,11 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-neo/15">
+                <div className="p-4 rounded-2xl border border-neo/15" style={{ background: 'var(--subtle-overlay)' }}>
                   <div className="text-[10px] text-text-dim uppercase font-bold tracking-widest mb-1">Reached</div>
                   <div className="text-sm font-black text-text-bright">Rs {data.Revenue.ThisMonth.toLocaleString()}</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white/5 border border-neo/15">
+                <div className="p-4 rounded-2xl border border-neo/15" style={{ background: 'var(--subtle-overlay)' }}>
                   <div className="text-[10px] text-text-dim uppercase font-bold tracking-widest mb-1">Remaining</div>
                   <div className="text-sm font-black text-text-bright">Rs {Math.max(0, revenueGoal - data.Revenue.ThisMonth).toLocaleString()}</div>
                 </div>
@@ -334,7 +335,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Product Health Card */}
         <div className="card relative group hover:border-neo/30 transition-all cursor-pointer">
-          <Link to="/products" className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-text-dim group-hover:text-neo transition-colors">
+          <Link to="/products" className="absolute top-6 right-6 p-2 rounded-full text-text-dim group-hover:text-neo transition-colors" style={{ background: 'var(--subtle-overlay)' }}>
             <ChevronRight size={18} />
           </Link>
           <div className="mb-6">
@@ -356,7 +357,7 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <div className="w-full grid grid-cols-2 gap-x-12 gap-y-3 pt-6 border-t border-white/5">
+            <div className="w-full grid grid-cols-2 gap-x-12 gap-y-3 pt-6 border-t" style={{ borderColor: 'var(--subtle-border)' }}>
               {healthData.map((item, i) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -385,7 +386,7 @@ export default function Dashboard() {
             {data.Alerts.slice(0, 3).map((alert, i) => {
               const target = alert.Section === 'Products' ? `/products?search=${alert.Message.split("'")[1] || ''}` : '/';
               return (
-                <Link to={target} key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-neo/30 hover:bg-neo/5 transition-all group">
+                <Link to={target} key={i} className="flex items-start gap-3 p-3 rounded-xl border hover:border-neo/30 hover:bg-neo/5 transition-all group" style={{ background: 'var(--subtle-overlay)', borderColor: 'var(--subtle-border)' }}>
                   <AlertTriangle size={14} className={`flex-shrink-0 mt-0.5 ${alert.Level === 'Critical' ? 'text-danger' : 'text-ember'}`} />
                   <div className="text-[10px] leading-tight text-text-mid font-medium group-hover:text-text-bright transition-colors">{alert.Message}</div>
                   <ChevronRight size={12} className="ml-auto text-text-dim opacity-0 group-hover:opacity-100 transition-all" />
@@ -405,7 +406,7 @@ export default function Dashboard() {
         </div>
 
         {/* AI Action Hub */}
-        <div className="card bg-void/50 border-white/5">
+        <div className="card" style={{ background: 'var(--glass-bg)', borderColor: 'var(--subtle-border)' }}>
           <div className="flex items-center gap-2 mb-6">
             <Activity size={16} className="text-neo" />
             <h3 className="text-sm font-bold text-text-bright uppercase tracking-widest">Action Hub</h3>
@@ -417,7 +418,7 @@ export default function Dashboard() {
               { to: '/orders', icon: ShoppingCart, label: 'Review Orders' },
               { to: '/decisions', icon: Activity, label: 'Update Rules' },
             ].map(action => (
-              <Link key={action.label} to={action.to} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface border border-white/5 hover:border-neo/30 hover:bg-neo/5 transition-all gap-2 group">
+              <Link key={action.label} to={action.to} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface border hover:border-neo/30 hover:bg-neo/5 transition-all gap-2 group" style={{ borderColor: 'var(--subtle-border)' }}>
                 <action.icon size={18} className="text-text-dim group-hover:text-neo transition-colors" />
                 <span className="text-[9px] font-bold uppercase tracking-widest text-text-dim text-center">{action.label}</span>
               </Link>
@@ -427,7 +428,7 @@ export default function Dashboard() {
       </div>
 
       {/* --- BOTTOM ROW: Recent Decisions --- */}
-      <div className="card border-white/5">
+      <div className="card" style={{ borderColor: 'var(--subtle-border)' }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-text-bright uppercase tracking-widest">Recent Neural Decisions</h3>
           <Link to="/decisions" className="btn-ghost px-4 py-2 text-[10px] font-bold uppercase tracking-widest">View History</Link>
@@ -435,7 +436,7 @@ export default function Dashboard() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="text-left border-b border-white/5">
+              <tr className="text-left border-b" style={{ borderColor: 'var(--subtle-border)' }}>
                 <th className="pb-4 text-[10px] uppercase tracking-widest text-text-dim font-bold">Category</th>
                 <th className="pb-4 text-[10px] uppercase tracking-widest text-text-dim font-bold">Item</th>
                 <th className="pb-4 text-[10px] uppercase tracking-widest text-text-dim font-bold">Neural Action</th>
@@ -443,11 +444,11 @@ export default function Dashboard() {
                 <th className="pb-4 text-[10px] uppercase tracking-widest text-text-dim font-bold text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y" style={{ borderColor: 'var(--subtle-border)' }}>
               {(data.RecentDecisions || []).slice(0, 5).map((d) => (
-                <tr key={d.Id} className="group hover:bg-white/5 transition-colors">
+                <tr key={d.Id} className="group transition-colors" onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <td className="py-4">
-                    <span className="px-2 py-1 rounded-md bg-white/5 text-[9px] font-bold uppercase tracking-widest text-text-dim">{d.Section}</span>
+                    <span className="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest text-text-dim" style={{ background: 'var(--subtle-overlay)' }}>{d.Section}</span>
                   </td>
                   <td className="py-4 text-xs font-bold text-text-bright">{d.ItemName}</td>
                   <td className="py-4 text-xs text-text-mid">{d.DecisionDetails}</td>

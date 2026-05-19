@@ -211,7 +211,7 @@ export default function CompetitorIntel() {
                         <stop offset="95%" stopColor="#00eaff" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid vertical={false} stroke="var(--grid-stroke)" />
                     <XAxis dataKey="Date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                     <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
@@ -297,7 +297,7 @@ export default function CompetitorIntel() {
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data?.PriceHistory || []}>
-                  <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid vertical={false} stroke="var(--grid-stroke)" />
                   <XAxis dataKey="Date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                   <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
@@ -314,7 +314,7 @@ export default function CompetitorIntel() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartDistribution}>
-                  <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid vertical={false} stroke="var(--grid-stroke)" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                   <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10 }} />
                   <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />

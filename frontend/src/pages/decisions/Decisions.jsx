@@ -320,12 +320,10 @@ export default function Decisions() {
             <div className="card">
               <div className="section-title mb-4">Volume by Section</div>
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { section: 'Products', count: 487, color: '#67f4ff' },
-                  { section: 'Customers', count: 312, color: '#22d3ee' },
-                  { section: 'Orders', count: 289, color: '#fbbf24' },
-                  { section: 'Ads', count: 196, color: '#34d399' },
-                ].map(s => (
+                {volumeBySection.length === 0 && (
+                  <div className="col-span-2 py-8 text-center text-xs text-text-dim">No decision records yet.</div>
+                )}
+                {volumeBySection.map(s => (
                   <div key={s.section} className="p-2 rounded-lg bg-abyss border border-border">
                     <div className="text-[10px] text-text-dim uppercase font-bold">{s.section}</div>
                     <div className="text-lg font-bold" style={{ color: s.color }}>{s.count}</div>
@@ -335,19 +333,15 @@ export default function Decisions() {
             </div>
 
             <div className="card lg:col-span-2">
-              <div className="section-title mb-4">Most Triggered Rules</div>
+              <div className="section-title mb-4">Most Triggered Decision Types</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                {[
-                  { rule: 'Low Stock Alert', triggers: 342, color: '#f59e0b' },
-                  { rule: 'High Return Flag', triggers: 218, color: '#ef4444' },
-                  { rule: 'COD Penalty (RTO)', triggers: 189, color: '#93c5fd' },
-                  { rule: 'VIP Tier Upgrade', triggers: 134, color: '#67f4ff' },
-                  { rule: 'Pause Ad ROI', triggers: 97, color: '#10b981' },
-                  { rule: 'Price Drop Rule', triggers: 84, color: '#34d399' },
-                ].map(r => (
+                {decisionTypeVolume.length === 0 && (
+                  <div className="md:col-span-2 py-8 text-center text-xs text-text-dim">No decision types found for this filter.</div>
+                )}
+                {decisionTypeVolume.map((r, idx) => (
                   <div key={r.rule} className="flex items-center justify-between p-2 rounded-lg bg-abyss">
                     <span className="text-xs text-text-mid truncate">{r.rule}</span>
-                    <span className="text-xs font-bold" style={{ color: r.color }}>{r.triggers}×</span>
+                    <span className="text-xs font-bold" style={{ color: ['#67f4ff', '#22d3ee', '#93c5fd', '#34d399', '#fbbf24', '#10b981'][idx % 6] }}>{r.triggers}x</span>
                   </div>
                 ))}
               </div>
@@ -357,26 +351,14 @@ export default function Decisions() {
           {/* Middle Row: Success Rate & AI Health */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <div className="section-title">Decision Success Rate</div>
-              <div className="text-[10px] text-bloom font-bold bg-bloom/10 px-2 py-0.5 rounded">91.2% Avg</div>
+              <div className="section-title">Decision Applied Rate</div>
+              <div className="text-[10px] text-bloom font-bold bg-bloom/10 px-2 py-0.5 rounded">{appliedRate}% Live</div>
             </div>
             <div className="space-y-4">
               {(() => {
-                const successData = [
-                  { type: 'Price Change', section: 'Products', success: 94, total: 128, color: '#10b981' },
-                  { type: 'Inventory Restock', section: 'Products', success: 98, total: 89, color: '#10b981' },
-                  { type: 'Customer Flag', section: 'Customers', success: 87, total: 156, color: '#f59e0b' },
-                  { type: 'Ad Pause/Resume', section: 'Ads', success: 82, total: 73, color: '#f59e0b' },
-                  { type: 'Stop Selling', section: 'Products', success: 91, total: 44, color: '#10b981' },
-                ];
+                if (successByType.length === 0) return <div className="py-10 text-center text-text-dim text-xs italic">No live decision data for this category.</div>;
 
-                const filtered = decisionFilter === 'All'
-                  ? successData
-                  : successData.filter(d => d.section === decisionFilter);
-
-                if (filtered.length === 0) return <div className="py-10 text-center text-text-dim text-xs italic">No data for this category.</div>;
-
-                return filtered.map(s => {
+                return successByType.map(s => {
                   const rate = Math.round((s.success / s.total) * 100);
                   return (
                     <div key={s.type} className="group">
@@ -399,28 +381,30 @@ export default function Decisions() {
           </div>
 
           <div className="card">
-            <div className="section-title mb-4">AI Model Health</div>
+            <div className="section-title mb-4">Live Engine Health</div>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-neo/5 border border-neo/20">
                 <div className="flex items-center gap-3">
                   <Activity size={18} className="text-neo-bright animate-pulse" />
                   <div>
-                    <div className="text-xs font-bold text-text-bright">Real-time Processing</div>
-                    <div className="text-[10px] text-text-dim">Latency: 124ms</div>
+                    <div className="text-xs font-bold text-text-bright">SQL Decision Stream</div>
+                    <div className="text-[10px] text-text-dim">
+                      {latestDecision ? `Last event: ${new Date(latestDecision.CreatedAt).toLocaleString()}` : 'Waiting for first decision'}
+                    </div>
                   </div>
                 </div>
-                <div className="text-xs font-bold text-bloom">Operational</div>
+                <div className="text-xs font-bold text-bloom">{loading ? 'Syncing' : 'Live'}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-abyss border border-border">
-                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Drift Score</div>
-                  <div className="text-lg font-bold text-text-bright">0.02</div>
-                  <div className="text-[9px] text-bloom font-medium">Stable</div>
+                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Rule Overrides</div>
+                  <div className="text-lg font-bold text-text-bright">{optimizedRulesCount}</div>
+                  <div className="text-[9px] text-bloom font-medium">From SystemRules</div>
                 </div>
                 <div className="p-3 rounded-xl bg-abyss border border-border">
-                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Re-train Due</div>
-                  <div className="text-lg font-bold text-text-bright">14d</div>
-                  <div className="text-[9px] text-text-dim font-medium">12 May 2026</div>
+                  <div className="text-[10px] text-text-dim uppercase font-bold mb-1">Editable Rules</div>
+                  <div className="text-lg font-bold text-text-bright">{rules.filter(r => r.IsEditable !== false).length}</div>
+                  <div className="text-[9px] text-text-dim font-medium">{rules.length} configured</div>
                 </div>
               </div>
             </div>
@@ -428,29 +412,15 @@ export default function Decisions() {
 
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <div className="section-title">Impact Analysis (Deep Dive)</div>
-              <div className="text-[10px] text-text-dim bg-abyss border border-border px-2 py-1 rounded">Last 30 Days Data</div>
+              <div className="section-title">Impact Analysis (Live Decisions)</div>
+              <div className="text-[10px] text-text-dim bg-abyss border border-border px-2 py-1 rounded">Decisions Table</div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(() => {
-                const impactData = [
-                  { section: 'Products', decision: 'Price Drop: Wireless Mouse', impact: '+150%', metric: 'Sales Vol.', score: 92, status: 'positive' },
-                  { section: 'Products', decision: 'Inventory: Gaming KB', impact: '+Rs 4.2k', metric: 'Est. Revenue', score: 85, status: 'positive' },
-                  { section: 'Customers', decision: 'VIP Upgrade: R. Martinez', impact: '+22%', metric: 'LTV Growth', score: 78, status: 'positive' },
-                  { section: 'Orders', decision: 'RTO Block: ORD-00238', impact: 'Rs 120', metric: 'Loss Saved', score: 95, status: 'positive' },
-                  { section: 'Ads', decision: 'Pause: Low ROI Social', impact: 'Rs 900', metric: 'Spend Saved', score: 88, status: 'positive' },
-                  { section: 'Customers', decision: 'Flag: High Returner', impact: 'Review', metric: 'Risk Control', score: 70, status: 'neutral' },
-                  { section: 'Ads', decision: 'Scale: Search Bestseller', impact: '+35%', metric: 'ROI Boost', score: 82, status: 'positive' },
-                ];
+                if (liveImpactData.length === 0) return <div className="col-span-2 py-10 text-center text-text-dim text-xs italic">No live decisions for this section yet.</div>;
 
-                const filtered = decisionFilter === 'All'
-                  ? impactData
-                  : impactData.filter(d => d.section === decisionFilter);
-
-                if (filtered.length === 0) return <div className="col-span-2 py-10 text-center text-text-dim text-xs italic">No impact data for this section yet.</div>;
-
-                return filtered.map((item, i) => (
-                  <div key={i} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
+                return liveImpactData.map((item) => (
+                  <div key={item.id} className="p-3 rounded-xl bg-surface/30 border border-border/10 flex items-center gap-4 hover:border-neo/30 transition-all group">
                     <div className="flex-shrink-0 relative">
                       <svg className="w-12 h-12 rotate-[-90deg]">
                         <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />

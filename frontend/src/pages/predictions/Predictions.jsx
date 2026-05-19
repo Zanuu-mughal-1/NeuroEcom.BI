@@ -208,10 +208,10 @@ export default function Predictions() {
                     setProductResult(null);
                   }
                 }}
-                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
+                className="select w-full rounded-xl py-3"
               >
                 {products.map(p => (
-                  <option key={p.Id} value={p.Id} className="bg-surface text-text-mid">
+                  <option key={p.Id} value={p.Id}>
                     {p.Name} — Rs {p.Price} ({p.Stock} in stock)
                   </option>
                 ))}
@@ -425,10 +425,10 @@ export default function Predictions() {
                     setSimBudget(Math.round((c.TotalSpend || 1500) / 30) || 100);
                   }
                 }}
-                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
+                className="select w-full rounded-xl py-3"
               >
                 {campaigns.filter(c => c.Status !== 'Draft').map(c => (
-                  <option key={c.Id} value={c.Id} className="bg-surface text-text-mid">
+                  <option key={c.Id} value={c.Id}>
                     {c.Name} — {c.Platform} (Rs {c.Budget?.toLocaleString()} Budget)
                   </option>
                 ))}
@@ -618,10 +618,10 @@ export default function Predictions() {
                     setSimLoyaltyPoints(c.LoyaltyPoints);
                   }
                 }}
-                className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
+                className="select w-full rounded-xl py-3"
               >
                 {mockCustomers.map(c => (
-                  <option key={c.Id} value={c.Id} className="bg-surface text-text-mid">
+                  <option key={c.Id} value={c.Id}>
                     {c.FirstName} {c.LastName} — {c.LoyaltyTier} ({c.TotalOrders} Orders)
                   </option>
                 ))}
@@ -807,10 +807,10 @@ export default function Predictions() {
                         setSimQualityLevel(0);
                       }
                     }}
-                    className="w-full bg-void border border-border rounded-xl px-4 py-3 text-text-mid focus:outline-none focus:border-neo/50 transition-all appearance-none cursor-pointer"
+                    className="select w-full rounded-xl py-3"
                   >
                     {mockProducts.map(p => (
-                      <option key={p.Id} value={p.Id} className="bg-surface text-text-mid">{p.Name} — Current Return Rate: {(5 + (p.Id % 10)).toFixed(1)}%</option>
+                      <option key={p.Id} value={p.Id}>{p.Name} — Current Return Rate: {(5 + (p.Id % 10)).toFixed(1)}%</option>
                     ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">

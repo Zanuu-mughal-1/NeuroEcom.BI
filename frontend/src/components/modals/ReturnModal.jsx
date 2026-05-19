@@ -67,7 +67,7 @@ export default function ReturnModal({ isOpen, onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-up">
       <div className="card w-full max-w-lg shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-lg transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-lg transition-colors" onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
           <X size={20} className="text-text-dim" />
         </button>
 

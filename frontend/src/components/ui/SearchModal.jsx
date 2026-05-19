@@ -72,7 +72,7 @@ export default function SearchModal({ isOpen, onClose }) {
             placeholder="Search products, orders, or customers..."
             className="flex-1 bg-transparent border-none outline-none text-text-bright placeholder:text-text-dim text-lg"
           />
-          <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg text-text-dim">
+          <button onClick={onClose} className="p-1 rounded-lg text-text-dim" onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             <X size={18} />
           </button>
         </div>
@@ -107,7 +107,9 @@ export default function SearchModal({ isOpen, onClose }) {
                       <button 
                         key={p.Id}
                         onClick={() => handleNavigate(`/products?id=${p.Id}`)}
-                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 group transition-colors text-left"
+                        className="w-full flex items-center justify-between p-3 rounded-xl group transition-colors text-left"
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-border">
@@ -137,7 +139,9 @@ export default function SearchModal({ isOpen, onClose }) {
                       <button 
                         key={c.Id}
                         onClick={() => handleNavigate(`/customers?id=${c.Id}`)}
-                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 group transition-colors text-left"
+                        className="w-full flex items-center justify-between p-3 rounded-xl group transition-colors text-left"
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-border">
@@ -167,7 +171,9 @@ export default function SearchModal({ isOpen, onClose }) {
                       <button 
                         key={o.Id}
                         onClick={() => handleNavigate(`/orders?id=${o.Id}`)}
-                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 group transition-colors text-left"
+                        className="w-full flex items-center justify-between p-3 rounded-xl group transition-colors text-left"
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-border">
@@ -197,10 +203,10 @@ export default function SearchModal({ isOpen, onClose }) {
         {/* Shortcut Footer */}
         <div className="px-4 py-3 border-t border-border bg-surface/30 flex items-center justify-between text-[10px] font-medium text-text-dim">
           <div className="flex gap-4">
-            <span><kbd className="bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-text-mid">↑↓</kbd> Navigate</span>
-            <span><kbd className="bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-text-mid">Enter</kbd> Select</span>
+            <span><kbd className="px-1.5 py-0.5 rounded text-text-mid" style={{ background: 'var(--subtle-kbd-bg)', border: '1px solid var(--subtle-kbd-border)' }}>↑↓</kbd> Navigate</span>
+            <span><kbd className="px-1.5 py-0.5 rounded text-text-mid" style={{ background: 'var(--subtle-kbd-bg)', border: '1px solid var(--subtle-kbd-border)' }}>Enter</kbd> Select</span>
           </div>
-          <span><kbd className="bg-white/10 px-1.5 py-0.5 rounded border border-white/10 text-text-mid">Esc</kbd> Close</span>
+          <span><kbd className="px-1.5 py-0.5 rounded text-text-mid" style={{ background: 'var(--subtle-kbd-bg)', border: '1px solid var(--subtle-kbd-border)' }}>Esc</kbd> Close</span>
         </div>
       </div>
     </div>

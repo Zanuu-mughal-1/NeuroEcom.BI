@@ -290,14 +290,14 @@ export default function Returns() {
               </button>
             </div>
 
-            <div className={`p-5 rounded-2xl border transition-all ${!rtoResult ? 'bg-void/10 border-dashed border-white/5' : 'bg-surface border-white/10 shadow-xl shadow-black/20'}`}>
+            <div className={`p-5 rounded-2xl border transition-all ${!rtoResult ? 'border-dashed' : 'shadow-xl'}`} style={{ background: !rtoResult ? 'var(--glass-bg)' : 'var(--surface)', borderColor: !rtoResult ? 'var(--subtle-border)' : 'var(--border-color)' }}>
               {rtoResult ? (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="relative w-16 h-16">
                         <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
-                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--subtle-border)" strokeWidth="3" />
                           <circle cx="18" cy="18" r="15.9" fill="none"
                             stroke={rtoResult.score <= 20 ? '#10b981' : rtoResult.score <= 50 ? '#f59e0b' : '#ef4444'}
                             strokeWidth="3" strokeDasharray={`${rtoResult.score} 100`} strokeLinecap="round" />
@@ -319,7 +319,7 @@ export default function Returns() {
                   
                   <div className="space-y-2">
                     <div className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Recommended Action</div>
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+                    <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: 'var(--subtle-overlay)', borderColor: 'var(--subtle-border)' }}>
                       <ArrowRight size={16} className="text-neo flex-shrink-0" />
                       <span className="text-xs font-medium text-text-mid leading-relaxed">
                         {rtoResult.score > 50 
@@ -349,19 +349,19 @@ export default function Returns() {
             </div>
           </div>
 
-          <div className="card !p-0 flex flex-col border-white/5 bg-void/50">
-            <div className="p-5 border-b border-white/5 flex justify-between items-center">
+          <div className="card !p-0 flex flex-col" style={{ borderColor: 'var(--subtle-border)', background: 'var(--glass-bg)' }}>
+            <div className="p-5 border-b flex justify-between items-center" style={{ borderColor: 'var(--subtle-border)' }}>
               <div className="flex items-center gap-2">
                 <History size={16} className="text-text-mid" />
                 <span className="font-bold text-text-bright uppercase text-xs tracking-widest">Intelligence Audit Trail</span>
               </div>
               <span className="text-[10px] text-text-dim font-black uppercase tracking-widest">Latest 10 Events</span>
             </div>
-            <div className="flex-1 overflow-y-auto max-h-[500px] divide-y divide-white/5">
+            <div className="flex-1 overflow-y-auto max-h-[500px] divide-y" style={{ borderColor: 'var(--subtle-border)' }}>
               {rtoLogs.length === 0 ? (
                 <div className="p-12 text-center text-text-dim text-xs italic">No neural events logged in audit trail</div>
               ) : rtoLogs.map(log => (
-                <div key={log.Id} className="p-5 hover:bg-white/5 transition-all group">
+                <div key={log.Id} className="p-5 transition-all group" onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black font-mono text-neo uppercase mb-1">TRK-{log.Id.toString().padStart(6, '0')}</span>
@@ -391,15 +391,15 @@ export default function Returns() {
 
       {/* RTO Rules Tab */}
       {activeTab === 'rules' && (
-        <div className="card !p-0 overflow-hidden border-white/5">
-          <div className="p-5 border-b border-white/5 bg-void/30">
+        <div className="card !p-0 overflow-hidden" style={{ borderColor: 'var(--subtle-border)' }}>
+          <div className="p-5 border-b" style={{ borderColor: 'var(--subtle-border)', background: 'var(--glass-bg)' }}>
             <h3 className="text-xl font-bold text-text-bright tracking-tight">Neural Threshold Settings</h3>
             <p className="text-xs text-text-dim">Configure baseline weights for risk calculations</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-abyss border-b border-white/5">
+                <tr className="bg-abyss border-b" style={{ borderColor: 'var(--subtle-border)' }}>
                   <th className="table-header text-left">Parameter</th>
                   <th className="table-header text-left">Internal Logic Description</th>
                   <th className="table-header text-center">Neural Weight</th>
@@ -407,9 +407,9 @@ export default function Returns() {
                   <th className="table-header text-center">Mod</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y" style={{ borderColor: 'var(--subtle-border)' }}>
                 {rules.map(rule => (
-                  <tr key={rule.Id} className="group hover:bg-white/5 transition-colors">
+                  <tr key={rule.Id} className="group transition-colors" onMouseEnter={e => e.currentTarget.style.background = 'var(--subtle-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <td className="py-5 px-5 font-bold text-text-bright text-sm">{rule.RuleName}</td>
                     <td className="py-5 px-5 text-text-mid text-xs leading-relaxed max-w-md">{rule.Description}</td>
                     <td className="py-5 px-5 text-center">
