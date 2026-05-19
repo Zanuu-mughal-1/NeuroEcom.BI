@@ -53,6 +53,9 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
       if (isNaN(parsedPrice) || isNaN(parsedCost) || isNaN(parsedStock) || isNaN(parsedReorder)) {
         throw new Error('Please enter valid numbers for Price, Cost, Stock, and Reorder Level')
       }
+      if (parsedPrice <= 0 || parsedCost < 0 || parsedStock < 0 || parsedReorder < 0) {
+        throw new Error('Price must be greater than zero; cost, stock, and reorder level cannot be negative')
+      }
 
       const payload = {
         ...formData,
@@ -72,7 +75,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
       onClose()
     } catch (err) {
       console.error('Failed to save product', err)
-      setError(err.message || err?.response?.data?.message || 'Error saving product')
+      setError(err?.response?.data?.message || err.message || 'Error saving product')
     } finally {
       setLoading(false)
     }
@@ -113,23 +116,23 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-mid mb-1">Price ($)</label>
-              <input required type="number" step="0.01" className="input w-full" value={formData.Price} onChange={e => setFormData({...formData, Price: e.target.value})} />
+              <label className="block text-sm font-medium text-text-mid mb-1">Price (Rs)</label>
+              <input required type="number" min="0.01" step="0.01" className="input w-full" value={formData.Price} onChange={e => setFormData({...formData, Price: e.target.value})} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-mid mb-1">Cost ($)</label>
-              <input required type="number" step="0.01" className="input w-full" value={formData.Cost} onChange={e => setFormData({...formData, Cost: e.target.value})} />
+              <label className="block text-sm font-medium text-text-mid mb-1">Cost (Rs)</label>
+              <input required type="number" min="0" step="0.01" className="input w-full" value={formData.Cost} onChange={e => setFormData({...formData, Cost: e.target.value})} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-mid mb-1">Current Stock</label>
-              <input required type="number" className="input w-full" value={formData.Stock} onChange={e => setFormData({...formData, Stock: e.target.value})} />
+              <input required type="number" min="0" className="input w-full" value={formData.Stock} onChange={e => setFormData({...formData, Stock: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-mid mb-1">Reorder Level</label>
-              <input required type="number" className="input w-full" value={formData.ReorderLevel} onChange={e => setFormData({...formData, ReorderLevel: e.target.value})} />
+              <input required type="number" min="0" className="input w-full" value={formData.ReorderLevel} onChange={e => setFormData({...formData, ReorderLevel: e.target.value})} />
             </div>
           </div>
 

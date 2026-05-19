@@ -65,8 +65,8 @@ export const returnApi = {
 
 export const rtoApi = {
   testOrder: (data) => api.post('/rto/test', data),
-  getRules: () => api.get('/rto/rules'),
-  updateRule: (id, data) => api.put(`/rto/rules/${id}`, data)
+  getRules: () => api.get('/decisions/rules', { params: { category: 'RTO' } }),
+  updateRule: (id, data) => api.put(`/decisions/rules/${id}`, data)
 }
 
 export const decisionsApi = {

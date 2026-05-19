@@ -71,6 +71,9 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Product product)
     {
+        var validationError = ValidateProduct(product);
+        if (validationError != null) return BadRequest(new { message = validationError });
+
         product.CreatedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
         _db.Products.Add(product);
@@ -83,6 +86,8 @@ public class ProductsController : ControllerBase
     {
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
+        var validationError = ValidateProduct(update);
+        if (validationError != null) return BadRequest(new { message = validationError });
         
         product.Name = update.Name;
         product.SKU = update.SKU;
@@ -116,21 +121,27 @@ public class ProductsController : ControllerBase
                 product.IsActive = true; product.IsDiscontinued = false;
                 details = "Product resumed and marked active"; break;
             case "IncreaseInventory":
+                if ((action.Quantity ?? 0) <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
                 product.Stock += action.Quantity ?? 0;
                 product.LastRestockDate = DateTime.UtcNow;
                 details = $"Stock increased by {action.Quantity}"; break;
             case "DecreaseInventory":
+                if ((action.Quantity ?? 0) <= 0) return BadRequest(new { message = "Quantity must be greater than zero" });
                 product.Stock = Math.Max(0, (product.Stock ?? 0) - (action.Quantity ?? 0));
                 details = $"Stock decreased by {action.Quantity}"; break;
             case "IncreasePrice":
+                if ((action.NewPrice ?? 0) <= 0) return BadRequest(new { message = "New price must be greater than zero" });
                 product.Price = action.NewPrice ?? product.Price;
                 details = $"Price changed to Rs{action.NewPrice}"; break;
             case "DecreasePrice":
+                if ((action.NewPrice ?? 0) <= 0) return BadRequest(new { message = "New price must be greater than zero" });
                 product.Price = action.NewPrice ?? product.Price;
                 details = $"Price changed to Rs{action.NewPrice}"; break;
             case "Delete":
                 product.IsActive = false;
                 details = "Product archived"; break;
+            default:
+                return BadRequest(new { message = $"Unsupported product action '{action.Action}'" });
         }
 
         product.UpdatedAt = DateTime.UtcNow;
@@ -195,6 +206,17 @@ public class ProductsController : ControllerBase
             await _db.SaveChangesAsync();
             return Ok(new { message = "Product archived due to existing orders" });
         }
+    }
+
+    private static string? ValidateProduct(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.Name)) return "Product name is required";
+        if (string.IsNullOrWhiteSpace(product.SKU)) return "SKU is required";
+        if (product.Price <= 0) return "Price must be greater than zero";
+        if (product.Cost < 0) return "Cost cannot be negative";
+        if ((product.Stock ?? 0) < 0) return "Stock cannot be negative";
+        if ((product.ReorderLevel ?? 0) < 0) return "Reorder level cannot be negative";
+        return null;
     }
 }
 
