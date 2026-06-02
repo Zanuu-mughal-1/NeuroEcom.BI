@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Brain, Sparkles, TrendingUp, TrendingDown, Package, Megaphone, Zap, Target, ChevronRight, CheckCircle, AlertTriangle, XCircle, RefreshCcw, Play, PieChart, Info, ArrowRight, FlaskConical } from 'lucide-react'
+import { Brain, Sparkles, TrendingUp, Package, Megaphone, Zap, Target, ChevronRight, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 import { SalesAreaChart } from '../../components/charts/MiniChart'
-import api, { mockProducts, mockCampaigns, mockCustomers, generateSalesData } from '../../utils/api'
+import api, { mockProducts, mockCampaigns, generateSalesData } from '../../utils/api'
 
 export default function Predictions() {
   const [products, setProducts] = useState([])
   const [campaigns, setCampaigns] = useState([])
+  const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('product')
   const [selectedProduct, setSelectedProduct] = useState(null)
@@ -20,27 +21,41 @@ export default function Predictions() {
   const [adForecastData, setAdForecastData] = useState([])
   const [simulating, setSimulating] = useState(false)
 
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [simLoyaltyPoints, setSimLoyaltyPoints] = useState(0)
+  const [selectedReturnProduct, setSelectedReturnProduct] = useState(null)
+  const [simQualityLevel, setSimQualityLevel] = useState(0)
+  const [showFlags, setShowFlags] = useState(false)
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [prodRes, adsRes] = await Promise.all([
+        const [prodRes, adsRes, custRes] = await Promise.all([
           api.get('/products'),
-          api.get('/ads')
-        ]).catch(() => [{ data: mockProducts }, { data: mockCampaigns }])
+          api.get('/ads'),
+          api.get('/customers')
+        ]).catch(() => [{ data: mockProducts }, { data: mockCampaigns }, { data: [] }])
 
         const prods = prodRes.data.length > 0 ? prodRes.data : mockProducts
         const camps = adsRes.data.length > 0 ? adsRes.data : mockCampaigns
+        const custs = custRes.data.length > 0 ? custRes.data : []
 
         setProducts(prods)
         setCampaigns(camps)
+        setCustomers(custs)
 
         if (prods.length > 0) {
           setSelectedProduct(prods[0])
           setSimPrice(prods[0].Price)
           setSimStock(prods[0].Stock)
+          setSelectedReturnProduct(prods[0])
         }
         if (camps.length > 0) setSelectedCampaign(camps[0])
+        if (custs.length > 0) {
+          setSelectedCustomer(custs[0])
+          setSimLoyaltyPoints(custs[0].LoyaltyPoints || 0)
+        }
 
         setForecastData(generateSalesData(30))
         setAdForecastData(generateSalesData(30))
@@ -59,15 +74,12 @@ export default function Predictions() {
     const budgetRatio = simBudget / currentDailyBudget
     const roiDecay = Math.log(budgetRatio + 1) * 0.7
     const baseDailyRevenue = ((selectedCampaign.TotalRevenue || 5000) / 30) || 500
-
     const newAdForecast = Array.from({ length: 30 }, (_, i) => {
       const date = new Date(Date.now() + (i + 1) * 86400000)
       const volatility = 0.8 + Math.random() * 0.4
-      const revenue = Math.round(baseDailyRevenue * budgetRatio * roiDecay * volatility)
-
       return {
         date: date.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
-        revenue: revenue,
+        revenue: Math.round(baseDailyRevenue * budgetRatio * roiDecay * volatility),
         spend: simBudget * volatility
       }
     })
@@ -80,13 +92,11 @@ export default function Predictions() {
     const priceElasticity = -1.5
     const priceDiff = (simPrice - selectedProduct.Price) / selectedProduct.Price
     const salesMultiplier = 1 + (priceDiff * priceElasticity)
-
     const newForecast = Array.from({ length: 30 }, (_, i) => {
       const date = new Date(Date.now() + (i + 1) * 86400000)
       const seasonality = 1 + Math.sin(i / 5) * 0.1
       const randomness = 0.9 + Math.random() * 0.2
       const units = Math.max(1, Math.round(baseDailySales * salesMultiplier * seasonality * randomness))
-
       return {
         date: date.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
         revenue: units * simPrice,
@@ -150,14 +160,9 @@ export default function Predictions() {
     { id: 'returns', label: 'Return Predictions', icon: Zap },
   ]
 
-  const [selectedCustomer, setSelectedCustomer] = useState(mockCustomers[0])
-  const [simLoyaltyPoints, setSimLoyaltyPoints] = useState(selectedCustomer.LoyaltyPoints)
-  const [selectedReturnProduct, setSelectedReturnProduct] = useState(mockProducts[0])
-  const [simQualityLevel, setSimQualityLevel] = useState(0) // 0 to 100% improvement
-  const [showFlags, setShowFlags] = useState(false)
-
   return (
     <div className="p-6 space-y-5 animate-fade-up">
+
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-neo/10 via-royal/10 to-pulse/5 border border-neo/20 shadow-neo">
         <div className="absolute top-0 right-0 w-64 h-64 opacity-5 dark:opacity-10 pointer-events-none"
@@ -191,7 +196,7 @@ export default function Predictions() {
         ))}
       </div>
 
-      {/* PRODUCT PREDICTIONS */}
+      {/* ==================== PRODUCT PREDICTIONS ==================== */}
       {activeTab === 'product' && (
         <div className="space-y-5">
           <div className="card">
@@ -200,20 +205,13 @@ export default function Predictions() {
               <select
                 value={selectedProduct?.Id || ''}
                 onChange={(e) => {
-                  const p = products.find(prod => prod.Id === parseInt(e.target.value));
-                  if (p) {
-                    setSelectedProduct(p);
-                    setSimPrice(p.Price);
-                    setSimStock(p.Stock);
-                    setProductResult(null);
-                  }
+                  const p = products.find(prod => prod.Id === parseInt(e.target.value))
+                  if (p) { setSelectedProduct(p); setSimPrice(p.Price); setSimStock(p.Stock); setProductResult(null) }
                 }}
                 className="select w-full rounded-xl py-3"
               >
                 {products.map(p => (
-                  <option key={p.Id} value={p.Id}>
-                    {p.Name} — Rs {p.Price} ({p.Stock} in stock)
-                  </option>
+                  <option key={p.Id} value={p.Id}>{p.Name} — Rs {p.Price} ({p.Stock} in stock)</option>
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
@@ -232,7 +230,7 @@ export default function Predictions() {
                 { label: 'Cost', value: `Rs ${selectedProduct?.Cost}`, color: '#9ca3af' },
                 { label: 'Margin', value: `${((selectedProduct?.Price - selectedProduct?.Cost) / (selectedProduct?.Price || 1) * 100).toFixed(1)}%`, color: '#34d399' },
                 { label: 'Stock', value: selectedProduct?.Stock, color: (selectedProduct?.Stock || 0) < 10 ? '#f87171' : '#67f4ff' },
-                { label: 'Sales (est)', value: '450 units', color: '#22d3ee' },
+                { label: 'Health', value: selectedProduct?.HealthStatus || 'N/A', color: '#22d3ee' },
               ].map(m => (
                 <div key={m.label} className="p-3 rounded-lg text-center bg-void border border-border">
                   <div className="stat-label">{m.label}</div>
@@ -258,7 +256,6 @@ export default function Predictions() {
                 <button onClick={runProductSim} className="btn-primary w-full flex items-center justify-center gap-2">
                   <Zap size={14} /> Simulate Price Change
                 </button>
-
                 {!productResult && (
                   <div className="p-3 rounded-xl border border-dashed border-border/30 bg-surface/30 flex flex-col items-center justify-center py-6">
                     <TrendingUp size={24} className="text-text-dim/20 mb-2" />
@@ -266,7 +263,6 @@ export default function Predictions() {
                     <div className="text-[11px] text-text-dim/60 mt-1">Adjust price and click simulate</div>
                   </div>
                 )}
-
                 {productResult && (
                   <div className="p-4 rounded-xl space-y-3" style={{
                     background: productResult.positive ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
@@ -309,48 +305,47 @@ export default function Predictions() {
                   <label className="stat-label block mb-1">Simulated Stock Level</label>
                   <div className="flex items-center gap-3">
                     <input type="range" min="0" max={Math.max(500, (selectedProduct?.Stock || 0) * 2)} step="10" value={simStock}
-                      onChange={e => setSimStock(parseInt(e.target.value))}
-                      className="flex-1 accent-neo" />
+                      onChange={e => setSimStock(parseInt(e.target.value))} className="flex-1 accent-neo" />
                     <span className="text-xl font-bold text-neo-bright w-12 text-right" style={{ fontFamily: 'Bebas Neue' }}>{simStock}</span>
                   </div>
                   <div className="text-xs text-text-dim mt-1">Current: {selectedProduct?.Stock} units</div>
                 </div>
-
                 <div className="p-3 rounded-xl space-y-3 bg-abyss border border-border">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-text-dim">Stockout Risk</span>
                     {(() => {
-                      const dailyRate = forecastData.reduce((sum, d) => sum + (d.units || 0), 0) / 30;
-                      const daysLeft = dailyRate > 0 ? simStock / dailyRate : Infinity;
-                      const risk = daysLeft < 7 ? 'Critical' : daysLeft < 15 ? 'High' : 'Low';
-                      const color = risk === 'Critical' ? '#ef4444' : risk === 'High' ? '#f59e0b' : '#10b981';
+                      const dailyRate = forecastData.reduce((sum, d) => sum + (d.units || 0), 0) / 30
+                      const daysLeft = dailyRate > 0 ? simStock / dailyRate : Infinity
+                      const risk = daysLeft < 7 ? 'Critical' : daysLeft < 15 ? 'High' : 'Low'
+                      const color = risk === 'Critical' ? '#ef4444' : risk === 'High' ? '#f59e0b' : '#10b981'
                       return <span className="text-xs font-bold" style={{ color }}>{risk}</span>
                     })()}
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden bg-abyss">
                     {(() => {
-                      const dailyRate = forecastData.reduce((sum, d) => sum + (d.units || 0), 0) / 30;
-                      const daysLeft = dailyRate > 0 ? simStock / dailyRate : 30;
-                      const progress = Math.min(100, (daysLeft / 30) * 100);
-                      const color = daysLeft < 7 ? '#ef4444' : daysLeft < 15 ? '#f59e0b' : '#10b981';
+                      const dailyRate = forecastData.reduce((sum, d) => sum + (d.units || 0), 0) / 30
+                      const daysLeft = dailyRate > 0 ? simStock / dailyRate : 30
+                      const progress = Math.min(100, (daysLeft / 30) * 100)
+                      const color = daysLeft < 7 ? '#ef4444' : daysLeft < 15 ? '#f59e0b' : '#10b981'
                       return <div className="h-full rounded-full" style={{ width: `${progress}%`, background: color }} />
                     })()}
                   </div>
                   <div className="flex justify-between text-[10px] text-text-dim mt-1">
-                    <span>Depletion: ~{forecastData.reduce((sum, d) => sum + (d.units || 0), 0) > 0 ? Math.floor(simStock / (forecastData.reduce((sum, d) => sum + (d.units || 0), 0) / 30)) : 'N/A'} days</span>
+                    <span>Depletion: ~{forecastData.reduce((s, d) => s + (d.units || 0), 0) > 0 ? Math.floor(simStock / (forecastData.reduce((s, d) => s + (d.units || 0), 0) / 30)) : 'N/A'} days</span>
                     <span>Safety: {Math.round(simStock * 0.2)} units</span>
                   </div>
                 </div>
-
                 <div className="bg-neo/10 border border-neo/20 p-4 rounded-xl min-h-[100px] flex flex-col justify-center">
                   <div className="flex items-center gap-2 mb-2">
                     <Brain size={12} className="text-neo dark:text-neo-bright" />
                     <div className="text-[10px] uppercase tracking-wider text-neo dark:text-neo-bright font-bold">AI Strategic Insight</div>
                   </div>
                   <p className="text-xs text-text-mid leading-relaxed italic">
-                    "{simStock < 50 ? `Stock levels are dangerously low. Reorder at least 150 units immediately to avoid Rs ${(150 * simPrice).toLocaleString()} in lost revenue.` :
-                      simStock > 300 ? "Inventory is significantly over-buffered. Consider a slight price reduction to increase velocity and free up warehouse capital." :
-                        "Maintain current levels. Inventory is balanced for the projected demand wave. No action required."}"
+                    "{simStock < 50
+                      ? `Stock levels are dangerously low. Reorder at least 150 units immediately to avoid Rs ${(150 * simPrice).toLocaleString()} in lost revenue.`
+                      : simStock > 300
+                        ? 'Inventory is significantly over-buffered. Consider a slight price reduction to increase velocity and free up warehouse capital.'
+                        : 'Maintain current levels. Inventory is balanced for the projected demand wave. No action required.'}"
                   </p>
                 </div>
               </div>
@@ -363,15 +358,13 @@ export default function Predictions() {
               </div>
               <div className="space-y-3">
                 {(() => {
-                  const totalPredictedUnits = forecastData.reduce((sum, d) => sum + (d.units || 0), 0);
-                  const totalPredictedRevenue = forecastData.reduce((sum, d) => sum + (d.revenue || 0), 0);
-                  const basePrice = selectedProduct?.Price || 1;
-                  const revenueChange = ((totalPredictedRevenue - (15 * 30 * basePrice)) / (15 * 30 * basePrice) * 100).toFixed(1);
-
+                  const totalPredictedUnits = forecastData.reduce((s, d) => s + (d.units || 0), 0)
+                  const totalPredictedRevenue = forecastData.reduce((s, d) => s + (d.revenue || 0), 0)
+                  const basePrice = selectedProduct?.Price || 1
+                  const revenueChange = ((totalPredictedRevenue - (15 * 30 * basePrice)) / (15 * 30 * basePrice) * 100).toFixed(1)
                   return [
                     { label: 'Predicted Sales', value: `${totalPredictedUnits} units`, change: `${revenueChange > 0 ? '+' : ''}${revenueChange}%`, positive: parseFloat(revenueChange) > 0 },
                     { label: 'Predicted Revenue', value: `Rs ${totalPredictedRevenue.toLocaleString()}`, change: `based on Rs ${simPrice}`, positive: true },
-                    { label: 'Return Rate Forecast', value: `${(8.5 + Math.random() * 3).toFixed(1)}%`, change: '±0.5%', positive: false },
                     { label: 'Optimal Price', value: `Rs ${(basePrice * 0.95).toFixed(2)}`, change: 'AI suggested', positive: true },
                     { label: 'Reorder Date', value: simStock === 0 ? 'Out of Stock' : `~${totalPredictedUnits > 0 ? Math.floor(simStock / (totalPredictedUnits / 30)) : 'N/A'} days`, change: 'est. depletion', positive: simStock > 50 },
                   ].map(m => (
@@ -379,9 +372,7 @@ export default function Predictions() {
                       <span className="text-xs text-text-dim">{m.label}</span>
                       <div className="text-right">
                         <div className="text-sm font-bold text-text-bright">{m.value}</div>
-                        <div className={`text-xs ${m.positive === true ? 'text-bloom' : m.positive === false ? 'text-danger' : 'text-text-dim'}`}>
-                          {m.change}
-                        </div>
+                        <div className={`text-xs ${m.positive === true ? 'text-bloom' : m.positive === false ? 'text-danger' : 'text-text-dim'}`}>{m.change}</div>
                       </div>
                     </div>
                   ))
@@ -409,7 +400,7 @@ export default function Predictions() {
         </div>
       )}
 
-      {/* ADS PREDICTIONS */}
+      {/* ==================== ADS PREDICTIONS ==================== */}
       {activeTab === 'ads' && (
         <div className="space-y-5">
           <div className="card">
@@ -418,19 +409,13 @@ export default function Predictions() {
               <select
                 value={selectedCampaign?.Id || ''}
                 onChange={(e) => {
-                  const c = campaigns.find(camp => camp.Id === parseInt(e.target.value));
-                  if (c) {
-                    setSelectedCampaign(c);
-                    setAdResult(null);
-                    setSimBudget(Math.round((c.TotalSpend || 1500) / 30) || 100);
-                  }
+                  const c = campaigns.find(camp => camp.Id === parseInt(e.target.value))
+                  if (c) { setSelectedCampaign(c); setAdResult(null); setSimBudget(Math.round((c.TotalSpend || 1500) / 30) || 100) }
                 }}
                 className="select w-full rounded-xl py-3"
               >
                 {campaigns.filter(c => c.Status !== 'Draft').map(c => (
-                  <option key={c.Id} value={c.Id}>
-                    {c.Name} — {c.Platform} (Rs {c.Budget?.toLocaleString()} Budget)
-                  </option>
+                  <option key={c.Id} value={c.Id}>{c.Name} — {c.Platform} (Rs {c.Budget?.toLocaleString()} Budget)</option>
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
@@ -477,7 +462,6 @@ export default function Predictions() {
                 <button onClick={runAdSim} className="btn-success w-full flex items-center justify-center gap-2">
                   <Zap size={14} /> Simulate Budget Change
                 </button>
-
                 {!adResult && (
                   <div className="p-3 rounded-xl border border-dashed border-border/30 bg-surface/30 flex flex-col items-center justify-center py-6">
                     <TrendingUp size={24} className="text-text-dim/20 mb-2" />
@@ -485,7 +469,6 @@ export default function Predictions() {
                     <div className="text-[11px] text-text-dim/60 mt-1">Adjust budget and click simulate</div>
                   </div>
                 )}
-
                 {adResult && (
                   <div className="p-4 rounded-xl space-y-3" style={{
                     background: adResult.positive ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
@@ -506,20 +489,16 @@ export default function Predictions() {
                       </div>
                       <div>
                         <div className="stat-label">Projected ROI</div>
-                        <div className={`text-sm font-bold ${adResult.newROI > 100 ? 'text-bloom' : adResult.newROI > 0 ? 'text-ember' : 'text-danger'}`}>
-                          {adResult.newROI}%
-                        </div>
+                        <div className={`text-sm font-bold ${adResult.newROI > 100 ? 'text-bloom' : adResult.newROI > 0 ? 'text-ember' : 'text-danger'}`}>{adResult.newROI}%</div>
                       </div>
                       <div>
                         <div className="stat-label">Projected ROAS</div>
                         <div className="text-sm font-bold text-neo-bright">{adResult.roas}x</div>
                       </div>
                     </div>
-                    <div className="pt-2 border-t border-border/10">
-                      <div className="flex items-center gap-1.5">
-                        {adResult.newROI > 50 ? <CheckCircle size={14} className="text-bloom" /> : adResult.newROI > 0 ? <AlertTriangle size={14} className="text-ember" /> : <XCircle size={14} className="text-danger" />}
-                        <div className="text-xs font-bold text-text-bright">{adResult.recommendation}</div>
-                      </div>
+                    <div className="pt-2 border-t border-border/10 flex items-center gap-1.5">
+                      {adResult.newROI > 50 ? <CheckCircle size={14} className="text-bloom" /> : adResult.newROI > 0 ? <AlertTriangle size={14} className="text-ember" /> : <XCircle size={14} className="text-danger" />}
+                      <div className="text-xs font-bold text-text-bright">{adResult.recommendation}</div>
                     </div>
                   </div>
                 )}
@@ -533,23 +512,16 @@ export default function Predictions() {
               </div>
               <div className="space-y-3">
                 {(() => {
-                  const currentDaily = (selectedCampaign?.TotalSpend || 1500) / 30 || 50;
-                  const optimalBudget = Math.round(currentDaily * 1.25);
-                  const predictedRevenue = Math.round((selectedCampaign?.TotalRevenue || 5000) * 1.15);
-
-                  const recommendations = [
-                    { label: 'Optimal Daily Budget', value: `Rs ${optimalBudget}`, confidence: 89, icon: Target, color: '#67f4ff' },
-                    { label: 'Expected ROI at optimal', value: `${Math.round((selectedCampaign?.ROI || 150) * 1.1)}%`, confidence: 84, icon: TrendingUp, color: '#34d399' },
-                    { label: 'Best Performing Platform', value: selectedCampaign?.Platform || 'Meta', confidence: 76, icon: Megaphone, color: '#22d3ee' },
-                    { label: 'Next 30 Day Revenue', value: `Rs ${predictedRevenue.toLocaleString()}`, confidence: 78, icon: ChevronRight, color: '#fbbf24' },
-                  ];
-
-                  return recommendations.map(r => (
+                  const currentDaily = (selectedCampaign?.TotalSpend || 1500) / 30 || 50
+                  const optimalBudget = Math.round(currentDaily * 1.25)
+                  const predictedRevenue = Math.round((selectedCampaign?.TotalRevenue || 5000) * 1.15)
+                  return [
+                    { label: 'Optimal Daily Budget', value: `Rs ${optimalBudget}`, confidence: 89, color: '#67f4ff' },
+                    { label: 'Expected ROI at optimal', value: `${Math.round((selectedCampaign?.ROI || 150) * 1.1)}%`, confidence: 84, color: '#34d399' },
+                    { label: 'Best Platform', value: selectedCampaign?.Platform || 'Meta', confidence: 76, color: '#22d3ee' },
+                    { label: 'Next 30 Day Revenue', value: `Rs ${predictedRevenue.toLocaleString()}`, confidence: 78, color: '#fbbf24' },
+                  ].map(r => (
                     <div key={r.label} className="flex items-center gap-3 p-3 rounded-xl bg-void border border-border">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${r.color}18` }}>
-                        <r.icon size={14} style={{ color: r.color }} />
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-text-dim">{r.label}</div>
                         <div className="text-base font-bold mt-0.5" style={{ color: r.color }}>{r.value}</div>
@@ -559,76 +531,54 @@ export default function Predictions() {
                         <div className="text-sm font-bold text-bloom">{r.confidence}%</div>
                       </div>
                     </div>
-                  ));
+                  ))
                 })()}
-
-                <div className="p-3 rounded-xl" style={{ background: 'rgba(0,234,255,0.08)', border: '1px solid rgba(0,234,255,0.2)' }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={13} className="text-neo-bright" />
-                    <span className="text-xs font-semibold text-neo-bright">Platform Allocation for {selectedCampaign?.Name}</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {(() => {
-                      const primary = selectedCampaign?.Platform || 'Meta';
-                      const platforms = [
-                        { name: primary, pct: 60, color: '#67f4ff' },
-                        { name: primary === 'Google' ? 'Facebook' : 'Google', pct: 25, color: '#ef4444' },
-                        { name: 'Instagram', pct: 15, color: '#ec4899' }
-                      ];
-                      return platforms.map(p => (
-                        <div key={p.name}>
-                          <div className="flex justify-between text-xs mb-0.5">
-                            <span className="text-text-dim">{p.name}</span>
-                            <span style={{ color: p.color }}>{p.pct}%</span>
-                          </div>
-                          <div className="h-1 rounded-full overflow-hidden bg-abyss">
-                            <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: p.color }} />
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
           <div className="card">
-            <div className="section-title mb-1">30-Day Sales Forecast</div>
-            <div className="section-subtitle mb-4">Projected performance with current settings</div>
+            <div className="section-title mb-1">30-Day Ad Revenue Forecast</div>
+            <div className="section-subtitle mb-4">Projected ad performance with current budget settings</div>
             <div className="h-52">
-              <SalesAreaChart data={forecastData} color="#38bdf8" dataKey="revenue" prefix="Rs " />
+              <SalesAreaChart data={adForecastData} color="#34d399" dataKey="revenue" prefix="Rs " />
             </div>
           </div>
         </div>
       )}
 
-      {/* CUSTOMER PREDICTIONS */}
+      {/* ==================== CUSTOMER PREDICTIONS ==================== */}
       {activeTab === 'customers' && (
         <div className="space-y-5">
           <div className="card">
             <div className="section-title mb-3">Select Customer</div>
             <div className="relative">
-              <select
-                value={selectedCustomer?.Id || ''}
-                onChange={(e) => {
-                  const c = mockCustomers.find(cust => cust.Id === parseInt(e.target.value));
-                  if (c) {
-                    setSelectedCustomer(c);
-                    setSimLoyaltyPoints(c.LoyaltyPoints);
-                  }
-                }}
-                className="select w-full rounded-xl py-3"
-              >
-                {mockCustomers.map(c => (
-                  <option key={c.Id} value={c.Id}>
-                    {c.FirstName} {c.LastName} — {c.LoyaltyTier} ({c.TotalOrders} Orders)
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
-                <ChevronRight size={18} className="rotate-90" />
-              </div>
+              {customers.length === 0 ? (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-abyss border border-border">
+                  <div className="w-4 h-4 rounded-full border-2 border-neo/40 border-t-neo animate-spin" />
+                  <span className="text-sm text-text-dim">Loading customers from database...</span>
+                </div>
+              ) : (
+                <>
+                  <select
+                    value={selectedCustomer?.Id || ''}
+                    onChange={(e) => {
+                      const c = customers.find(cust => cust.Id === parseInt(e.target.value))
+                      if (c) { setSelectedCustomer(c); setSimLoyaltyPoints(c.LoyaltyPoints || 0) }
+                    }}
+                    className="select w-full rounded-xl py-3"
+                  >
+                    {customers.map(c => (
+                      <option key={c.Id} value={c.Id}>
+                        {c.FirstName} {c.LastName} — {c.LoyaltyTier || 'New'} ({c.TotalOrders ?? 0} Orders)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
+                    <ChevronRight size={18} className="rotate-90" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -638,7 +588,8 @@ export default function Predictions() {
               <div className="space-y-4">
                 <div>
                   <label className="stat-label block mb-1">Add Loyalty Points</label>
-                  <input type="range" min="0" max="5000" step="100" value={simLoyaltyPoints - (selectedCustomer?.LoyaltyPoints || 0)}
+                  <input type="range" min="0" max="5000" step="100"
+                    value={simLoyaltyPoints - (selectedCustomer?.LoyaltyPoints || 0)}
                     onChange={e => setSimLoyaltyPoints((selectedCustomer?.LoyaltyPoints || 0) + parseInt(e.target.value))}
                     className="w-full accent-neo" />
                   <div className="flex justify-between text-xs text-text-dim mt-1">
@@ -646,7 +597,6 @@ export default function Predictions() {
                     <span className="text-neo-bright">+{simLoyaltyPoints - (selectedCustomer?.LoyaltyPoints || 0)} pts</span>
                   </div>
                 </div>
-
                 <div className="p-4 rounded-xl bg-abyss border border-border">
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-[10px] uppercase tracking-wider text-text-dim font-bold">Churn Risk Impact</div>
@@ -672,17 +622,14 @@ export default function Predictions() {
               <div className="section-title mb-4">AI Customer Forecast</div>
               <div className="space-y-3">
                 {[
-                  { label: 'Projected Lifetime Value', value: `Rs ${(selectedCustomer?.TotalSpent * 1.4 || 0).toLocaleString()}`, icon: TrendingUp, color: '#34d399' },
-                  { label: 'Next Purchase Probability', value: `${Math.min(95, 65 + (simLoyaltyPoints / 100)).toFixed(0)}%`, icon: Target, color: '#67f4ff' },
-                  { label: 'Predicted Next Purchase', value: 'Within 12 days', icon: Zap, color: '#22d3ee' },
-                  { label: 'Suggested Segment', value: simLoyaltyPoints > 5000 ? 'VIP Elite' : simLoyaltyPoints > 2000 ? 'Gold Star' : 'Loyal Silver', icon: Brain, color: '#fbbf24' },
+                  { label: 'Projected Lifetime Value', value: `Rs ${((selectedCustomer?.TotalSpent || 0) * 1.4).toLocaleString()}`, color: '#34d399' },
+                  { label: 'Next Purchase Probability', value: `${Math.min(95, 65 + (simLoyaltyPoints / 100)).toFixed(0)}%`, color: '#67f4ff' },
+                  { label: 'Predicted Next Purchase', value: 'Within 12 days', color: '#22d3ee' },
+                  { label: 'Suggested Segment', value: simLoyaltyPoints > 5000 ? 'VIP Elite' : simLoyaltyPoints > 2000 ? 'Gold Star' : 'Loyal Silver', color: '#fbbf24' },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between p-3 rounded-xl bg-surface/30 border border-border/10">
-                    <div className="flex items-center gap-3">
-                      <item.icon size={14} style={{ color: item.color }} />
-                      <span className="text-xs text-text-dim">{item.label}</span>
-                    </div>
-                    <span className="text-sm font-bold text-text-bright">{item.value}</span>
+                    <span className="text-xs text-text-dim">{item.label}</span>
+                    <span className="text-sm font-bold" style={{ color: item.color }}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -691,35 +638,37 @@ export default function Predictions() {
             <div className="card">
               <div className="section-title mb-4">Product Affinity (AI Suggested)</div>
               {(() => {
-                const affinityProduct = mockProducts[(selectedCustomer?.Id || 0) % mockProducts.length];
-                const matchPct = 75 + ((selectedCustomer?.Id || 0) % 20);
+                const affinityProduct = products.length > 0 ? products[(selectedCustomer?.Id || 0) % products.length] : null
+                const matchPct = 75 + ((selectedCustomer?.Id || 0) % 20)
                 return (
                   <>
-                    <div className="p-4 rounded-xl bg-neo/5 border border-neo/20 flex gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-neo/20 flex items-center justify-center flex-shrink-0">
-                        <Package size={20} className="text-neo-bright" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-text-dim">Likely Next Purchase</div>
-                        <div className="text-sm font-bold text-text-bright mt-0.5">{affinityProduct.Name}</div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-bloom/10 text-bloom font-bold">{matchPct}% Match</span>
-                          <span className="text-[10px] text-text-dim">Based on browsing history</span>
+                    {affinityProduct ? (
+                      <div className="p-4 rounded-xl bg-neo/5 border border-neo/20 flex gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-neo/20 flex items-center justify-center flex-shrink-0">
+                          <Package size={20} className="text-neo-bright" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-text-dim">Likely Next Purchase</div>
+                          <div className="text-sm font-bold text-text-bright mt-0.5">{affinityProduct.Name}</div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-bloom/10 text-bloom font-bold">{matchPct}% Match</span>
+                            <span className="text-[10px] text-text-dim">Based on purchase history</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-abyss border border-border text-xs text-text-dim">No product data available</div>
+                    )}
                     <div className="mt-4 space-y-2">
                       <div className="text-[10px] uppercase tracking-wider text-text-dim font-bold">Cross-Sell Opportunities</div>
                       <div className="flex gap-2">
                         {['Premium Support', 'Extended Warranty'].map(tag => (
-                          <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-abyss border border-border text-text-mid">
-                            {tag}
-                          </span>
+                          <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-abyss border border-border text-text-mid">{tag}</span>
                         ))}
                       </div>
                     </div>
                   </>
-                );
+                )
               })()}
             </div>
 
@@ -727,18 +676,15 @@ export default function Predictions() {
               <div className="section-title mb-4">Churn Risk Drivers</div>
               <div className="space-y-3">
                 {(() => {
-                  const id = selectedCustomer?.Id || 0;
-                  const lastPurchaseDays = 15 + (id % 60);
-                  const supportTickets = id % 3;
-                  const returnRate = 5 + (id % 15);
-
-                  const drivers = [
+                  const id = selectedCustomer?.Id || 0
+                  const lastPurchaseDays = 15 + (id % 60)
+                  const supportTickets = id % 3
+                  const returnRate = 5 + (id % 15)
+                  return [
                     { label: 'Last Purchase', value: `${lastPurchaseDays} days ago`, risk: lastPurchaseDays > 45 ? 'High' : lastPurchaseDays > 20 ? 'Medium' : 'Low', color: lastPurchaseDays > 45 ? '#ef4444' : lastPurchaseDays > 20 ? '#f59e0b' : '#10b981' },
                     { label: 'Support Tickets', value: `${supportTickets} unresolved`, risk: supportTickets > 1 ? 'High' : supportTickets > 0 ? 'Medium' : 'Low', color: supportTickets > 1 ? '#ef4444' : supportTickets > 0 ? '#f59e0b' : '#10b981' },
                     { label: 'Avg. Return Rate', value: `${returnRate}%`, risk: returnRate > 15 ? 'High' : returnRate > 8 ? 'Medium' : 'Low', color: returnRate > 15 ? '#ef4444' : returnRate > 8 ? '#f59e0b' : '#10b981' },
-                  ];
-
-                  return drivers.map(driver => (
+                  ].map(driver => (
                     <div key={driver.label} className="flex items-center justify-between">
                       <div>
                         <div className="text-xs text-text-bright font-medium">{driver.label}</div>
@@ -749,22 +695,22 @@ export default function Predictions() {
                         {driver.risk}
                       </div>
                     </div>
-                  ));
+                  ))
                 })()}
                 <div className="pt-2 mt-2 border-t border-border/10">
                   <p className="text-[10px] text-text-dim italic leading-relaxed">
                     {(() => {
-                      const id = selectedCustomer?.Id || 0;
-                      const lastPurchaseDays = 15 + (id % 60);
-                      const isVIP = (selectedCustomer?.TotalSpent || 0) > 3000;
-                      const hasTickets = (id % 3) > 1;
-
-                      if (hasTickets) return `*AI suggests a personalized follow-up from the Success Team to resolve ${id % 3} open tickets before proposing new offers.`;
-                      if (lastPurchaseDays > 45) return `*AI suggests a "We Miss You" reactivation campaign with a 20% discount on their favorite category: ${mockProducts[id % mockProducts.length].Category}.`;
-                      if (isVIP) return `*AI suggests an "Elite Appreciation" gift: Free 1-year extended warranty on their next purchase of ${mockProducts[id % mockProducts.length].Name}.`;
-                      if ((selectedCustomer?.TotalOrders || 0) > 10) return `*AI suggests inviting ${selectedCustomer?.FirstName} to the "Ambassador Program" to leverage their high brand loyalty for referrals.`;
-
-                      return `*AI suggests a "Next-Step" voucher: 10% off ${mockProducts[(id + 1) % mockProducts.length].Name} to encourage their ${((selectedCustomer?.TotalOrders || 0) + 1)}th order.`;
+                      const id = selectedCustomer?.Id || 0
+                      const lastPurchaseDays = 15 + (id % 60)
+                      const isVIP = (selectedCustomer?.TotalSpent || 0) > 3000
+                      const hasTickets = (id % 3) > 1
+                      const p0 = products.length > 0 ? products[id % products.length] : null
+                      const p1 = products.length > 0 ? products[(id + 1) % products.length] : null
+                      if (hasTickets) return `*AI suggests a personalized follow-up to resolve ${id % 3} open tickets before proposing new offers.`
+                      if (lastPurchaseDays > 45) return `*AI suggests a "We Miss You" reactivation campaign with a 20% discount on their favorite category: ${p0?.Category || 'Electronics'}.`
+                      if (isVIP) return `*AI suggests an "Elite Appreciation" gift: Free 1-year extended warranty on their next purchase of ${p0?.Name || 'a top product'}.`
+                      if ((selectedCustomer?.TotalOrders || 0) > 10) return `*AI suggests inviting ${selectedCustomer?.FirstName} to the "Ambassador Program" to leverage their brand loyalty for referrals.`
+                      return `*AI suggests a "Next-Step" voucher: 10% off ${p1?.Name || 'a recommended product'} to encourage their ${((selectedCustomer?.TotalOrders || 0) + 1)}th order.`
                     })()}
                   </p>
                 </div>
@@ -790,7 +736,7 @@ export default function Predictions() {
         </div>
       )}
 
-      {/* RETURN PREDICTIONS */}
+      {/* ==================== RETURN PREDICTIONS ==================== */}
       {activeTab === 'returns' && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -798,29 +744,37 @@ export default function Predictions() {
               <div className="section-title mb-4">Product Return Simulator</div>
               <div className="space-y-4">
                 <div className="relative">
-                  <select
-                    value={selectedReturnProduct?.Id || ''}
-                    onChange={(e) => {
-                      const p = mockProducts.find(prod => prod.Id === parseInt(e.target.value));
-                      if (p) {
-                        setSelectedReturnProduct(p);
-                        setSimQualityLevel(0);
-                      }
-                    }}
-                    className="select w-full rounded-xl py-3"
-                  >
-                    {mockProducts.map(p => (
-                      <option key={p.Id} value={p.Id}>{p.Name} — Current Return Rate: {(5 + (p.Id % 10)).toFixed(1)}%</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
-                    <ChevronRight size={18} className="rotate-90" />
-                  </div>
+                  {products.length === 0 ? (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-abyss border border-border">
+                      <div className="w-4 h-4 rounded-full border-2 border-neo/40 border-t-neo animate-spin" />
+                      <span className="text-sm text-text-dim">Loading products from database...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedReturnProduct?.Id || ''}
+                        onChange={(e) => {
+                          const p = products.find(prod => prod.Id === parseInt(e.target.value))
+                          if (p) { setSelectedReturnProduct(p); setSimQualityLevel(0) }
+                        }}
+                        className="select w-full rounded-xl py-3"
+                      >
+                        {products.map(p => (
+                          <option key={p.Id} value={p.Id}>
+                            {p.Name} — {p.Category} (Rs {p.Price})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-dim">
+                        <ChevronRight size={18} className="rotate-90" />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="p-4 rounded-xl bg-surface/30 border border-border/10 space-y-4">
                   <div>
-                    <label className="stat-label block mb-2">Quality & Packaging Improvement</label>
+                    <label className="stat-label block mb-2">Quality &amp; Packaging Improvement</label>
                     <input type="range" min="0" max="100" step="5" value={simQualityLevel}
                       onChange={e => setSimQualityLevel(parseInt(e.target.value))}
                       className="w-full accent-danger" />
@@ -833,13 +787,12 @@ export default function Predictions() {
 
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     {(() => {
-                      const baseRate = 5 + ((selectedReturnProduct?.Id || 0) % 10);
-                      const reduction = (simQualityLevel / 100) * 0.6;
-                      const newRate = baseRate * (1 - reduction);
-                      const monthlyReturns = 150;
-                      const savingsPerReturn = (selectedReturnProduct?.Price || 100) * 0.4;
-                      const monthlySavings = Math.round((baseRate - newRate) / 100 * monthlyReturns * savingsPerReturn);
-
+                      const baseRate = 5 + ((selectedReturnProduct?.Id || 0) % 10)
+                      const reduction = (simQualityLevel / 100) * 0.6
+                      const newRate = baseRate * (1 - reduction)
+                      const monthlyReturns = 150
+                      const savingsPerReturn = (selectedReturnProduct?.Price || 100) * 0.4
+                      const monthlySavings = Math.round((baseRate - newRate) / 100 * monthlyReturns * savingsPerReturn)
                       return (
                         <>
                           <div className="p-3 rounded-lg bg-abyss border border-border">
@@ -853,7 +806,7 @@ export default function Predictions() {
                             <div className="text-[10px] text-text-dim">Based on {monthlyReturns} orders</div>
                           </div>
                         </>
-                      );
+                      )
                     })()}
                   </div>
                 </div>
@@ -868,7 +821,7 @@ export default function Predictions() {
                     { label: 'Defective/Damaged', pct: 45 - (simQualityLevel / 3), color: '#ef4444' },
                     { label: 'Wrong Size/Item', pct: 25, color: '#67f4ff' },
                     { label: 'Changed Mind', pct: 30, color: '#9ca3af' }
-                  ];
+                  ]
                   return reasons.map(r => (
                     <div key={r.label}>
                       <div className="flex justify-between text-[10px] mb-1">
@@ -880,7 +833,7 @@ export default function Predictions() {
                           style={{ width: `${Math.max(5, r.pct)}%`, background: r.color }} />
                       </div>
                     </div>
-                  ));
+                  ))
                 })()}
                 <div className="p-3 rounded-xl bg-neo/5 border border-neo/20 mt-4">
                   <div className="flex items-center gap-2 mb-1">
@@ -888,7 +841,7 @@ export default function Predictions() {
                     <span className="text-[10px] font-bold text-neo-bright uppercase">AI Suggestion</span>
                   </div>
                   <p className="text-[10px] text-text-dim leading-relaxed">
-                    Increasing Quality Control by 40% will eliminate 80% of "Defective" returns for {selectedReturnProduct?.Name}.
+                    Increasing Quality Control by 40% will eliminate 80% of "Defective" returns for {selectedReturnProduct?.Name || 'this product'}.
                   </p>
                 </div>
               </div>
@@ -901,12 +854,9 @@ export default function Predictions() {
             <div className="h-52">
               <SalesAreaChart
                 data={Array.from({ length: 6 }, (_, i) => {
-                  const baseLoss = 5000 + (Math.random() * 1000);
-                  const improvement = 1 - ((simQualityLevel / 100) * 0.4);
-                  return {
-                    date: `Month ${i + 1}`,
-                    revenue: Math.round(baseLoss * improvement)
-                  };
+                  const baseLoss = 5000 + (Math.random() * 1000)
+                  const improvement = 1 - ((simQualityLevel / 100) * 0.4)
+                  return { date: `Month ${i + 1}`, revenue: Math.round(baseLoss * improvement) }
                 })}
                 color="#ef4444"
                 dataKey="revenue"
@@ -937,6 +887,7 @@ export default function Predictions() {
                 ))}
               </div>
             </div>
+
             <div className="card">
               <div className="section-title mb-4">Fraud Detection AI</div>
               <div className="p-4 rounded-xl bg-danger/5 border border-danger/20">
@@ -946,13 +897,9 @@ export default function Predictions() {
                 </div>
                 <div className="text-2xl font-bold text-text-bright">34</div>
                 <div className="text-[10px] text-text-dim mt-1">Suspicious return patterns detected this week</div>
-                <button
-                  onClick={() => setShowFlags(!showFlags)}
-                  className="btn-ghost w-full mt-4 text-[10px] py-1"
-                >
+                <button onClick={() => setShowFlags(!showFlags)} className="btn-ghost w-full mt-4 text-[10px] py-1">
                   {showFlags ? 'Hide Alerts' : 'Review Flags'}
                 </button>
-
                 {showFlags && (
                   <div className="mt-3 space-y-2 animate-fade-in">
                     {[
